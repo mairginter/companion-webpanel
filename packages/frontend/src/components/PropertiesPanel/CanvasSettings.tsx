@@ -39,8 +39,8 @@ export function CanvasSettings({ panel, panelId }: Props) {
   }
 
   const preset = detectPreset(panel)
-  const lbl: React.CSSProperties = { fontSize: 9, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }
-  const sel: React.CSSProperties = { background: '#1a2030', border: '1px solid #2a3344', color: '#e9edf2', borderRadius: 3, padding: '4px 6px', fontSize: 11, width: '100%' }
+  const lbl: React.CSSProperties = { fontSize: 12, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }
+  const sel: React.CSSProperties = { background: '#1a2030', border: '1px solid #2a3344', color: '#e9edf2', borderRadius: 4, padding: '8px 10px', fontSize: 14, width: '100%' }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

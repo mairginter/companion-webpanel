@@ -42,16 +42,16 @@ export function NumericInput({ value, onChange, min, label, unit }: Props) {
   }, [localValue, commit, value, onChange, clamp])
 
   const inputStyle: React.CSSProperties = {
-    background: '#1a2030', border: '1px solid #2a3344', borderRadius: 3,
-    padding: '3px 6px', color: '#e9edf2', fontSize: 11,
+    background: '#1a2030', border: '1px solid #2a3344', borderRadius: 4,
+    padding: '8px 10px', color: '#e9edf2', fontSize: 14,
     fontFamily: "'JetBrains Mono', 'Courier New', monospace",
     width: '100%', outline: 'none', boxSizing: 'border-box',
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {label && <span style={{ fontSize: 9, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {label && <span style={{ fontSize: 12, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <input
           type="text" value={localValue} style={inputStyle}
           onChange={(e) => setLocalValue(e.target.value)}
@@ -59,7 +59,7 @@ export function NumericInput({ value, onChange, min, label, unit }: Props) {
           onKeyDown={onKeyDown}
           onWheel={onWheel}
         />
-        {unit && <span style={{ fontSize: 10, color: '#4a5568' }}>{unit}</span>}
+        {unit && <span style={{ fontSize: 12, color: '#4a5568' }}>{unit}</span>}
       </div>
     </div>
   )

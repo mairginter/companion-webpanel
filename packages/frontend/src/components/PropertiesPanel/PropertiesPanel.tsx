@@ -125,7 +125,7 @@ export function PropertiesPanel() {
   }
 
   const titleStyle: React.CSSProperties = {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: 600,
     color: '#8896aa',
     textTransform: 'uppercase',

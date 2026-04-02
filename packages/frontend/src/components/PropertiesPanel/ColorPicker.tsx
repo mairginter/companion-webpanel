@@ -16,12 +16,12 @@ export function ColorPicker({ value, onChange, label }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {label && <span style={{ fontSize: 9, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
+      {label && <span style={{ fontSize: 12, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
         onClick={() => inputRef.current?.click()}>
-        <div style={{ width: 24, height: 24, background: value || '#000000', borderRadius: 4, border: '1px solid #2a3344', flexShrink: 0 }} />
-        <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: '#e9edf2',
-          background: '#1a2030', border: '1px solid #2a3344', borderRadius: 3, padding: '3px 6px', flex: 1 }}>
+        <div style={{ width: 36, height: 36, background: value || '#000000', borderRadius: 4, border: '1px solid #2a3344', flexShrink: 0 }} />
+        <span style={{ fontSize: 14, fontFamily: "'JetBrains Mono', monospace", color: '#e9edf2',
+          background: '#1a2030', border: '1px solid #2a3344', borderRadius: 4, padding: '8px 10px', flex: 1 }}>
           {value || '—'}
         </span>
         <input ref={inputRef} type="color" value={hex} onChange={(e) => onChange(e.target.value)}

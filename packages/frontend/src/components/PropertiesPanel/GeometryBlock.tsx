@@ -20,7 +20,7 @@ export function GeometryBlock({ elements, panelId }: Props) {
     for (const el of elements) updateElementGeometry(panelId, el.id, patch)
   }
   const sl: React.CSSProperties = {
-    fontSize: 9, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6,
+    fontSize: 12, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6,
   }
   const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }
   return (

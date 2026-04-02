@@ -24,8 +24,8 @@ export function LabelProps({ element, panelId }: Props) {
         el.id !== element.id ? el : { ...el, style: { ...s, ...patch } } as AnyElement) }) })
   }
 
-  const lbl: React.CSSProperties = { fontSize: 9, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }
-  const sel: React.CSSProperties = { background: '#1a2030', border: '1px solid #2a3344', color: '#e9edf2', borderRadius: 3, padding: '2px 4px', fontSize: 11 }
+  const lbl: React.CSSProperties = { fontSize: 12, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }
+  const sel: React.CSSProperties = { background: '#1a2030', border: '1px solid #2a3344', color: '#e9edf2', borderRadius: 4, padding: '8px 10px', fontSize: 14 }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -33,7 +33,7 @@ export function LabelProps({ element, panelId }: Props) {
       <div>
         <div style={lbl}>Text</div>
         <textarea value={element.text} onChange={(e) => updateText(e.target.value)} rows={3}
-          style={{ ...sel, width: '100%', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+          style={{ ...sel, width: '100%', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', lineHeight: 1.5 }} />
       </div>
       <ColorPicker label="Farbe" value={s.color ?? '#e9edf2'} onChange={(v) => updateStyle({ color: v })} />
       <NumericInput label="Font-Size" value={s.fontSize ?? 13} min={8} unit="px"

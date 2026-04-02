@@ -25,7 +25,7 @@ export function ShapeProps({ element, panelId }: Props) {
     })
   }
 
-  const lbl: React.CSSProperties = { fontSize: 9, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }
+  const lbl: React.CSSProperties = { fontSize: 12, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={lbl}>Shape</div>

@@ -25,25 +25,25 @@ export function CompanionButtonProps({ element, panelId }: Props) {
     })
   }
 
-  const lbl: React.CSSProperties = { fontSize: 9, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px' }
+  const lbl: React.CSSProperties = { fontSize: 12, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px' }
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }
   const tog = (v: boolean | undefined, d: boolean) => v === undefined ? d : v
-  const sel: React.CSSProperties = { background: '#1a2030', border: '1px solid #2a3344', color: '#e9edf2', borderRadius: 3, padding: '2px 4px', fontSize: 11 }
+  const sel: React.CSSProperties = { background: '#1a2030', border: '1px solid #2a3344', color: '#e9edf2', borderRadius: 4, padding: '8px 10px', fontSize: 14 }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ ...lbl, marginBottom: 2 }}>CompanionButton</div>
       <div style={row}>
         <span style={lbl}>Show Background</span>
-        <input type="checkbox" checked={tog(r.showBgColor, true)} onChange={(e) => updateRender({ showBgColor: e.target.checked })} />
+        <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showBgColor, true)} onChange={(e) => updateRender({ showBgColor: e.target.checked })} />
       </div>
       <div style={row}>
         <span style={lbl}>Show Bitmap</span>
-        <input type="checkbox" checked={tog(r.showBitmap, false)} onChange={(e) => updateRender({ showBitmap: e.target.checked })} />
+        <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showBitmap, false)} onChange={(e) => updateRender({ showBitmap: e.target.checked })} />
       </div>
       <div style={row}>
         <span style={lbl}>Show Text</span>
-        <input type="checkbox" checked={tog(r.showText, true)} onChange={(e) => updateRender({ showText: e.target.checked })} />
+        <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showText, true)} onChange={(e) => updateRender({ showText: e.target.checked })} />
       </div>
       <div style={row}>
         <span style={lbl}>Text-Align</span>
