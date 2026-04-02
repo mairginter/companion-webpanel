@@ -3,7 +3,6 @@ import { useWebSocket } from './ws/useWebSocket'
 import { useSettings } from './api/useSettings'
 import { useAppStore } from './store/useAppStore'
 import { Toolbar } from './components/Toolbar/Toolbar'
-import { Sidebar } from './components/Sidebar/Sidebar'
 import { Canvas } from './components/Canvas/Canvas'
 
 const styles: Record<string, React.CSSProperties> = {
@@ -159,7 +158,6 @@ export function App() {
     <div style={styles.app}>
       <Toolbar mode={mode} onToggleMode={toggleMode} />
       <div style={styles.body}>
-        <Sidebar />
         <Canvas sendPress={sendPress} />
       </div>
     </div>

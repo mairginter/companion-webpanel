@@ -18,13 +18,8 @@ export const LabelElement = React.memo(function LabelElement({ element, isContai
         ),
         display: 'flex',
         alignItems: 'center',
-        justifyContent:
-          style?.align === 'right'
-            ? 'flex-end'
-            : style?.align === 'center'
-            ? 'center'
-            : 'flex-start',
         color: style?.color ?? '#ffffff',
+        textAlign: style?.align ?? 'left',
         fontSize: style?.fontSize ?? 18,
         fontFamily: style?.fontFamily ?? 'Inter, system-ui, sans-serif',
         fontWeight: style?.fontWeight ?? '600',

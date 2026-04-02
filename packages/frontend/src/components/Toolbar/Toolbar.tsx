@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
+import { useAppStore } from '../../store/useAppStore'
 
 interface ToolbarProps {
   mode: 'view' | 'edit'
@@ -16,14 +17,8 @@ const s: React.CSSProperties = {
   gap: 8,
   userSelect: 'none',
   flexShrink: 0,
-}
-
-const titleStyle: React.CSSProperties = {
-  fontSize: 15,
-  fontWeight: 600,
-  color: '#e9edf2',
-  letterSpacing: '0.02em',
-  marginRight: 8,
+  position: 'relative',
+  zIndex: 100,
 }
 
 const dividerStyle: React.CSSProperties = {
@@ -43,43 +38,104 @@ const modeButtonStyle = (active: boolean): React.CSSProperties => ({
   fontWeight: 500,
   cursor: 'pointer',
   transition: 'all 0.15s',
+  height: 32,
 })
 
 export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
+  const panels = useAppStore((s) => s.settings?.panels ?? [])
+  const activePanelId = useAppStore((s) => s.activePanelId)
+  const setActivePanelId = useAppStore((s) => s.setActivePanelId)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const activePanel = panels.find((p) => p.id === activePanelId)
+
+  // Schließen bei Klick außerhalb
+  useEffect(() => {
+    if (!dropdownOpen) return
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [dropdownOpen])
+
   return (
     <div style={s}>
-      <span style={titleStyle}>Companion Panel</span>
+      <span style={{ fontSize: 15, fontWeight: 600, color: '#e9edf2', letterSpacing: '0.02em', marginRight: 8 }}>
+        Companion Panel
+      </span>
+      <div style={dividerStyle} />
+
+      {/* Panel-Auswahl Dropdown */}
+      <div ref={dropdownRef} style={{ position: 'relative' }}>
+        <button
+          style={{
+            ...modeButtonStyle(false),
+            display: 'flex', alignItems: 'center', gap: 6,
+            minWidth: 140, maxWidth: 220,
+            color: '#e9edf2',
+            border: `1px solid ${dropdownOpen ? '#4a9eff' : '#2a3344'}`,
+          }}
+          onClick={() => setDropdownOpen((o) => !o)}
+          title="Panel wechseln"
+        >
+          <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {activePanel?.name ?? 'Kein Panel'}
+          </span>
+          <span style={{ fontSize: 10, color: '#4a5568' }}>{dropdownOpen ? '▲' : '▼'}</span>
+        </button>
+
+        {dropdownOpen && (
+          <div style={{
+            position: 'absolute', top: '100%', left: 0, marginTop: 4,
+            background: '#1a2030', border: '1px solid #2a3344', borderRadius: 6,
+            minWidth: 200, zIndex: 500, boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            overflow: 'hidden',
+          }}>
+            {panels.length === 0 && (
+              <div style={{ padding: '10px 14px', color: '#4a5568', fontSize: 13 }}>Keine Panels</div>
+            )}
+            {panels.map((panel) => (
+              <div
+                key={panel.id}
+                onClick={() => { setActivePanelId(panel.id); setDropdownOpen(false) }}
+                style={{
+                  padding: '10px 14px',
+                  fontSize: 13,
+                  color: panel.id === activePanelId ? '#4a9eff' : '#e9edf2',
+                  background: panel.id === activePanelId ? 'rgba(74,158,255,0.08)' : 'transparent',
+                  borderLeft: `3px solid ${panel.id === activePanelId ? '#4a9eff' : 'transparent'}`,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {panel.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div style={dividerStyle} />
 
       {/* Mode Toggle */}
-      <button
-        style={modeButtonStyle(mode === 'view')}
-        onClick={() => mode !== 'view' && onToggleMode()}
-        title="View Mode (V)"
-      >
+      <button style={modeButtonStyle(mode === 'view')} onClick={() => mode !== 'view' && onToggleMode()} title="View Mode (V)">
         View
       </button>
-      <button
-        style={modeButtonStyle(mode === 'edit')}
-        onClick={() => mode !== 'edit' && onToggleMode()}
-        title="Edit Mode (E)"
-      >
+      <button style={modeButtonStyle(mode === 'edit')} onClick={() => mode !== 'edit' && onToggleMode()} title="Edit Mode (E)">
         Edit
       </button>
 
-      <div style={dividerStyle} />
-
-      {/* Spacer */}
       <div style={{ flex: 1 }} />
 
       {/* Help */}
       <button
-        style={{
-          ...modeButtonStyle(false),
-          width: 32,
-          padding: 0,
-          textAlign: 'center',
-        }}
+        style={{ ...modeButtonStyle(false), width: 32, padding: 0, textAlign: 'center' }}
         title="Keyboard Shortcuts"
       >
         ?
