@@ -1,0 +1,614 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/CompanionWebpannelSettings.schema.json",
+  "title": "CompanionWebpannelSettings",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "activeHostId",
+    "hosts",
+    "panels"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^1\\.1\\.0$"
+    },
+    "activeHostId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hosts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/HostProfile"
+      }
+    },
+    "wizard": {
+      "$ref": "#/$defs/WizardState"
+    },
+    "panels": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Panel"
+      }
+    }
+  },
+  "$defs": {
+    "HostProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "host",
+        "satellite"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "description": "IP oder DNS Name"
+        },
+        "satellite": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "wsPort"
+          ],
+          "properties": {
+            "wsPort": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "default": 16623
+            }
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "WizardState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "completed": {
+          "type": "boolean",
+          "default": false
+        },
+        "pageAssignments": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/PageAssignment"
+          },
+          "description": "Map: hostId:page -> assignment info"
+        }
+      }
+    },
+    "PageAssignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "page",
+        "instructionShown",
+        "surfaceConfig"
+      ],
+      "properties": {
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "instructionShown": {
+          "type": "boolean"
+        },
+        "confirmedByUser": {
+          "type": "boolean",
+          "default": false
+        },
+        "surfaceConfig": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Grid-Größe der Satellite-Surface für diese Page. Muss alle verwendeten row/col abdecken.",
+          "required": [
+            "keysPerRow",
+            "rows"
+          ],
+          "properties": {
+            "keysPerRow": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32,
+              "default": 8,
+              "description": "Anzahl Spalten (KEYS_PER_ROW im ADD-DEVICE Kommando)"
+            },
+            "rows": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32,
+              "default": 8,
+              "description": "Anzahl Zeilen. KEYS_TOTAL = keysPerRow × rows"
+            }
+          }
+        },
+        "ts": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Unix ms"
+        }
+      }
+    },
+    "Panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "zoom",
+        "defaultMode",
+        "grid",
+        "elements"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "zoom": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 4.0,
+          "default": 1.0
+        },
+        "defaultMode": {
+          "type": "string",
+          "enum": ["edit", "view"],
+          "default": "view",
+          "description": "Modus beim Öffnen des Panels. 'view' = Betriebsmodus (Buttons auslösbar, kein Drag). 'edit' = Bearbeitungsmodus (Elemente verschieben, hinzufügen, löschen)."
+        },
+        "grid": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "size",
+            "snap"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "size": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 10
+            },
+            "snap": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "canvas": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 100
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 100
+            },
+            "background": {
+              "type": "string",
+              "default": "#101214"
+            }
+          }
+        },
+        "elements": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/Element"
+          }
+        }
+      }
+    },
+    "Element": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CompanionButtonElement"
+        },
+        {
+          "$ref": "#/$defs/ShapeElement"
+        },
+        {
+          "$ref": "#/$defs/LabelElement"
+        },
+        {
+          "$ref": "#/$defs/MeterElement"
+        }
+      ]
+    },
+    "BaseElement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "w",
+        "h",
+        "z"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "h": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "z": {
+          "type": "integer",
+          "default": 0
+        },
+        "locked": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "CompanionButtonElement": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseElement"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "ref",
+            "render"
+          ],
+          "properties": {
+            "type": {
+              "const": "companionButton"
+            },
+            "ref": {
+              "$ref": "#/$defs/CompanionRef"
+            },
+            "render": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "centerBitmap": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "bitmapSize": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 512,
+                  "default": 72,
+                  "description": "Pixelgröße des angezeigten Bitmaps (Companion liefert 72px). Bestimmt auch die Mindestgröße des Buttons wenn enforceMinSize=true."
+                },
+                "enforceMinSize": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Wenn true: Button-Breite und -Höhe (w/h) können im Edit-Mode nicht kleiner als bitmapSize gezogen werden. Verhindert abgeschnittene Bitmaps."
+                },
+                "showBitmap": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Companion-Bitmap anzeigen. Default false — Text ist bereits in Bitmap eingebettet."
+                },
+                "showText": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "showBgColor": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Companion bgColor als Hintergrundfarbe des Buttons anwenden."
+                },
+                "textAlign": {
+                  "type": "string",
+                  "enum": [
+                    "center",
+                    "top",
+                    "bottom"
+                  ],
+                  "default": "bottom"
+                },
+                "borderRadius": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 50,
+                  "default": 6
+                },
+                "opacity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "default": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CompanionRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hostId",
+        "page",
+        "row",
+        "col"
+      ],
+      "properties": {
+        "hostId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Referenz auf HostProfile.id – bestimmt welche Satellite-Verbindung verwendet wird"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "col": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "ShapeElement": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseElement"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "style"
+          ],
+          "properties": {
+            "type": {
+              "const": "shape"
+            },
+            "style": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "fill"
+              ],
+              "properties": {
+                "fill": {
+                  "type": "string",
+                  "default": "#2b2f36"
+                },
+                "stroke": {
+                  "type": "string"
+                },
+                "strokeWidth": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 20,
+                  "default": 0
+                },
+                "borderRadius": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "default": 10
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "LabelElement": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseElement"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "text",
+            "style"
+          ],
+          "properties": {
+            "type": {
+              "const": "label"
+            },
+            "text": {
+              "type": "string"
+            },
+            "style": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "color": {
+                  "type": "string",
+                  "default": "#ffffff"
+                },
+                "fontSize": {
+                  "type": "number",
+                  "minimum": 6,
+                  "maximum": 96,
+                  "default": 18
+                },
+                "fontFamily": {
+                  "type": "string",
+                  "default": "system-ui"
+                },
+                "fontWeight": {
+                  "type": "string",
+                  "default": "600"
+                },
+                "align": {
+                  "type": "string",
+                  "enum": [
+                    "left",
+                    "center",
+                    "right"
+                  ],
+                  "default": "left"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "MeterElement": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseElement"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "source",
+            "style"
+          ],
+          "properties": {
+            "type": {
+              "const": "meter"
+            },
+            "source": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "ref",
+                "field",
+                "parser"
+              ],
+              "properties": {
+                "ref": {
+                  "$ref": "#/$defs/CompanionRef"
+                },
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "text"
+                  ],
+                  "default": "text"
+                },
+                "parser": {
+                  "type": "string",
+                  "enum": [
+                    "db"
+                  ],
+                  "default": "db"
+                }
+              }
+            },
+            "style": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "min": {
+                  "type": "number",
+                  "default": -60
+                },
+                "max": {
+                  "type": "number",
+                  "default": 0
+                },
+                "peakHoldMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 800
+                },
+                "zones": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "to",
+                      "color"
+                    ],
+                    "properties": {
+                      "to": {
+                        "type": "number"
+                      },
+                      "color": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "default": [
+                    {
+                      "to": -18,
+                      "color": "#19c37d"
+                    },
+                    {
+                      "to": -6,
+                      "color": "#f2c94c"
+                    },
+                    {
+                      "to": 0,
+                      "color": "#eb5757"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

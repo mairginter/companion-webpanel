@@ -1,0 +1,660 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <pattern id="dotgrid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="0" cy="0" r="1.2" fill="rgba(255,255,255,0.1)"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="rgba(0,0,0,0.5)"/>
+    </filter>
+    <filter id="shadowSm">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(0,0,0,0.4)"/>
+    </filter>
+    <clipPath id="canvasClip">
+      <rect x="200" y="56" width="1440" height="960"/>
+    </clipPath>
+    <linearGradient id="meterGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#21d07a"/>
+      <stop offset="100%" stop-color="#16a05a"/>
+    </linearGradient>
+    <linearGradient id="meterYellow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="meterRed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff5a5f"/>
+      <stop offset="100%" stop-color="#e04040"/>
+    </linearGradient>
+    <linearGradient id="btnGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a3344"/>
+      <stop offset="100%" stop-color="#1e2535"/>
+    </linearGradient>
+    <linearGradient id="toolbarGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e2840"/>
+      <stop offset="100%" stop-color="#161e2e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- BACKGROUND                                       -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <rect width="1920" height="1080" fill="#0f141a"/>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- CANVAS AREA (main background + dot grid)        -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <rect x="200" y="56" width="1440" height="960" fill="#0f141a"/>
+  <rect x="200" y="56" width="1440" height="960" fill="url(#dotgrid)" clip-path="url(#canvasClip)"/>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- TOOLBAR (top, 56px)                             -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <rect x="0" y="0" width="1920" height="56" fill="url(#toolbarGrad)"/>
+  <rect x="0" y="55" width="1920" height="1" fill="#2a3344"/>
+
+  <!-- Hamburger -->
+  <g transform="translate(12,16)">
+    <rect y="0" width="22" height="2.5" rx="1.2" fill="#8896aa"/>
+    <rect y="8" width="22" height="2.5" rx="1.2" fill="#8896aa"/>
+    <rect y="16" width="22" height="2.5" rx="1.2" fill="#8896aa"/>
+  </g>
+
+  <!-- App Title -->
+  <text x="48" y="35" font-size="15" font-weight="600" fill="#e9edf2" letter-spacing="0.2">Companion Panel</text>
+
+  <!-- Divider after title -->
+  <rect x="210" y="14" width="1" height="28" fill="#2a3344"/>
+
+  <!-- Host Selector Pill -->
+  <rect x="220" y="10" width="220" height="36" rx="8" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <!-- Status dot green animated -->
+  <circle cx="238" cy="28" r="5" fill="#21d07a"/>
+  <circle cx="238" cy="28" r="5" fill="#21d07a" opacity="0.4">
+    <animate attributeName="r" values="5;9;5" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <text x="250" y="24" font-size="13" font-weight="600" fill="#e9edf2">OBS-PC</text>
+  <text x="250" y="38" font-size="11" fill="#8896aa" font-family="'Courier New', monospace">192.168.1.10 : 16623</text>
+  <!-- Dropdown arrow -->
+  <polygon points="428,24 436,24 432,30" fill="#8896aa"/>
+
+  <!-- Divider -->
+  <rect x="450" y="14" width="1" height="28" fill="#2a3344"/>
+
+  <!-- + Add Button (Edit-Mode active) -->
+  <rect x="460" y="12" width="80" height="32" rx="6" fill="#1a2030" stroke="#4a9eff" stroke-width="1"/>
+  <text x="472" y="32" font-size="18" fill="#4a9eff" font-weight="300">+</text>
+  <text x="490" y="32" font-size="13" fill="#4a9eff" font-weight="500">Hinzu</text>
+
+  <!-- Save -->
+  <rect x="548" y="12" width="64" height="32" rx="6" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="562" y="32" font-size="13" fill="#e9edf2">Speichern</text>
+  <!-- save icon -->
+  <rect x="554" y="18" width="12" height="14" rx="1" fill="none" stroke="#8896aa" stroke-width="1.5"/>
+  <rect x="556" y="18" width="8" height="6" rx="0.5" fill="#8896aa"/>
+
+  <!-- Load -->
+  <rect x="620" y="12" width="54" height="32" rx="6" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="635" y="32" font-size="13" fill="#8896aa">Laden</text>
+
+  <!-- Presets -->
+  <rect x="682" y="12" width="74" height="32" rx="6" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="696" y="32" font-size="13" fill="#8896aa">Presets</text>
+  <polygon points="742,22 750,22 746,28" fill="#8896aa"/>
+
+  <!-- Divider -->
+  <rect x="764" y="14" width="1" height="28" fill="#2a3344"/>
+
+  <!-- Zoom -->
+  <rect x="773" y="12" width="90" height="32" rx="6" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="787" y="32" font-size="13" fill="#e9edf2" font-family="'Courier New', monospace">100%</text>
+  <polygon points="846,22 854,22 850,28" fill="#8896aa"/>
+
+  <!-- Lock icon -->
+  <g transform="translate(875, 13)">
+    <rect x="0" y="8" width="22" height="16" rx="3" fill="none" stroke="#ff8a3d" stroke-width="1.8"/>
+    <path d="M5,8 L5,5 Q11,-1 17,5 L17,8" fill="none" stroke="#ff8a3d" stroke-width="1.8"/>
+    <circle cx="11" cy="16" r="2.5" fill="#ff8a3d"/>
+  </g>
+
+  <!-- Settings icon -->
+  <g transform="translate(912, 13)">
+    <circle cx="11" cy="15" r="5" fill="none" stroke="#8896aa" stroke-width="1.8"/>
+    <circle cx="11" cy="15" r="2" fill="#8896aa"/>
+    <!-- gear teeth -->
+    <rect x="9.5" y="7" width="3" height="3" rx="0.5" fill="#8896aa"/>
+    <rect x="9.5" y="21" width="3" height="3" rx="0.5" fill="#8896aa"/>
+    <rect x="4" y="12.5" width="3" height="3" rx="0.5" fill="#8896aa"/>
+    <rect x="15" y="12.5" width="3" height="3" rx="0.5" fill="#8896aa"/>
+  </g>
+
+  <!-- MODE TOGGLE (right side) -->
+  <rect x="1690" y="10" width="220" height="36" rx="8" fill="#121821" stroke="#2a3344" stroke-width="1"/>
+  <!-- View (active) -->
+  <rect x="1692" y="12" width="106" height="32" rx="7" fill="rgba(33,208,122,0.15)" stroke="#21d07a" stroke-width="1"/>
+  <circle cx="1710" cy="28" r="4" fill="#21d07a"/>
+  <text x="1720" y="33" font-size="13" font-weight="600" fill="#21d07a">View-Mode</text>
+  <!-- Edit (inactive) -->
+  <text x="1818" y="22" font-size="11" fill="#8896aa">✎</text>
+  <text x="1834" y="22" font-size="13" fill="#8896aa">Edit</text>
+
+  <!-- Divider before mode toggle -->
+  <rect x="1670" y="14" width="1" height="28" fill="#2a3344"/>
+
+  <!-- Right side icons: connection count -->
+  <rect x="960" y="14" width="120" height="28" rx="5" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <circle cx="978" cy="28" r="4" fill="#21d07a"/>
+  <text x="990" y="32" font-size="12" fill="#8896aa">2 Hosts online</text>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- LEFT SIDEBAR (200px)                            -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <rect x="0" y="56" width="200" height="1024" fill="#121821"/>
+  <rect x="199" y="56" width="1" height="1024" fill="#2a3344"/>
+
+  <!-- Panels header -->
+  <text x="16" y="88" font-size="10" font-weight="600" fill="#4a5568" letter-spacing="1.5">PANELS</text>
+
+  <!-- Panel items -->
+  <!-- Active: Live Control -->
+  <rect x="0" y="96" width="199" height="40" fill="#1a2535"/>
+  <rect x="0" y="96" width="3" height="40" fill="#21d07a"/>
+  <circle cx="22" cy="116" r="5" fill="#21d07a"/>
+  <text x="36" y="120" font-size="13" font-weight="600" fill="#e9edf2">Live Control</text>
+
+  <!-- Audio Mix -->
+  <rect x="0" y="137" width="199" height="38" fill="transparent"/>
+  <text x="36" y="161" font-size="13" fill="#8896aa">Audio Mix</text>
+  <circle cx="22" cy="156" r="5" fill="#2a3344" stroke="#4a5568" stroke-width="1.5"/>
+
+  <!-- Zoom Control -->
+  <text x="36" y="199" font-size="13" fill="#8896aa">Zoom Control</text>
+  <circle cx="22" cy="194" r="5" fill="#2a3344" stroke="#4a5568" stroke-width="1.5"/>
+
+  <!-- Lower Thirds -->
+  <text x="36" y="237" font-size="13" fill="#8896aa">Lower Thirds</text>
+  <circle cx="22" cy="232" r="5" fill="#2a3344" stroke="#4a5568" stroke-width="1.5"/>
+
+  <!-- Admin -->
+  <text x="36" y="275" font-size="13" fill="#8896aa">Admin</text>
+  <circle cx="22" cy="270" r="5" fill="#2a3344" stroke="#4a5568" stroke-width="1.5"/>
+
+  <!-- Separator -->
+  <rect x="16" y="295" width="168" height="1" fill="#2a3344"/>
+
+  <!-- + Neues Panel button -->
+  <rect x="12" y="305" width="176" height="36" rx="7" fill="transparent" stroke="#2a3344" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="68" y="328" font-size="13" fill="#4a5568">+ Neues Panel</text>
+
+  <!-- Sidebar bottom: Status section -->
+  <rect x="0" y="960" width="200" height="56" fill="#0e1520"/>
+  <rect x="0" y="960" width="200" height="1" fill="#2a3344"/>
+  <text x="12" y="980" font-size="10" font-weight="600" fill="#4a5568" letter-spacing="1">STATUS</text>
+  <circle cx="22" cy="1000" r="4" fill="#21d07a"/>
+  <text x="34" y="1003" font-size="11" fill="#8896aa">OBS-PC verbunden</text>
+  <circle cx="22" cy="1018" r="4" fill="#ff8a3d"/>
+  <text x="34" y="1021" font-size="11" fill="#8896aa">vMix-PC: Verbinde…</text>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- CANVAS CONTENT                                  -->
+  <!-- ═══════════════════════════════════════════════ -->
+
+  <!-- ─── GROUP: Shape (Grouping Box) ─────────────── -->
+  <rect x="240" y="80" width="440" height="300" rx="12" fill="rgba(26,32,48,0.7)" stroke="#2a3344" stroke-width="1.5"/>
+  <text x="258" y="72" font-size="10" font-weight="600" fill="#4a5568" letter-spacing="1.2">KAMERA-STEUERUNG</text>
+
+  <!-- ─── Companion Buttons Row 1 ───────────────────── -->
+  <!-- Button: PPT - ACTIVE (has Companion state) -->
+  <rect x="258" y="90" width="110" height="110" rx="8" fill="#c0392b" filter="url(#shadowSm)"/>
+  <rect x="258" y="90" width="110" height="110" rx="8" fill="none" stroke="#ff5a5f" stroke-width="1.5"/>
+  <!-- bitmap placeholder -->
+  <rect x="293" y="102" width="40" height="40" rx="4" fill="rgba(0,0,0,0.3)"/>
+  <text x="313" y="126" font-size="9" fill="rgba(255,255,255,0.5)" text-anchor="middle">BMP</text>
+  <text x="313" y="172" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">PPT</text>
+  <text x="313" y="186" font-size="10" fill="rgba(255,255,255,0.6)" text-anchor="middle">Präsentation</text>
+
+  <!-- Button: ZOOM MAIN - ACTIVE green -->
+  <rect x="378" y="90" width="110" height="110" rx="8" fill="#1a5c38" filter="url(#shadowSm)"/>
+  <rect x="378" y="90" width="110" height="110" rx="8" fill="none" stroke="#21d07a" stroke-width="1.5"/>
+  <rect x="413" y="102" width="40" height="40" rx="4" fill="rgba(0,0,0,0.3)"/>
+  <text x="433" y="126" font-size="9" fill="rgba(255,255,255,0.5)" text-anchor="middle">BMP</text>
+  <text x="433" y="172" font-size="12" font-weight="700" fill="#21d07a" text-anchor="middle">ZOOM MAIN</text>
+
+  <!-- Button: CLOSEUP - INACTIVE -->
+  <rect x="498" y="90" width="110" height="110" rx="8" fill="#1a2030" stroke="#2a3344" stroke-width="1" stroke-dasharray="4,3" filter="url(#shadowSm)"/>
+  <text x="553" y="148" font-size="20" fill="#4a5568" text-anchor="middle">?</text>
+  <text x="553" y="172" font-size="12" fill="#4a5568" text-anchor="middle">CLOSEUP</text>
+  <text x="553" y="186" font-size="9" fill="#2a3344" text-anchor="middle">keine Verbindung</text>
+
+  <!-- Button: WIDE - PRESSED state -->
+  <rect x="618" y="90" width="110" height="110" rx="8" fill="#1a3060" stroke="#4a9eff" stroke-width="2.5" filter="url(#shadowSm)" transform="scale(0.97) translate(18,3)"/>
+  <rect x="622" y="94" width="102" height="102" rx="6" fill="rgba(74,158,255,0.1)"/>
+  <rect x="657" y="106" width="32" height="32" rx="3" fill="rgba(0,0,0,0.3)"/>
+  <text x="672" y="172" font-size="12" font-weight="700" fill="#4a9eff" text-anchor="middle">WIDE</text>
+  <text x="672" y="187" font-size="9" fill="#4a9eff" text-anchor="middle">▼ PRESSED</text>
+
+  <!-- Button Row 2 -->
+  <!-- STALE button -->
+  <rect x="258" y="218" width="110" height="110" rx="8" fill="#1a2030" stroke="#ff8a3d" stroke-width="1.5" opacity="0.55" filter="url(#shadowSm)"/>
+  <!-- stale warning overlay -->
+  <polygon points="313,232 325,254 301,254" fill="#ff8a3d" opacity="0.9"/>
+  <text x="313" y="251" font-size="9" fill="#0f141a" text-anchor="middle" font-weight="700">!</text>
+  <text x="313" y="290" font-size="11" fill="#ff8a3d" text-anchor="middle">NDI OUT</text>
+  <text x="313" y="305" font-size="9" fill="#ff8a3d" text-anchor="middle">⚠ Stale</text>
+
+  <!-- Normal button -->
+  <rect x="378" y="218" width="110" height="110" rx="8" fill="#2d1a5c" stroke="#7c3aed" stroke-width="1" filter="url(#shadowSm)"/>
+  <rect x="413" y="230" width="40" height="40" rx="4" fill="rgba(0,0,0,0.3)"/>
+  <text x="433" y="300" font-size="11" font-weight="600" fill="#a78bfa" text-anchor="middle">STINGER</text>
+
+  <!-- Locked button (edit-mode indicator) -->
+  <rect x="498" y="218" width="110" height="110" rx="8" fill="#1e3a1e" stroke="#21d07a" stroke-width="1" filter="url(#shadowSm)"/>
+  <rect x="533" y="230" width="40" height="40" rx="4" fill="rgba(0,0,0,0.3)"/>
+  <text x="553" y="300" font-size="11" font-weight="600" fill="#21d07a" text-anchor="middle">CUT</text>
+  <!-- Lock badge -->
+  <rect x="592" y="224" width="16" height="14" rx="3" fill="#ff8a3d"/>
+  <text x="600" y="234" font-size="9" fill="white" text-anchor="middle">🔒</text>
+
+  <!-- ─── GROUP: Quick Actions (colored buttons) ─── -->
+  <rect x="240" y="400" width="440" height="80" rx="10" fill="rgba(20,26,40,0.6)" stroke="#2a3344" stroke-width="1"/>
+  <text x="258" y="394" font-size="10" font-weight="600" fill="#4a5568" letter-spacing="1.2">QUICK ACTIONS</text>
+
+  <!-- CUT green -->
+  <rect x="258" y="412" width="90" height="56" rx="7" fill="#21d07a" filter="url(#shadowSm)"/>
+  <text x="303" y="444" font-size="14" font-weight="700" fill="#061a0f" text-anchor="middle">CUT</text>
+  <text x="303" y="458" font-size="9" fill="#061a0f" text-anchor="middle" opacity="0.7">direkt</text>
+
+  <!-- MERGE blue -->
+  <rect x="358" y="412" width="90" height="56" rx="7" fill="#4a9eff" filter="url(#shadowSm)"/>
+  <text x="403" y="444" font-size="14" font-weight="700" fill="#030f1e" text-anchor="middle">MERGE</text>
+  <text x="403" y="458" font-size="9" fill="#030f1e" text-anchor="middle" opacity="0.7">blend 2s</text>
+
+  <!-- STINGER orange -->
+  <rect x="458" y="412" width="90" height="56" rx="7" fill="#ff8a3d" filter="url(#shadowSm)"/>
+  <text x="503" y="444" font-size="14" font-weight="700" fill="#1f0800" text-anchor="middle">STINGER</text>
+  <text x="503" y="458" font-size="9" fill="#1f0800" text-anchor="middle" opacity="0.7">overlay</text>
+
+  <!-- FADE red -->
+  <rect x="558" y="412" width="90" height="56" rx="7" fill="#ff5a5f" filter="url(#shadowSm)"/>
+  <text x="603" y="444" font-size="14" font-weight="700" fill="#1f0000" text-anchor="middle">FADE</text>
+  <text x="603" y="458" font-size="9" fill="#1f0000" text-anchor="middle" opacity="0.7">zu schwarz</text>
+
+  <!-- ─── GROUP: Label Elements ──────────────────── -->
+  <text x="240" y="510" font-size="18" font-weight="700" fill="#e9edf2" letter-spacing="0.5">Live-Produktion</text>
+  <text x="240" y="530" font-size="13" fill="#8896aa">OBS Studio · NDI · vMix</text>
+  <rect x="240" y="538" width="200" height="1" fill="#2a3344"/>
+
+  <!-- Small person buttons -->
+  <rect x="240" y="550" width="72" height="36" rx="6" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="276" y="572" font-size="12" fill="#e9edf2" text-anchor="middle">Harald</text>
+
+  <rect x="320" y="550" width="72" height="36" rx="6" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="356" y="572" font-size="12" fill="#e9edf2" text-anchor="middle">Manfred</text>
+
+  <rect x="400" y="550" width="72" height="36" rx="6" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="436" y="572" font-size="12" fill="#e9edf2" text-anchor="middle">Arnold</text>
+
+  <rect x="480" y="550" width="72" height="36" rx="6" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="516" y="572" font-size="12" fill="#e9edf2" text-anchor="middle">Igor</text>
+
+  <!-- ─── AUDIO METERS ───────────────────────────── -->
+  <rect x="710" y="80" width="360" height="520" rx="12" fill="rgba(18,24,33,0.9)" stroke="#2a3344" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="727" y="74" font-size="10" font-weight="600" fill="#4a5568" letter-spacing="1.2">AUDIO MONITORING</text>
+
+  <!-- Meter 1: SOLO -->
+  <g transform="translate(730, 96)">
+    <text x="20" y="12" font-size="10" fill="#8896aa" text-anchor="middle">SOLO</text>
+    <!-- Meter bars -->
+    <rect x="4" y="18" width="32" height="360" rx="3" fill="#0a0e14"/>
+    <!-- Green zone -->
+    <rect x="7" y="222" width="26" height="152" rx="2" fill="#21d07a" opacity="0.9"/>
+    <!-- Yellow zone -->
+    <rect x="7" y="162" width="26" height="58" rx="2" fill="#f59e0b" opacity="0.9"/>
+    <!-- Red zone (small, signal not at max) -->
+    <rect x="7" y="18" width="26" height="12" rx="2" fill="#ff5a5f" opacity="0.3"/>
+    <!-- Segment dividers -->
+    <rect x="6" y="98" width="28" height="1" fill="#0a0e14" opacity="0.5"/>
+    <rect x="6" y="178" width="28" height="1" fill="#0a0e14" opacity="0.5"/>
+    <rect x="6" y="258" width="28" height="1" fill="#0a0e14" opacity="0.5"/>
+    <!-- Peak hold line -->
+    <rect x="7" y="155" width="26" height="2" fill="white" opacity="0.9"/>
+    <!-- dB labels -->
+    <text x="44" y="22" font-size="9" fill="#4a5568" font-family="monospace">0</text>
+    <text x="40" y="102" font-size="9" fill="#4a5568" font-family="monospace">-18</text>
+    <text x="40" y="182" font-size="9" fill="#4a5568" font-family="monospace">-36</text>
+    <text x="40" y="262" font-size="9" fill="#4a5568" font-family="monospace">-54</text>
+    <!-- MUTE button -->
+    <rect x="1" y="386" width="38" height="22" rx="5" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+    <text x="20" y="400" font-size="10" fill="#8896aa" text-anchor="middle">MUTE</text>
+    <!-- value -->
+    <text x="20" y="420" font-size="11" fill="#21d07a" text-anchor="middle" font-family="monospace">-14dB</text>
+  </g>
+
+  <!-- Meter 2: ALL MIC -->
+  <g transform="translate(810, 96)">
+    <text x="20" y="12" font-size="10" fill="#8896aa" text-anchor="middle">ALL MIC</text>
+    <rect x="4" y="18" width="32" height="360" rx="3" fill="#0a0e14"/>
+    <rect x="7" y="258" width="26" height="116" rx="2" fill="#21d07a" opacity="0.9"/>
+    <rect x="7" y="208" width="26" height="48" rx="2" fill="#f59e0b" opacity="0.9"/>
+    <rect x="7" y="18" width="26" height="20" rx="2" fill="#ff5a5f" opacity="0.6"/>
+    <rect x="7" y="200" width="26" height="2" fill="white" opacity="0.9"/>
+    <rect x="1" y="386" width="38" height="22" rx="5" fill="#ff5a5f" stroke="#ff5a5f" stroke-width="1"/>
+    <text x="20" y="400" font-size="10" fill="white" text-anchor="middle" font-weight="600">MUTE</text>
+    <text x="20" y="420" font-size="11" fill="#f59e0b" text-anchor="middle" font-family="monospace">-8dB</text>
+  </g>
+
+  <!-- Meter 3: A STUDIO -->
+  <g transform="translate(890, 96)">
+    <text x="20" y="12" font-size="10" fill="#8896aa" text-anchor="middle">A STUDIO</text>
+    <rect x="4" y="18" width="32" height="360" rx="3" fill="#0a0e14"/>
+    <rect x="7" y="298" width="26" height="76" rx="2" fill="#21d07a" opacity="0.6"/>
+    <rect x="7" y="302" width="26" height="2" fill="white" opacity="0.7"/>
+    <rect x="1" y="386" width="38" height="22" rx="5" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+    <text x="20" y="400" font-size="10" fill="#8896aa" text-anchor="middle">MUTE</text>
+    <text x="20" y="420" font-size="11" fill="#4a5568" text-anchor="middle" font-family="monospace">-40dB</text>
+  </g>
+
+  <!-- Meter 4: MASTER (wider) -->
+  <g transform="translate(970, 96)">
+    <text x="26" y="12" font-size="10" fill="#e9edf2" text-anchor="middle" font-weight="600">MASTER</text>
+    <rect x="4" y="18" width="44" height="360" rx="3" fill="#0a0e14"/>
+    <!-- Stereo appearance: two sub-bars -->
+    <rect x="7" y="162" width="18" height="192" rx="2" fill="#21d07a" opacity="0.9"/>
+    <rect x="29" y="182" width="16" height="172" rx="2" fill="#21d07a" opacity="0.9"/>
+    <rect x="7" y="122" width="18" height="38" rx="2" fill="#f59e0b" opacity="0.9"/>
+    <rect x="29" y="142" width="16" height="38" rx="2" fill="#f59e0b" opacity="0.9"/>
+    <rect x="7" y="18" width="18" height="4" rx="1" fill="#ff5a5f" opacity="0.4"/>
+    <rect x="29" y="18" width="16" height="4" rx="1" fill="#ff5a5f" opacity="0.4"/>
+    <!-- Peak -->
+    <rect x="7" y="115" width="18" height="2" fill="white" opacity="0.9"/>
+    <rect x="29" y="135" width="16" height="2" fill="white" opacity="0.9"/>
+    <!-- Master label L/R -->
+    <text x="16" y="390" font-size="9" fill="#4a5568" text-anchor="middle">L</text>
+    <text x="37" y="390" font-size="9" fill="#4a5568" text-anchor="middle">R</text>
+    <text x="26" y="420" font-size="11" fill="#21d07a" text-anchor="middle" font-family="monospace">-12dB</text>
+  </g>
+
+  <!-- ─── ZOOM CONTROLS (secondary buttons) ──────── -->
+  <rect x="710" y="630" width="360" height="60" rx="10" fill="rgba(18,24,33,0.9)" stroke="#2a3344" stroke-width="1"/>
+  <text x="727" y="623" font-size="10" font-weight="600" fill="#4a5568" letter-spacing="1.2">ZOOM KAMERA</text>
+
+  <rect x="722" y="640" width="100" height="38" rx="7" fill="#1a2030" stroke="#4a9eff" stroke-width="1"/>
+  <text x="772" y="664" font-size="12" fill="#4a9eff" text-anchor="middle">◀ LINKS</text>
+
+  <rect x="832" y="640" width="100" height="38" rx="7" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="882" y="664" font-size="12" fill="#8896aa" text-anchor="middle">CENTER</text>
+
+  <rect x="942" y="640" width="100" height="38" rx="7" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="992" y="664" font-size="12" fill="#8896aa" text-anchor="middle">RECHTS ▶</text>
+
+  <!-- ─── EDIT-MODE SELECTION OVERLAY ────────────── -->
+  <!-- Shown on the PPT button as example of selection -->
+  <!-- (demonstrates edit mode interaction) -->
+  <rect x="1100" y="80" width="280" height="180" rx="10" fill="rgba(26,32,48,0.8)" stroke="#2a3344" stroke-width="1.5"/>
+  <text x="1117" y="74" font-size="10" font-weight="600" fill="#4a5568" letter-spacing="1.2">EDIT-MODE – ELEMENT AUSGEWÄHLT</text>
+
+  <!-- Example element with selection handles -->
+  <rect x="1140" y="96" width="110" height="110" rx="8" fill="#1a5c38" stroke="#21d07a" stroke-width="1"/>
+  <text x="1195" y="155" font-size="12" font-weight="700" fill="#21d07a" text-anchor="middle">ON AIR</text>
+
+  <!-- Selection border -->
+  <rect x="1137" y="93" width="116" height="116" rx="9" fill="none" stroke="#4a9eff" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <!-- 8 resize handles -->
+  <rect x="1130" y="145" width="10" height="10" rx="2" fill="white" stroke="#4a9eff" stroke-width="1.5"/>
+  <rect x="1243" y="145" width="10" height="10" rx="2" fill="white" stroke="#4a9eff" stroke-width="1.5"/>
+  <rect x="1187" y="86" width="10" height="10" rx="2" fill="white" stroke="#4a9eff" stroke-width="1.5"/>
+  <rect x="1187" y="204" width="10" height="10" rx="2" fill="white" stroke="#4a9eff" stroke-width="1.5"/>
+  <rect x="1130" y="86" width="10" height="10" rx="2" fill="white" stroke="#4a9eff" stroke-width="1.5"/>
+  <rect x="1243" y="86" width="10" height="10" rx="2" fill="white" stroke="#4a9eff" stroke-width="1.5"/>
+  <rect x="1130" y="204" width="10" height="10" rx="2" fill="white" stroke="#4a9eff" stroke-width="1.5"/>
+  <rect x="1243" y="204" width="10" height="10" rx="2" fill="white" stroke="#4a9eff" stroke-width="1.5"/>
+
+  <!-- Position tooltip -->
+  <rect x="1265" y="92" width="98" height="26" rx="5" fill="#4a9eff"/>
+  <text x="1314" y="109" font-size="11" fill="white" text-anchor="middle" font-family="monospace">x:120 y:96</text>
+  <polygon points="1265,105 1257,105 1265,110" fill="#4a9eff"/>
+
+  <!-- ─── PROPERTIES PANEL (Right Sidebar) ─────── -->
+  <rect x="1640" y="56" width="280" height="960" fill="#121821" stroke="#2a3344" stroke-width="0"/>
+  <rect x="1640" y="56" width="1" height="960" fill="#2a3344"/>
+
+  <!-- Header -->
+  <rect x="1640" y="56" width="280" height="48" fill="#1a2030"/>
+  <rect x="1640" y="103" width="280" height="1" fill="#2a3344"/>
+  <text x="1658" y="78" font-size="11" font-weight="600" fill="#4a9eff" letter-spacing="0.5">✎ Companion Button</text>
+  <text x="1658" y="94" font-size="10" fill="#4a5568">ID: btn-h1-p5-r3c6</text>
+
+  <!-- POSITION & SIZE section -->
+  <text x="1658" y="124" font-size="9" font-weight="700" fill="#4a5568" letter-spacing="1.5">POSITION &amp; GRÖßE</text>
+  <rect x="1658" y="130" width="280" height="1" fill="#1e2535"/>
+
+  <!-- X/Y inputs -->
+  <text x="1658" y="152" font-size="11" fill="#8896aa">X</text>
+  <rect x="1674" y="140" width="60" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1704" y="156" font-size="11" fill="#e9edf2" text-anchor="middle" font-family="monospace">120</text>
+
+  <text x="1748" y="152" font-size="11" fill="#8896aa">Y</text>
+  <rect x="1764" y="140" width="60" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1794" y="156" font-size="11" fill="#e9edf2" text-anchor="middle" font-family="monospace">96</text>
+
+  <!-- W/H inputs -->
+  <text x="1658" y="182" font-size="11" fill="#8896aa">B</text>
+  <rect x="1674" y="170" width="60" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1704" y="186" font-size="11" fill="#e9edf2" text-anchor="middle" font-family="monospace">110</text>
+
+  <text x="1748" y="182" font-size="11" fill="#8896aa">H</text>
+  <rect x="1764" y="170" width="60" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1794" y="186" font-size="11" fill="#e9edf2" text-anchor="middle" font-family="monospace">110</text>
+
+  <!-- Z -->
+  <text x="1658" y="212" font-size="11" fill="#8896aa">Z-Index</text>
+  <rect x="1714" y="200" width="40" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1734" y="216" font-size="11" fill="#e9edf2" text-anchor="middle" font-family="monospace">0</text>
+
+  <!-- Separator -->
+  <rect x="1658" y="234" width="244" height="1" fill="#1e2535"/>
+  <text x="1658" y="252" font-size="9" font-weight="700" fill="#4a5568" letter-spacing="1.5">COMPANION REF</text>
+
+  <!-- Host -->
+  <text x="1658" y="274" font-size="11" fill="#8896aa">Host</text>
+  <rect x="1700" y="262" width="140" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1712" y="278" font-size="11" fill="#e9edf2">OBS-PC</text>
+  <circle cx="1716" cy="274" r="4" fill="#21d07a"/>
+
+  <!-- Page Row Col -->
+  <text x="1658" y="302" font-size="11" fill="#8896aa">Page</text>
+  <rect x="1700" y="290" width="50" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1725" y="306" font-size="11" fill="#e9edf2" text-anchor="middle" font-family="monospace">5</text>
+
+  <text x="1658" y="330" font-size="11" fill="#8896aa">Row</text>
+  <rect x="1700" y="318" width="50" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1725" y="334" font-size="11" fill="#e9edf2" text-anchor="middle" font-family="monospace">3</text>
+
+  <text x="1658" y="358" font-size="11" fill="#8896aa">Col</text>
+  <rect x="1700" y="346" width="50" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1725" y="362" font-size="11" fill="#e9edf2" text-anchor="middle" font-family="monospace">6</text>
+
+  <!-- Key index (calculated) -->
+  <rect x="1658" y="376" width="196" height="24" rx="4" fill="#0a1020" stroke="#1e2535" stroke-width="1"/>
+  <text x="1668" y="392" font-size="11" fill="#4a5568">→ Key: </text>
+  <text x="1712" y="392" font-size="11" fill="#4a9eff" font-family="monospace">30</text>
+  <text x="1734" y="392" font-size="10" fill="#4a5568">(auto)</text>
+
+  <!-- Separator -->
+  <rect x="1658" y="408" width="244" height="1" fill="#1e2535"/>
+  <text x="1658" y="426" font-size="9" font-weight="700" fill="#4a5568" letter-spacing="1.5">DARSTELLUNG</text>
+
+  <!-- Radius -->
+  <text x="1658" y="448" font-size="11" fill="#8896aa">Eckenradius</text>
+  <rect x="1752" y="436" width="40" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1772" y="452" font-size="11" fill="#e9edf2" text-anchor="middle" font-family="monospace">8</text>
+
+  <!-- Opacity slider -->
+  <text x="1658" y="476" font-size="11" fill="#8896aa">Deckkraft</text>
+  <rect x="1714" y="468" width="120" height="8" rx="4" fill="#1e2535"/>
+  <rect x="1714" y="468" width="120" height="8" rx="4" fill="#4a9eff"/>
+  <circle cx="1834" cy="472" r="6" fill="white" stroke="#4a9eff" stroke-width="1.5"/>
+  <text x="1845" y="476" font-size="11" fill="#e9edf2" font-family="monospace">100%</text>
+
+  <!-- Checkboxes -->
+  <rect x="1658" y="492" width="14" height="14" rx="3" fill="#21d07a"/>
+  <text x="1661" y="503" font-size="9" fill="white" font-weight="700">✓</text>
+  <text x="1678" y="503" font-size="11" fill="#e9edf2">Min. Größe (72px)</text>
+
+  <rect x="1658" y="514" width="14" height="14" rx="3" fill="#21d07a"/>
+  <text x="1661" y="525" font-size="9" fill="white" font-weight="700">✓</text>
+  <text x="1678" y="525" font-size="11" fill="#e9edf2">Bitmap zentrieren</text>
+
+  <rect x="1658" y="536" width="14" height="14" rx="3" fill="#21d07a"/>
+  <text x="1661" y="547" font-size="9" fill="white" font-weight="700">✓</text>
+  <text x="1678" y="547" font-size="11" fill="#e9edf2">Text anzeigen</text>
+
+  <!-- Text position -->
+  <text x="1658" y="572" font-size="11" fill="#8896aa">Text-Position</text>
+  <rect x="1740" y="560" width="100" height="24" rx="4" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="1752" y="576" font-size="11" fill="#e9edf2">unten</text>
+  <polygon points="1826,568 1836,568 1831,574" fill="#8896aa"/>
+
+  <!-- Separator -->
+  <rect x="1658" y="592" width="244" height="1" fill="#1e2535"/>
+
+  <!-- Delete button -->
+  <rect x="1658" y="600" width="196" height="34" rx="7" fill="rgba(255,90,95,0.1)" stroke="#ff5a5f" stroke-width="1"/>
+  <text x="1756" y="622" font-size="12" fill="#ff5a5f" text-anchor="middle">🗑 Element löschen</text>
+
+  <!-- ─── WIZARD DIALOG (overlaid) ──────────────── -->
+  <rect x="580" y="700" width="540" height="300" rx="14" fill="#1a2030" stroke="#2a3344" stroke-width="1.5" filter="url(#shadow)"/>
+  <!-- Modal scrim hint -->
+  <rect x="200" y="56" width="1440" height="960" fill="rgba(0,0,0,0.55)" clip-path="url(#canvasClip)"/>
+  <!-- redraw dialog on top of scrim -->
+  <rect x="580" y="700" width="540" height="300" rx="14" fill="#1a2030" stroke="#2a3344" stroke-width="1.5" filter="url(#shadow)"/>
+
+  <!-- Dialog header -->
+  <rect x="580" y="700" width="540" height="52" rx="14" fill="#1e2840"/>
+  <rect x="580" y="730" width="540" height="22" fill="#1e2840"/>
+  <rect x="580" y="751" width="540" height="1" fill="#2a3344"/>
+  <text x="600" y="732" font-size="15" font-weight="700" fill="#e9edf2">Surface Einrichtung – OBS-PC, Page 5</text>
+  <!-- Close btn -->
+  <circle cx="1094" cy="726" r="12" fill="#2a3344"/>
+  <text x="1094" y="731" font-size="13" fill="#8896aa" text-anchor="middle">✕</text>
+
+  <!-- Step indicator -->
+  <g transform="translate(810, 770)">
+    <circle cx="0" cy="0" r="8" fill="#21d07a"/>
+    <text x="0" y="4" font-size="9" fill="white" text-anchor="middle" font-weight="700">1</text>
+    <rect x="12" y="-1.5" width="30" height="3" rx="1.5" fill="#21d07a"/>
+    <circle cx="50" cy="0" r="8" fill="#4a9eff" stroke="#4a9eff" stroke-width="2"/>
+    <circle cx="50" cy="0" r="4" fill="#1a2030"/>
+    <rect x="62" y="-1.5" width="30" height="3" rx="1.5" fill="#2a3344"/>
+    <circle cx="100" cy="0" r="8" fill="#2a3344"/>
+    <text x="100" y="4" font-size="9" fill="#4a5568" text-anchor="middle">3</text>
+  </g>
+
+  <!-- Step label -->
+  <text x="852" y="800" font-size="11" fill="#8896aa" text-anchor="middle">Schritt 2 von 3</text>
+
+  <!-- Content -->
+  <text x="850" y="840" font-size="15" font-weight="600" fill="#e9edf2" text-anchor="middle">Grid-Größe für Page 5</text>
+
+  <text x="620" y="868" font-size="13" fill="#8896aa">Spalten (Keys per Row):</text>
+  <rect x="790" y="854" width="60" height="28" rx="6" fill="#0f141a" stroke="#4a9eff" stroke-width="1.5"/>
+  <text x="820" y="873" font-size="14" fill="#e9edf2" text-anchor="middle" font-family="monospace">8</text>
+
+  <text x="620" y="900" font-size="13" fill="#8896aa">Zeilen (Rows):</text>
+  <rect x="790" y="886" width="60" height="28" rx="6" fill="#0f141a" stroke="#2a3344" stroke-width="1"/>
+  <text x="820" y="905" font-size="14" fill="#e9edf2" text-anchor="middle" font-family="monospace">8</text>
+
+  <!-- Info box -->
+  <rect x="620" y="916" width="230" height="28" rx="6" fill="rgba(74,158,255,0.1)" stroke="rgba(74,158,255,0.3)" stroke-width="1"/>
+  <text x="635" y="934" font-size="11" fill="#4a9eff">→ 64 Buttons total (Key 0–63)</text>
+
+  <!-- Buttons -->
+  <rect x="740" y="952" width="100" height="36" rx="8" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="790" y="975" font-size="13" fill="#8896aa" text-anchor="middle">Zurück</text>
+
+  <rect x="856" y="952" width="100" height="36" rx="8" fill="#21d07a"/>
+  <text x="906" y="975" font-size="13" fill="#061a0f" text-anchor="middle" font-weight="700">Fertig ✓</text>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- CONTEXT MENU (floating)                         -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <rect x="396" y="316" width="190" height="195" rx="8" fill="#1e2535" stroke="#2a3344" stroke-width="1" filter="url(#shadow)"/>
+
+  <rect x="397" y="317" width="188" height="30" rx="7" fill="transparent"/>
+  <text x="414" y="337" font-size="12" fill="#e9edf2">Duplizieren</text>
+  <text x="574" y="337" font-size="11" fill="#4a5568">⌘D</text>
+
+  <rect x="397" y="347" width="188" height="26" rx="0" fill="transparent"/>
+  <text x="414" y="365" font-size="12" fill="#e9edf2">Nach oben (Z+1)</text>
+
+  <rect x="397" y="373" width="188" height="26" rx="0" fill="transparent"/>
+  <text x="414" y="391" font-size="12" fill="#e9edf2">Nach unten (Z-1)</text>
+
+  <text x="414" y="417" font-size="12" fill="#e9edf2">Vordergrund</text>
+  <text x="414" y="443" font-size="12" fill="#e9edf2">Hintergrund</text>
+
+  <rect x="405" y="451" width="172" height="1" fill="#2a3344"/>
+
+  <rect x="397" y="456" width="188" height="26" rx="0" fill="transparent"/>
+  <text x="414" y="474" font-size="12" fill="#e9edf2">Sperren</text>
+
+  <rect x="405" y="480" width="172" height="1" fill="#2a3344"/>
+
+  <rect x="397" y="482" width="188" height="28" rx="0,0,7,7" fill="transparent"/>
+  <rect x="397" y="484" width="188" height="26" rx="0"/>
+  <text x="414" y="502" font-size="12" fill="#ff5a5f" font-weight="600">Löschen</text>
+  <text x="574" y="502" font-size="11" fill="#4a5568">Del</text>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- LEGEND / ANNOTATION CALLOUTS                    -->
+  <!-- ═══════════════════════════════════════════════ -->
+
+  <!-- Bottom info bar -->
+  <rect x="200" y="1010" width="1440" height="46" fill="#0e1520"/>
+  <rect x="200" y="1010" width="1440" height="1" fill="#2a3344"/>
+
+  <!-- State legend items -->
+  <!-- Active state dot -->
+  <rect x="220" y="1022" width="14" height="14" rx="3" fill="#1a5c38" stroke="#21d07a" stroke-width="1.5"/>
+  <text x="240" y="1033" font-size="11" fill="#8896aa">Aktiv (Companion-State)</text>
+
+  <rect x="420" y="1022" width="14" height="14" rx="3" fill="#1a2030" stroke="#2a3344" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="440" y="1033" font-size="11" fill="#8896aa">Inaktiv (keine Verbindung)</text>
+
+  <rect x="650" y="1022" width="14" height="14" rx="3" fill="#1a3060" stroke="#4a9eff" stroke-width="2"/>
+  <text x="670" y="1033" font-size="11" fill="#8896aa">Gedrückt (KEY-PRESS aktiv)</text>
+
+  <rect x="890" y="1022" width="14" height="14" rx="3" fill="#1a2030" stroke="#ff8a3d" stroke-width="1.5" opacity="0.55"/>
+  <text x="910" y="1033" font-size="11" fill="#8896aa">Stale (WS getrennt)</text>
+
+  <rect x="1070" y="1022" width="14" height="14" rx="3" fill="#2d1a5c" stroke="#7c3aed" stroke-width="1"/>
+  <text x="1090" y="1033" font-size="11" fill="#8896aa">Custom-Farbe</text>
+
+  <!-- Second info row -->
+  <text x="220" y="1049" font-size="11" fill="#4a5568">V = View · E = Edit · G = Grid · Ctrl+S = Speichern · Del = Löschen · Shift+↑↓←→ = 10px Nudge · Ctrl+D = Duplizieren</text>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- COMPONENT LABELS (annotation boxes)             -->
+  <!-- ═══════════════════════════════════════════════ -->
+
+  <!-- Toolbar label -->
+  <rect x="1090" y="4" width="80" height="18" rx="4" fill="#4a9eff" opacity="0.9"/>
+  <text x="1130" y="16" font-size="10" fill="white" text-anchor="middle" font-weight="600">TOOLBAR</text>
+
+  <!-- Sidebar label -->
+  <rect x="2" y="380" width="80" height="18" rx="4" fill="#4a9eff" opacity="0.9" transform="rotate(-90,91,389)"/>
+  <text x="44" y="402" font-size="10" fill="white" text-anchor="middle" font-weight="600" transform="rotate(-90,44,402)">SIDEBAR</text>
+
+  <!-- Properties label -->
+  <rect x="1645" y="62" width="120" height="18" rx="4" fill="#4a9eff" opacity="0.9"/>
+  <text x="1705" y="74" font-size="10" fill="white" text-anchor="middle" font-weight="600">PROPERTIES (Edit)</text>
+
+  <!-- Canvas label -->
+  <rect x="1545" y="62" width="70" height="18" rx="4" fill="#2a3344" opacity="0.9"/>
+  <text x="1580" y="74" font-size="10" fill="#8896aa" text-anchor="middle">CANVAS</text>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- VERSION BADGE                                   -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <rect x="1820" y="1060" width="96" height="18" rx="4" fill="#1a2030" stroke="#2a3344" stroke-width="1"/>
+  <text x="1868" y="1073" font-size="10" fill="#4a5568" text-anchor="middle">UI Vorschlag v1</text>
+</svg>

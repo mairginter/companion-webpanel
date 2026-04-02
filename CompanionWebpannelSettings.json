@@ -1,0 +1,112 @@
+{
+  "version": "1.1.0",
+  "activeHostId": "LiveStudio-PC1",
+  "hosts": [
+    {
+      "id": "LiveStudio-PC1",
+      "name": "LiveStudio-PC1",
+      "host": "192.168.144.102",
+      "satellite": {
+        "wsPort": 16623
+      },
+      "notes": "Haupt-Companion-Instanz im Studio"
+    }
+  ],
+  "wizard": {
+    "completed": false,
+    "pageAssignments": {
+      "LiveStudio-PC1:1": {
+        "page": 1,
+        "instructionShown": false,
+        "confirmedByUser": false,
+        "surfaceConfig": {
+          "keysPerRow": 8,
+          "rows": 4
+        }
+      }
+    }
+  },
+  "panels": [
+    {
+      "id": "panel-main",
+      "name": "Main Panel",
+      "zoom": 1.0,
+      "defaultMode": "view",
+      "grid": {
+        "enabled": false,
+        "size": 40,
+        "snap": true
+      },
+      "canvas": {
+        "width": 1440,
+        "height": 900,
+        "background": "#101214"
+      },
+      "elements": [
+        {
+          "id": "btn-scene1",
+          "type": "companionButton",
+          "x": 20,
+          "y": 20,
+          "w": 100,
+          "h": 100,
+          "z": 0,
+          "ref": {
+            "hostId": "LiveStudio-PC1",
+            "page": 1,
+            "row": 0,
+            "col": 0
+          },
+          "render": {
+            "centerBitmap": true,
+            "bitmapSize": 72,
+            "enforceMinSize": true,
+            "showText": true,
+            "textAlign": "bottom",
+            "borderRadius": 8,
+            "opacity": 1.0
+          }
+        },
+        {
+          "id": "btn-scene2",
+          "type": "companionButton",
+          "x": 130,
+          "y": 20,
+          "w": 100,
+          "h": 100,
+          "z": 0,
+          "ref": {
+            "hostId": "LiveStudio-PC1",
+            "page": 1,
+            "row": 0,
+            "col": 1
+          },
+          "render": {
+            "centerBitmap": true,
+            "bitmapSize": 72,
+            "enforceMinSize": true,
+            "showText": true,
+            "textAlign": "bottom",
+            "borderRadius": 8
+          }
+        },
+        {
+          "id": "label-section",
+          "type": "label",
+          "x": 20,
+          "y": 140,
+          "w": 210,
+          "h": 28,
+          "z": 0,
+          "text": "Szenen",
+          "style": {
+            "color": "#8896aa",
+            "fontSize": 13,
+            "fontWeight": "600",
+            "align": "left"
+          }
+        }
+      ]
+    }
+  ]
+}

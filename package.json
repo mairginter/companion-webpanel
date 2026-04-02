@@ -1,0 +1,17 @@
+{
+  "name": "companion-webpanel",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm run dev -w @cwp/backend\" \"npm run dev -w @cwp/frontend\"",
+    "build": "npm run build -w @cwp/shared && npm run build -w @cwp/backend && npm run build -w @cwp/frontend",
+    "start": "npm run start -w @cwp/backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  }
+}
