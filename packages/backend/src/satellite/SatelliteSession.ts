@@ -101,13 +101,10 @@ export class SatelliteSession extends EventEmitter {
     this.lineBuffer = ''
 
     const url = `ws://${this.host}:${this.port}`
-    console.log(`[Satellite ${this.deviceId}] Verbinde zu ${url}`)
-
     const socket = new WebSocket(url)
     this.ws = socket
 
     socket.on('open', () => {
-      console.log(`[Satellite ${this.deviceId}] WebSocket verbunden`)
       this.reconnectAttempt = 0
     })
 
@@ -125,7 +122,6 @@ export class SatelliteSession extends EventEmitter {
     })
 
     socket.on('close', () => {
-      console.log(`[Satellite ${this.deviceId}] Verbindung getrennt`)
       this.clearTimers()
       if (!this.destroyed) {
         this.setStatus('stale')
@@ -146,7 +142,6 @@ export class SatelliteSession extends EventEmitter {
   private scheduleReconnect(): void {
     const delayMs = BACKOFF_MS[Math.min(this.reconnectAttempt, BACKOFF_MS.length - 1)]
     this.reconnectAttempt++
-    console.log(`[Satellite ${this.deviceId}] Reconnect in ${delayMs}ms (Versuch ${this.reconnectAttempt})`)
     this.reconnectTimer = setTimeout(() => {
       if (!this.destroyed) this.connect()
     }, delayMs)
@@ -162,7 +157,6 @@ export class SatelliteSession extends EventEmitter {
     } else if (line.startsWith('PONG')) {
       this.handlePong()
     } else if (line.startsWith('ADD-DEVICE OK')) {
-      console.log(`[Satellite ${this.deviceId}] Surface registriert ✓`)
       this.setStatus('connected')
       this.startKeepalive()
     } else if (line.startsWith('ADD-DEVICE ERROR')) {
@@ -174,9 +168,6 @@ export class SatelliteSession extends EventEmitter {
   }
 
   private handleBegin(line: string): void {
-    const versionMatch = line.match(/ApiVersion=([\d.]+)/)
-    const version = versionMatch?.[1] ?? 'unknown'
-    console.log(`[Satellite ${this.deviceId}] Companion Satellite API v${version}`)
     this.sendAddDevice()
   }
 

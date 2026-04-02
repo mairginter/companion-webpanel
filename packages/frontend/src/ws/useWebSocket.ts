@@ -20,6 +20,7 @@ export function useWebSocket(): {
   const applyDelta = useAppStore((s) => s.applyDelta)
   const applySnapshot = useAppStore((s) => s.applySnapshot)
   const applySessionStatus = useAppStore((s) => s.applySessionStatus)
+  const markAllSessionsStale = useAppStore((s) => s.markAllSessionsStale)
 
   const connect = useCallback(() => {
     // Nicht verbinden wenn bereits offen oder am verbinden
@@ -61,6 +62,8 @@ export function useWebSocket(): {
       // Nur null setzen wenn diese Socket noch die aktuelle ist
       if (ws.current === socket) {
         ws.current = null
+        // Alle Sessions als stale markieren — zeigt ⚠ auf Buttons bis reconnect
+        markAllSessionsStale()
         reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY_MS)
       }
     }
@@ -68,7 +71,7 @@ export function useWebSocket(): {
     socket.onerror = (err) => {
       console.error('[WS] Fehler:', err)
     }
-  }, [applyDelta, applySnapshot, applySessionStatus])
+  }, [applyDelta, applySnapshot, applySessionStatus, markAllSessionsStale])
 
   useEffect(() => {
     connect()

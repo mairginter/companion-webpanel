@@ -34,6 +34,8 @@ interface AppStore {
   /** key: "hostId:page" → status */
   sessionStatus: Record<string, SessionStatus>
   applySessionStatus: (msg: SessionStatusMessage) => void
+  /** Alle bekannten Sessions auf 'stale' setzen — bei WS-Disconnect zum Backend */
+  markAllSessionsStale: () => void
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   getButtonState: (hostId: string, page: number, keyIndex: number) => KeyState | undefined
@@ -103,6 +105,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const k = pageKey(msg.hostId, msg.page)
     set((s) => ({ sessionStatus: { ...s.sessionStatus, [k]: msg.status } }))
   },
+
+  markAllSessionsStale: () =>
+    set((s) => ({
+      sessionStatus: Object.fromEntries(
+        Object.keys(s.sessionStatus).map((k) => [k, 'stale' as SessionStatus]),
+      ),
+    })),
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   getButtonState: (hostId, page, keyIndex) =>

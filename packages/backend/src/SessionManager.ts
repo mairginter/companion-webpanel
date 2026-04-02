@@ -83,8 +83,6 @@ export class SessionManager {
 
       this.sessions.set(sessionKey, session)
       session.start()
-
-      console.log(`[SessionManager] Session gestartet: ${hostId} page ${page} → ${host.host}:${host.satellite.wsPort}`)
     }
 
     if (this.sessions.size === 0) {
@@ -110,7 +108,6 @@ export class SessionManager {
 
   /** Graceful Shutdown: REMOVE-DEVICE für alle Sessions */
   async stop(): Promise<void> {
-    console.log('[SessionManager] Stoppe alle Sessions...')
     await Promise.all([...this.sessions.values()].map((s) => s.stop()))
     this.sessions.clear()
   }

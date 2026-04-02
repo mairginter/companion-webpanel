@@ -169,6 +169,15 @@ export class ClientServer {
       })
     })
 
+    this.httpServer.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`[ClientServer] Port ${port} ist bereits belegt — laufenden Prozess beenden und neu starten.`)
+        process.exit(1)
+      } else {
+        console.error('[ClientServer] Server-Fehler:', err)
+      }
+    })
+
     this.httpServer.listen(port, () => {
       console.log(`[ClientServer] HTTP+WS auf http://localhost:${port}`)
       console.log(`[ClientServer] Settings-API: http://localhost:${port}/api/settings`)
