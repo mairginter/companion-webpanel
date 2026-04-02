@@ -1,0 +1,71 @@
+import React from 'react'
+import { Panel } from '@cwp/shared'
+import { useAppStore } from '../../store/useAppStore'
+import { ColorPicker } from './ColorPicker'
+import { NumericInput } from './NumericInput'
+
+interface Props { panel: Panel; panelId: string }
+
+type SizePreset = 'dynamic' | '1920x1080' | '1440x900' | '1280x720' | 'custom'
+
+const PRESETS: Array<{ label: string; value: SizePreset; w?: number; h?: number }> = [
+  { label: 'Dynamisch (Fenster)', value: 'dynamic' },
+  { label: '1920 x 1080', value: '1920x1080', w: 1920, h: 1080 },
+  { label: '1440 x 900', value: '1440x900', w: 1440, h: 900 },
+  { label: '1280 x 720', value: '1280x720', w: 1280, h: 720 },
+  { label: 'Benutzerdefiniert', value: 'custom' },
+]
+
+function detectPreset(panel: Panel): SizePreset {
+  const w = panel.canvas?.width
+  const h = panel.canvas?.height
+  if (!w || !h) return 'dynamic'
+  const found = PRESETS.find((p) => p.w === w && p.h === h)
+  return found?.value ?? 'custom'
+}
+
+export function CanvasSettings({ panel, panelId }: Props) {
+  const setSettings = useAppStore((s) => s.setSettings)
+  const settings = useAppStore((s) => s.settings)
+
+  const updateCanvas = (patch: Partial<NonNullable<Panel['canvas']>>) => {
+    if (!settings) return
+    setSettings({
+      ...settings,
+      panels: settings.panels.map((p) =>
+        p.id !== panelId ? p : { ...p, canvas: { ...p.canvas, ...patch } },
+      ),
+    })
+  }
+
+  const preset = detectPreset(panel)
+  const lbl: React.CSSProperties = { fontSize: 9, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }
+  const sel: React.CSSProperties = { background: '#1a2030', border: '1px solid #2a3344', color: '#e9edf2', borderRadius: 3, padding: '4px 6px', fontSize: 11, width: '100%' }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={lbl}>Canvas-Einstellungen</div>
+      <div>
+        <div style={lbl}>Größe</div>
+        <select value={preset} style={sel}
+          onChange={(e) => {
+            const p = PRESETS.find((x) => x.value === e.target.value)
+            if (p?.w && p?.h) updateCanvas({ width: p.w, height: p.h })
+            else if (e.target.value === 'dynamic') updateCanvas({ width: undefined, height: undefined })
+          }}>
+          {PRESETS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+        </select>
+      </div>
+      {preset === 'custom' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <NumericInput label="Breite" value={panel.canvas?.width ?? 1920} min={200}
+            onChange={(v) => updateCanvas({ width: v })} />
+          <NumericInput label="Höhe" value={panel.canvas?.height ?? 1080} min={100}
+            onChange={(v) => updateCanvas({ height: v })} />
+        </div>
+      )}
+      <ColorPicker label="Hintergrundfarbe" value={panel.canvas?.background ?? '#0f141a'}
+        onChange={(v) => updateCanvas({ background: v })} />
+    </div>
+  )
+}

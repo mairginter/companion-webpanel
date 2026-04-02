@@ -26,6 +26,7 @@ import { ShapeElement } from '../Elements/ShapeElement'
 import { LabelElement } from '../Elements/LabelElement'
 import { EditableElement } from './EditableElement'
 import { RubberBand } from './RubberBand'
+import { PropertiesPanel } from '../PropertiesPanel/PropertiesPanel'
 
 interface CanvasProps {
   sendPress: (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
@@ -87,39 +88,45 @@ export function Canvas({ sendPress }: CanvasProps) {
   const canvasWidth = panel?.canvas?.width
   const canvasHeight = panel?.canvas?.height
 
+  // Äußerer Container: position:relative — PropertiesPanel als absolute Overlay-Sibling
   const content = (
-    <div style={{ flex: 1, overflow: 'auto', background: '#0a0e14', position: 'relative' }}>
-      <div
-        ref={containerRef}
-        style={{
-          position: 'relative',
-          width: canvasWidth ?? '100%',
-          height: canvasHeight ?? '100%',
-          minWidth: '100%',
-          minHeight: '100%',
-          background: canvasBackground,
-          backgroundImage: DOT_GRID,
-        }}
-        onClick={mode === 'edit' ? () => clearSelection() : undefined}
-      >
-        {!panel ? (
-          <div style={{
-            position: 'absolute', top: '50%', left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center', color: '#4a5568', fontSize: 13, pointerEvents: 'none',
-          }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>⚡</div>
-            <div style={{ fontWeight: 600, color: '#8896aa', marginBottom: 4 }}>Kein Panel geladen</div>
-            <div style={{ fontSize: 12 }}>Backend verbinden und Settings konfigurieren</div>
-          </div>
-        ) : (
-          renderElements(panel.elements, panel.id, mode, sendPress)
-        )}
+    <div style={{ flex: 1, overflow: 'hidden', background: '#0a0e14', position: 'relative' }}>
+      {/* Scrollbarer Canvas-Bereich */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'auto' }}>
+        <div
+          ref={containerRef}
+          style={{
+            position: 'relative',
+            width: canvasWidth ?? '100%',
+            height: canvasHeight ?? '100%',
+            minWidth: '100%',
+            minHeight: '100%',
+            background: canvasBackground,
+            backgroundImage: DOT_GRID,
+          }}
+          onClick={mode === 'edit' ? () => clearSelection() : undefined}
+        >
+          {!panel ? (
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center', color: '#4a5568', fontSize: 13, pointerEvents: 'none',
+            }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>⚡</div>
+              <div style={{ fontWeight: 600, color: '#8896aa', marginBottom: 4 }}>Kein Panel geladen</div>
+              <div style={{ fontSize: 12 }}>Backend verbinden und Settings konfigurieren</div>
+            </div>
+          ) : (
+            renderElements(panel.elements, panel.id, mode, sendPress)
+          )}
 
-        {mode === 'edit' && panel && (
-          <RubberBand elements={panel.elements} panelId={panel.id} containerRef={containerRef} />
-        )}
+          {mode === 'edit' && panel && (
+            <RubberBand elements={panel.elements} panelId={panel.id} containerRef={containerRef} />
+          )}
+        </div>
       </div>
+      {/* Properties-Panel als Overlay im Edit-Mode */}
+      {mode === 'edit' && <PropertiesPanel />}
     </div>
   )
 
