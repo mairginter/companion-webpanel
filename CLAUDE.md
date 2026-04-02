@@ -394,12 +394,12 @@ npm run dev
 - Implementierungsplan mit 15 Tasks + TDD fertig (`docs/superpowers/plans/2026-04-01-edit-mode.md`)
 - Alle UI-Entscheidungen getroffen und in CLAUDE.md dokumentiert
 
-### ⚠ Vor weiterem Feature-Aufbau testen (noch offen)
-1. **Stabilitätstest:** Backend und Frontend sauber starten/stoppen — prüfen ob Ports (8080, 5173) nach dem Beenden vollständig freigegeben werden (kein `EADDRINUSE` beim Neustart)
-2. **Graceful Shutdown:** Prüfen ob SIGINT/SIGTERM REMOVE-DEVICE korrekt an Companion sendet und Surface aus Companion UI verschwindet
-3. **Absturz-Verhalten Backend:** Was passiert wenn der Backend-Prozess unerwartet stirbt (kein SIGINT)? Surface bleibt in Companion hängen? Frontend reconnect-Loop? Port blockiert?
-4. **Absturz-Verhalten Frontend:** Was passiert wenn der Browser-Tab geschlossen/gecrasht wird während ein Button gehalten wird? Bleibt `PRESSED=true` bei Companion hängen (stuck-pressed)?
-5. **Debug-Logs entfernen:** Temporäre `console.log`-Aufrufe aus `SessionManager.ts` und `SatelliteSession.ts` bereinigen (nur Warnings/Errors behalten)
+### ✅ Stabilitätstests abgeschlossen (Session 5)
+1. **Port-Freigabe:** `EADDRINUSE` behoben — `ClientServer.ts` fängt Fehler ab, gibt klare Meldung statt Stack-Trace
+2. **Graceful Shutdown:** Code korrekt implementiert (`stop()` → `sendRemoveDevice()`). Manuelle Verifikation mit Companion empfohlen (Windows-SIGINT per Script nicht simulierbar)
+3. **Absturz-Verhalten Backend:** Windows gibt Port nach Hard-Kill sofort frei — kein `EADDRINUSE`. Frontend-Bug gefixt: `useWebSocket.ts` markiert jetzt alle Sessions als `stale` bei `onclose` → ⚠ Overlay auf Buttons bis Reconnect
+4. **Absturz-Verhalten Frontend / Stuck-press:** `ClientServer.ts` Press-Tracker bereits implementiert — bei Tab-Close automatisch `PRESSED=false` gesendet (bereits in Phase 2 gebaut)
+5. **Debug-Logs bereinigt:** Alle `console.log` aus `SatelliteSession.ts` und `SessionManager.ts` entfernt — nur `warn`/`error` bleiben
 
 ### Phase 3 — Edit-Mode (bereit zur Implementierung)
 Reihenfolge laut Plan:
