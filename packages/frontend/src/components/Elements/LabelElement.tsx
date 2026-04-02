@@ -3,19 +3,19 @@ import { LabelElement as LabelElementType } from '@cwp/shared'
 
 interface Props {
   element: LabelElementType
+  isContained?: boolean
 }
 
-export const LabelElement = React.memo(function LabelElement({ element }: Props) {
+export const LabelElement = React.memo(function LabelElement({ element, isContained }: Props) {
   const { text, style } = element
   return (
     <div
       style={{
-        position: 'absolute',
-        left: element.x,
-        top: element.y,
-        width: element.w,
-        height: element.h,
-        zIndex: element.z,
+        ...(isContained
+          ? { position: 'relative' as const, width: '100%', height: '100%' }
+          : { position: 'absolute' as const, left: element.x, top: element.y,
+              width: element.w, height: element.h, zIndex: element.z }
+        ),
         display: 'flex',
         alignItems: 'center',
         justifyContent:

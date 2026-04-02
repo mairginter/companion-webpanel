@@ -7,12 +7,15 @@ interface Props {
   element: CompanionButtonElementType
   mode: 'view' | 'edit'
   sendPress: (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
+  /** true wenn von EditableElement gewrapped — überlässt Positionierung dem Wrapper */
+  isContained?: boolean
 }
 
 export const CompanionButtonElement = React.memo(function CompanionButtonElement({
   element,
   mode,
   sendPress,
+  isContained,
 }: Props) {
   const { ref, render } = element
   const bitmapSize = render?.bitmapSize ?? 72
@@ -67,12 +70,12 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
 
   // ─── Container ────────────────────────────────────────────────────────────
   const containerStyle: React.CSSProperties = {
-    position: 'absolute',
-    left: element.x,
-    top: element.y,
-    width: element.w,
-    height: element.h,
-    zIndex: element.z,
+    // isContained: EditableElement übernimmt position/left/top/width/height
+    ...(isContained
+      ? { position: 'relative' as const, width: '100%', height: '100%' }
+      : { position: 'absolute' as const, left: element.x, top: element.y,
+          width: element.w, height: element.h, zIndex: element.z }
+    ),
     borderRadius,
     overflow: 'hidden',
     cursor: mode === 'view' ? 'pointer' : 'default',
