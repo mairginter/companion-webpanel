@@ -37,6 +37,27 @@ interface AppStore {
   /** Alle bekannten Sessions auf 'stale' setzen — bei WS-Disconnect zum Backend */
   markAllSessionsStale: () => void
 
+  // ─── Edit Mode ────────────────────────────────────────────────────────────
+  selectedIds: Set<string>
+  selectElement: (id: string, addToSelection: boolean) => void
+  selectElements: (ids: string[]) => void
+  clearSelection: () => void
+
+  updateElementGeometry: (
+    panelId: string,
+    elementId: string,
+    patch: Partial<{ x: number; y: number; w: number; h: number }>,
+  ) => void
+
+  _undoSnapshot: Record<string, { x: number; y: number; w: number; h: number; panelId: string }> | null
+  _redoSnapshot: Record<string, { x: number; y: number; w: number; h: number; panelId: string }> | null
+  saveUndoSnapshot: (elementIds: string[]) => void
+  undo: () => void
+  redo: () => void
+
+  duplicateElements: (panelId: string, ids: string[]) => void
+  deleteElements: (panelId: string, ids: string[]) => void
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
   getButtonState: (hostId: string, page: number, keyIndex: number) => KeyState | undefined
   getSessionStatus: (hostId: string, page: number) => SessionStatus | undefined
@@ -112,6 +133,146 @@ export const useAppStore = create<AppStore>((set, get) => ({
         Object.keys(s.sessionStatus).map((k) => [k, 'stale' as SessionStatus]),
       ),
     })),
+
+  // ─── Edit Mode ────────────────────────────────────────────────────────────
+  selectedIds: new Set<string>(),
+
+  selectElement: (id, addToSelection) =>
+    set((s) => {
+      const next = new Set(addToSelection ? s.selectedIds : [])
+      if (addToSelection && s.selectedIds.has(id)) {
+        next.delete(id)  // Shift+Klick auf selektiertes → abwählen
+      } else {
+        next.add(id)
+      }
+      return { selectedIds: next }
+    }),
+
+  selectElements: (ids) => set({ selectedIds: new Set(ids) }),
+
+  clearSelection: () => set({ selectedIds: new Set() }),
+
+  updateElementGeometry: (panelId, elementId, patch) =>
+    set((s) => {
+      if (!s.settings) return s
+      return {
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) =>
+            p.id !== panelId
+              ? p
+              : {
+                  ...p,
+                  elements: p.elements.map((el) =>
+                    el.id !== elementId ? el : { ...el, ...patch },
+                  ),
+                },
+          ),
+        },
+      }
+    }),
+
+  _undoSnapshot: null,
+  _redoSnapshot: null,
+
+  saveUndoSnapshot: (elementIds) =>
+    set((s) => {
+      if (!s.settings) return s
+      const snapshot: Record<string, { x: number; y: number; w: number; h: number; panelId: string }> = {}
+      for (const panel of s.settings.panels) {
+        for (const el of panel.elements) {
+          if (elementIds.includes(el.id)) {
+            snapshot[el.id] = { x: el.x, y: el.y, w: el.w, h: el.h, panelId: panel.id }
+          }
+        }
+      }
+      return { _undoSnapshot: snapshot, _redoSnapshot: null } as any
+    }),
+
+  undo: () =>
+    set((s: any) => {
+      const snap = s._undoSnapshot
+      if (!s.settings || !snap) return s
+      const redoSnap: typeof snap = {}
+      for (const panel of s.settings.panels) {
+        for (const el of panel.elements) {
+          if (snap[el.id]) {
+            redoSnap[el.id] = { x: el.x, y: el.y, w: el.w, h: el.h, panelId: panel.id }
+          }
+        }
+      }
+      return {
+        _redoSnapshot: redoSnap,
+        _undoSnapshot: null,
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p: any) => ({
+            ...p,
+            elements: p.elements.map((el: any) =>
+              snap[el.id]
+                ? { ...el, x: snap[el.id].x, y: snap[el.id].y, w: snap[el.id].w, h: snap[el.id].h }
+                : el,
+            ),
+          })),
+        },
+      }
+    }),
+
+  redo: () =>
+    set((s: any) => {
+      const snap = s._redoSnapshot
+      if (!s.settings || !snap) return s
+      return {
+        _undoSnapshot: null,
+        _redoSnapshot: null,
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p: any) => ({
+            ...p,
+            elements: p.elements.map((el: any) =>
+              snap[el.id]
+                ? { ...el, x: snap[el.id].x, y: snap[el.id].y, w: snap[el.id].w, h: snap[el.id].h }
+                : el,
+            ),
+          })),
+        },
+      }
+    }),
+
+  duplicateElements: (panelId, ids) =>
+    set((s) => {
+      if (!s.settings) return s
+      const newIds: string[] = []
+      const panels = s.settings.panels.map((p) => {
+        if (p.id !== panelId) return p
+        const copies: typeof p.elements = []
+        for (const el of p.elements) {
+          if (ids.includes(el.id)) {
+            const copy = { ...el, id: crypto.randomUUID(), x: el.x + 75, y: el.y + 75 }
+            copies.push(copy)
+            newIds.push(copy.id)
+          }
+        }
+        return { ...p, elements: [...p.elements, ...copies] }
+      })
+      return { settings: { ...s.settings, panels }, selectedIds: new Set(newIds) }
+    }),
+
+  deleteElements: (panelId, ids) =>
+    set((s) => {
+      if (!s.settings) return s
+      return {
+        selectedIds: new Set(),
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) =>
+            p.id !== panelId
+              ? p
+              : { ...p, elements: p.elements.filter((el) => !ids.includes(el.id)) },
+          ),
+        },
+      }
+    }),
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   getButtonState: (hostId, page, keyIndex) =>
