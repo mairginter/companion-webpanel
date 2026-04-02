@@ -53,15 +53,21 @@ export function PropertiesPanel() {
   const singleEl = selectedElements.length === 1 ? selectedElements[0] : null
 
   const PANEL_W = 280
+  // Touch-freundlich: min. 44px Hit-Area
   const collapseBtn: React.CSSProperties = {
     background: '#1a2030',
     border: '1px solid #2a3344',
     color: '#8896aa',
-    borderRadius: 3,
-    padding: '2px 6px',
+    borderRadius: 4,
+    padding: '8px 12px',
     cursor: 'pointer',
-    fontSize: 12,
-    lineHeight: '18px',
+    fontSize: 14,
+    lineHeight: 1,
+    minWidth: 44,
+    minHeight: 44,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   }
 
   // Collapsed-Zustand: schmaler Tab am Rand
@@ -73,8 +79,8 @@ export function PropertiesPanel() {
       transform: 'translateY(-50%)',
       background: '#1a2030',
       border: '1px solid #2a3344',
-      borderRadius: side === 'right' ? '6px 0 0 6px' : '0 6px 6px 0',
-      padding: '10px 4px',
+      borderRadius: side === 'right' ? '8px 0 0 8px' : '0 8px 8px 0',
+      padding: '16px 8px',
       cursor: 'pointer',
       display: 'flex',
       flexDirection: 'column',
@@ -82,9 +88,10 @@ export function PropertiesPanel() {
       gap: 4,
       zIndex: 200,
       writingMode: 'vertical-lr',
-      fontSize: 10,
+      fontSize: 13,
       color: '#8896aa',
       userSelect: 'none',
+      minWidth: 32,
     }
     return (
       <div style={tabStyle} onClick={toggleOpen} title="Properties öffnen">

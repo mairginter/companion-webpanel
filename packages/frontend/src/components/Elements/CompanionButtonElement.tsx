@@ -24,6 +24,7 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   const showText = render?.showText !== false          // default: true
   const showBgColor = render?.showBgColor !== false    // default: true
   const textAlign = render?.textAlign ?? 'bottom'
+  const fontSize = render?.fontSize ?? 11
 
   const keysPerRow = useAppStore((s) => {
     const pk = `${ref.hostId}:${ref.page}`
@@ -109,7 +110,7 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
     left: 4,
     right: 4,
     color: textColor,
-    fontSize: 11,
+    fontSize,
     fontWeight: 600,
     fontFamily: "'Inter', system-ui, sans-serif",
     textAlign: 'center',

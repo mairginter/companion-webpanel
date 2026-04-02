@@ -56,6 +56,8 @@ export function CompanionButtonProps({ element, panelId }: Props) {
       </div>
       <NumericInput label="Border-Radius" value={r.borderRadius ?? 6} min={0}
         onChange={(v) => updateRender({ borderRadius: v })} />
+      <NumericInput label="Font-Size" value={r.fontSize ?? 11} min={6} unit="px"
+        onChange={(v) => updateRender({ fontSize: v })} />
     </div>
   )
 }

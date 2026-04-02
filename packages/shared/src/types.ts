@@ -71,6 +71,8 @@ export interface CompanionButtonElement extends BaseElement {
     textAlign?: 'center' | 'top' | 'bottom'
     borderRadius?: number
     opacity?: number
+    /** Schriftgröße des Text-Overlays in px. Default: 11 */
+    fontSize?: number
   }
 }
 
