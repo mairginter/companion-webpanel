@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useAppStore } from '../../store/useAppStore'
+import { AddElementMenu } from '../AddElement/AddElementMenu'
 
 interface ToolbarProps {
   mode: 'view' | 'edit'
@@ -47,6 +48,17 @@ export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
   const setActivePanelId = useAppStore((s) => s.setActivePanelId)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const [addMenuOpen, setAddMenuOpen] = useState(false)
+  const addBtnRef = useRef<HTMLButtonElement>(null)
+
+  const handleAddClick = useCallback(() => {
+    setAddMenuOpen((o) => !o)
+  }, [])
+
+  const getAddMenuPos = useCallback(() => {
+    const rect = addBtnRef.current?.getBoundingClientRect()
+    return rect ? { x: rect.left, y: rect.bottom + 4 } : { x: 0, y: 60 }
+  }, [])
 
   const activePanel = panels.find((p) => p.id === activePanelId)
 
@@ -131,6 +143,23 @@ export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
         Edit
       </button>
 
+      {mode === 'edit' && (
+        <>
+          <div style={dividerStyle} />
+          <button
+            ref={addBtnRef}
+            style={{
+              ...modeButtonStyle(addMenuOpen),
+              width: 32, padding: 0, textAlign: 'center', fontSize: 18,
+            }}
+            onClick={handleAddClick}
+            title="Element hinzufügen"
+          >
+            +
+          </button>
+        </>
+      )}
+
       <div style={{ flex: 1 }} />
 
       {/* Help */}
@@ -140,6 +169,18 @@ export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
       >
         ?
       </button>
+
+      {addMenuOpen && activePanel && (
+        <AddElementMenu
+          screenPos={getAddMenuPos()}
+          canvasPos={{
+            x: (activePanel.canvas?.width ?? 1920) / 2,
+            y: (activePanel.canvas?.height ?? 1080) / 2,
+          }}
+          panelId={activePanel.id}
+          onClose={() => setAddMenuOpen(false)}
+        />
+      )}
     </div>
   )
 }
