@@ -62,6 +62,9 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Rubber-Band Shift | Shift+Rubber-Band fügt zur bestehenden Selektion hinzu | Einheitlich mit Shift+Klick |
 | Edit-Mode Nicht-MVP | Kein proportionales Resize (Multi-Select), kein voller Undo-Stack, kein Z-Index manuell, kein `+`-Button, kein MeterElement | MVP-Fokus — Phase 4 |
 | Multi-Agent Implementierung | NEIN — kein paralleles Arbeiten mehrerer Agenten | Kein Git-Repo → keine Worktrees → Datei-Konflikte möglich. Sequenziell nach Plan-Reihenfolge. |
+| Sidebar | Entfernt — Panel-Auswahl als Dropdown in Toolbar | Mehr Canvas-Platz, einfachere Navigation |
+| Properties Panel Schriftgrössen | Labels 12px, Inputs/Selects 14px mit 8×10px Padding, Checkboxen 20×20px | Touch-freundlich (min 44px Hit-Area für Buttons) |
+| CompanionButton Font-Size | `render.fontSize` konfigurierbar (default 11px, min 6px) | User kann Textgrösse pro Button anpassen |
 
 ---
 
@@ -264,11 +267,11 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 | `showBitmap` | `false` | Companion-Bitmap anzeigen. Default false — Text ist bereits in Bitmap eingebettet |
 | `showText` | `true` | Text-Overlay anzeigen |
 | `showBgColor` | `true` | Companion `bgColor` als Button-Hintergrund anwenden |
-| `textAlign` | `'bottom'` | Textposition wenn Bitmap sichtbar: `top` / `center` / `bottom` |
+| `textAlign` | `'center'` | Textposition: `top` / `center` / `bottom` — gilt immer (auch ohne Bitmap) |
 | `bitmapSize` | `72` | Pixelgröße der angezeigten Bitmap |
 | `borderRadius` | `6` | Border-Radius des Button-Containers |
 
-**Wichtig:** Wenn `showBitmap=false` (Default), wird der Text **immer vertikal zentriert** (nicht `textAlign`-abhängig), weil kein Bitmap-Platz reserviert wird.
+**Fix (Session 5):** `textAlign` gilt jetzt immer — unabhängig von `showBitmap`. Default geändert auf `'center'`.
 
 ---
 
@@ -284,27 +287,36 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 - `SessionManager`: Orchestrierung, press-Routing
 - `index.ts`: Entry Point, Graceful Shutdown (SIGINT/SIGTERM)
 
-### Phase 3 — Frontend Canvas ← NÄCHSTES ZIEL (teilweise fertig)
+### Phase 3 — Frontend Canvas + Edit-Mode ✅ FERTIG
 
-**✅ Fertig:**
-- `CompanionButtonElement`: bgColor auf Container, Bitmap (Raw-RGB), Text-Overlay, mehrzeilig, Zentrierungslogik, alle visuelle States (inactive/active/pressed/stale)
-- `ShapeElement`: fill/stroke/strokeWidth/borderRadius
-- `LabelElement`: color/fontSize/fontFamily/fontWeight/align
-- `Canvas`: Element-Rendering nach z-Index, absolute Positionierung
-- `useSettings`: Settings laden von GET /api/settings
-- `utils/bitmap.ts`: Raw-RGB → Canvas Data-URL
+- `CompanionButtonElement`: bgColor, Bitmap, Text-Overlay, mehrzeilig, States, `render.fontSize`
+- `ShapeElement`, `LabelElement`: vollständig
+- Edit-Mode: Drag (@dnd-kit), Resize (custom PointerEvents), Rubber-Band Selektion
+- `PropertiesPanel`: Overlay, GeometryBlock, element-spezifische Props, Canvas-Settings
+- Keyboard-Shortcuts vollständig (V/E/G/S/Del/Esc/Ctrl+S/Z/Y/D + Nudge)
+- Panel-Auswahl als Dropdown in Toolbar (Sidebar entfernt)
+- 28/28 Tests grün
 
-**Noch offen:**
-1. `MeterElement` rendern (Audio-Pegelanzeige, Parser: "db")
-2. Edit-Mode: Drag & Drop (@dnd-kit), Resize (enforceMinSize = 72px)
-3. Speichern via Backend-HTTP POST-Endpoint (Settings schreiben)
-4. Properties-Panel (Edit-Mode, Element-Properties bearbeiten)
+### Phase 3.5 — Element-Hinzufügen ✅ FERTIG (Session 2026-04-03)
 
-### Phase 4 — Wizard & Setup-UI
-1. Host-Verwaltung (hinzufügen, entfernen, Verbindungsstatus)
-2. Surface-Grid-Konfiguration pro (hostId, page)
-3. Anleitung-Dialog: „Startup Page in Companion setzen"
-4. Validierung: Button außerhalb Grid → Warnung
+- `AddElementMenu`: Toolbar `+`-Button + Canvas Rechtsklick (nur Edit-Mode)
+- `CompanionButtonPickerDialog`: Host/Page-Dropdown + Mini-Grid aus Store-State
+- `addElement()` / `addPageAssignment()` Store-Actions
+- Shape immer hinter anderen Elementen (z-Sentinel-Logik)
+- CompanionButton Ref (Page/Row/Col) im PropertiesPanel editierbar
+- Backend: `SessionManager.update()` — neue Sessions nach Ctrl+S starten (kein Neustart nötig)
+- 32/32 Tests grün, letzter Commit: `208702d`
+
+**Offene Touch-Verbesserungen (nächste Session):**
+- CompanionButton Ref im PropertiesPanel: visueller Button-Picker (Mini-Grid-Dialog) statt nur NumericInputs
+- Page-Input im Picker-Dialog: bessere Touch-UI (aktuell zu kleines Number-Input)
+
+### Phase 4 — Wizard & Setup-UI (nächste Priority)
+1. **Surface-Management klären:** Wann erstellt/löscht? Panel ohne Surface sichtbar — Lifecycle-Design nötig
+2. Host-Verwaltung (hinzufügen, entfernen, Verbindungsstatus)
+3. Surface-Grid-Konfiguration pro (hostId, page)
+4. Anleitung-Dialog: „Startup Page in Companion setzen"
+5. Validierung: Button außerhalb Grid → Warnung
 
 ---
 
