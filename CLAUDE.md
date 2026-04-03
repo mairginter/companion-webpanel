@@ -27,10 +27,10 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Deployment | Nur PWA (kein Electron/Tauri) | MVP-Fokus |
 | Kiosk | Tablet: PWA Standalone / Desktop: Chrome `--app=` | Kein nativer Wrapper nötig |
 | Persistenz | Lokale JSON-Datei `CompanionWebpannelSettings.json` | Einfach, kein Server-DB |
-| Surface-Zuordnung | Manuell in Companion UI (Wizard-Anleitung) | Vermeidet nicht-offizielle APIs |
+| Surface-Zuordnung | **Entfällt** — Button Subscriptions API (seit Companion 4.3 / API 1.10.0) | Kein ADD-DEVICE, kein Surface in Companion UI sichtbar |
 | KEY-PRESS Timing | Echte Haltezeit (onPointerDown/Up/Leave/Cancel) | Long-Press-Aktionen in Companion funktionieren |
-| Max. Pages | 5–10 Satellite-Sessions parallel | Praxiswert für den Anwendungsfall |
-| Schema-Version | 1.1.0 | Aktuelle Version, bitte nicht auf 1.0.0 zurückfallen |
+| Max. Connections | 1 SatelliteClient pro Host (statt 1 Session pro Page) | Alle Subscriptions über eine WS-Verbindung |
+| Schema-Version | 1.2.0 | wizard/surfaceConfig entfernt — kein pageAssignment mehr nötig |
 | Monorepo-Tool | npm workspaces | Kein extra Tool nötig, standard npm |
 | Frontend Build | Vite + vite-plugin-pwa | Schnell, modernes HMR, PWA out-of-the-box |
 | State-Management Frontend | Zustand | Minimal, kein Boilerplate, gut für WS-Deltas |
@@ -41,7 +41,7 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Shortcut-Leiste | Entfernt → `?`-Menü in Toolbar | Weniger UI-Rauschen, Shortcuts bleiben zugänglich |
 | REMOVE-DEVICE | Beim graceful shutdown senden | Companion UI sauber halten |
 | Duplicate DEVICEID | Idempotent (selber Socket) | Companion entfernt altes Device automatisch bei Reconnect |
-| Page via API setzen | Nicht möglich | Muss manuell in Companion UI (Startup Page) gesetzt werden — Wizard-Flow bleibt |
+| Page via API setzen | **Entfällt** — keine Pages/Surfaces mehr nötig | Subscriptions arbeiten direkt mit PAGE/ROW/COL — kein Startup-Page-Setup |
 | Edit-Mode Drag-Ansatz | Hybrid: @dnd-kit + DragDeltaContext | @dnd-kit für Drag-Logik, React Context für Group-Drag ohne per-frame Store-Updates |
 | Edit-Mode Resize-Ansatz | Custom Pointer Events (kein @dnd-kit) | `setPointerCapture` für zuverlässiges Tracking auch über Canvas-Rand hinaus |
 | Properties Panel Position | `position:absolute` Overlay (Canvas behält volle Breite) | Kein Canvas-Schrumpfen — Panel liegt über Canvas |
@@ -61,10 +61,15 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Rubber-Band Style | fill `rgba(74,158,255,0.08)`, stroke `#4a9eff` 1px | Konsistent mit `accent.blue` aus Design-System |
 | Rubber-Band Shift | Shift+Rubber-Band fügt zur bestehenden Selektion hinzu | Einheitlich mit Shift+Klick |
 | Edit-Mode Nicht-MVP | Kein proportionales Resize (Multi-Select), kein voller Undo-Stack, kein Z-Index manuell, kein `+`-Button, kein MeterElement | MVP-Fokus — Phase 4 |
-| Multi-Agent Implementierung | NEIN — kein paralleles Arbeiten mehrerer Agenten | Kein Git-Repo → keine Worktrees → Datei-Konflikte möglich. Sequenziell nach Plan-Reihenfolge. |
+| Multi-Agent Implementierung | NEIN — kein paralleles Arbeiten mehrerer Agenten | Datei-Konflikte möglich bei parallelen Schreibzugriffen. Sequenziell nach Plan-Reihenfolge. |
 | Sidebar | Entfernt — Panel-Auswahl als Dropdown in Toolbar | Mehr Canvas-Platz, einfachere Navigation |
 | Properties Panel Schriftgrössen | Labels 12px, Inputs/Selects 14px mit 8×10px Padding, Checkboxen 20×20px | Touch-freundlich (min 44px Hit-Area für Buttons) |
 | CompanionButton Font-Size | `render.fontSize` konfigurierbar (default 11px, min 6px) | User kann Textgrösse pro Button anpassen |
+| Companion Mindestversion | 4.3.0+ (Satellite API 1.10.0) | Button Subscriptions API erst ab 4.3 — getestet mit 4.3.0+9146 |
+| Companion Setting | `satellite_subscriptions_enabled = true` | Muss in Companion Einstellungen aktiviert sein — `CAPS SUBSCRIPTIONS=1` prüfen |
+| Surface löschen | Nur wenn kein Button in der Konfig mehr auf diese Page zeigt | Subscription wird entfernt sobald letzter Ref weg ist |
+| Panel ohne Surface | Zulassen (stale-Anzeige reicht) | Kein Blocking — Button zeigt ⚠ bis Companion verbunden |
+| Button Picker im Picker-Dialog | Temporäre Subscriptions beim Öffnen, REMOVE-SUB beim Schließen | Live-Preview im Mini-Grid ohne permanente Subscription |
 
 ---
 
@@ -75,7 +80,7 @@ CompanionWebpannel/
 ├── CLAUDE.md                                     ← diese Datei
 ├── Companion-Webpanel-Umsetzungsbeschreibung.md  ← Anforderungen (Referenz)
 ├── Webpanel-Architektur.md                       ← Architektur-Doku (aktuell, v1.1)
-├── CompanionWebpannelSettings.schema.json        ← JSON-Schema v1.1.0 (vollständig)
+├── CompanionWebpannelSettings.schema.json        ← JSON-Schema v1.2.0 (wizard/surfaceConfig entfernt)
 ├── CompanionWebpannelSettings.json               ← Laufzeit-Konfiguration (Beispiel, anpassen!)
 ├── bitfocus-companion-module-sources.md          ← API-Quellen / Docs-Links
 ├── docs/superpowers/
@@ -85,11 +90,11 @@ CompanionWebpannel/
 └── packages/
     ├── shared/src/types.ts                       ← Alle TypeScript-Typen (Settings, WS-Messages, Elemente)
     ├── backend/src/
-    │   ├── satellite/SatelliteSession.ts         ← WebSocket-Verbindung zu Companion, ADD-DEVICE, PING/PONG
-    │   ├── state/StateStore.ts                   ← In-Memory State + Delta-Logik
-    │   ├── server/ClientServer.ts                ← HTTP (GET+POST /api/settings) + WS-Server für Browser-Clients
-    │   │                                            POST: atomisches Schreiben (tmp→rename), stuck-press Fix
-    │   ├── SessionManager.ts                     ← Orchestrierung aller Sessions
+    │   ├── satellite/SatelliteClient.ts          ← 1 pro Host, Button Subscriptions API, PING/PONG Keepalive
+    │   ├── state/StateStore.ts                   ← In-Memory State + Delta-Logik (Key: hostId:page:row:col)
+    │   ├── server/ClientServer.ts                ← HTTP (GET+POST /api/settings, POST+DELETE /api/preview-page)
+    │   │                                            + WS-Server für Browser-Clients, stuck-press Fix
+    │   ├── HostManager.ts                        ← Orchestrierung: 1 SatelliteClient pro Host, Subscription-Diff
     │   └── index.ts                              ← Entry Point, Graceful Shutdown
     └── frontend/src/
         ├── store/useAppStore.ts                  ← Zustand-Store (settings, buttons, sessionStatus, mode, activePanelId)
@@ -113,14 +118,18 @@ CompanionWebpannel/
 
 ```
 [Companion] ←→ WS:16623 ←→ [Node Backend] ←→ WS ←→ [React PWA / Browser]
-                              Satellite-Connector
-                              State-Store (In-Memory)
-                              Delta-Distributor
-                              Command-Router (KEY-PRESS)
+                              SatelliteClient (1 pro Host)
+                              └── ADD-SUB pro referenziertem Button
+                              └── SUB-STATE → StateStore
+                              └── SUB-PRESS ← press-Events vom Browser
+                              StateStore (In-Memory, pro hostId:page:row:col)
+                              ClientServer (HTTP + WS auf :8080)
 ```
 
-- **1 Satellite-Session pro (hostId × page)** — jede Session ist ein eigenes „Surface" in Companion
-- Backend ist **State-Broker**: cached alle KEY-STATEs, sendet nur Deltas an Clients
+- **1 SatelliteClient pro Host** (nicht pro Page) — alle Subscriptions über eine WS-Verbindung
+- Subscriptions sind **dynamisch**: neuer Button im Panel → sofort `ADD-SUB`, Button gelöscht → `REMOVE-SUB`
+- Kein Surface in Companion UI sichtbar — keine Startup-Page-Konfiguration nötig
+- Backend ist **State-Broker**: cached alle SUB-STATEs, sendet nur Deltas an Clients
 - Frontend ist **stateless**: bekommt alles vom Backend, rendert nur was sich ändert
 
 ---
@@ -132,14 +141,6 @@ CompanionWebpannel/
 { hostId: string, page: number, row: number, col: number }
 ```
 > `hostId` ist **required** — wird auf eine Satellite-Session gemappt.
-
-### surfaceConfig — Grid-Größe pro (hostId, page)
-```typescript
-{ keysPerRow: number, rows: number }
-// keysTotal = keysPerRow * rows
-// keyIndex  = row * keysPerRow + col
-```
-> Wird im Wizard abgefragt, in `wizard.pageAssignments["hostId:page"].surfaceConfig` gespeichert.
 
 ### Panel.defaultMode
 ```typescript
@@ -171,23 +172,42 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 
 ## Satellite API — wichtigste Kommandos
 
+### Button Subscriptions (ab API 1.10.0 / Companion 4.3.0) — **aktuelle Implementierung**
+
 ```
-← BEGIN ApiVersion=2.0.0 +OK
-→ ADD-DEVICE DEVICEID="webpanel:h1:page:5" PRODUCT_NAME="Webpanel h1 P5"
-    KEYS_TOTAL=64 KEYS_PER_ROW=8 BITMAPS=72 COLORS=true TEXT=true TEXT_STYLE=true
-← ADD-DEVICE OK DEVICEID="webpanel:h1:page:5"
-← KEY-STATE DEVICEID=... KEY=30 TYPE=BUTTON COLOR=rgb(255,0,0) TEXT=Live BITMAP=<base64>
-→ KEY-PRESS DEVICEID=... KEY=30 PRESSED=true    (bei onPointerDown)
-→ KEY-PRESS DEVICEID=... KEY=30 PRESSED=false   (bei onPointerUp / onPointerLeave / onPointerCancel)
-→ PING <timestamp>
-← PONG <timestamp>
-→ REMOVE-DEVICE DEVICEID="webpanel:h1:page:5"   (beim graceful shutdown)
-← REMOVE-DEVICE OK DEVICEID="webpanel:h1:page:5"
+← BEGIN CompanionVersion="4.3.0+..." ApiVersion="1.10.0"
+← CAPS SUBSCRIPTIONS=1                              (1=aktiviert, 0=in Companion Settings deaktiviert)
+
+→ ADD-SUB SUBID=cwp/1/0/0 LOCATION=1/0/0 BITMAP=72 COLORS=hex TEXT=true TEXT_STYLE=true
+← ADD-SUB OK SUBID="cwp/1/0/0"
+← SUB-STATE SUBID="cwp/1/0/0" PRESSED=0 TYPE=BUTTON COLOR=#ff0000 TEXT=<base64> BITMAP=<base64> FONT_SIZE=auto
+
+→ SUB-PRESS SUBID=cwp/1/0/0 PRESSED=true           (bei onPointerDown)
+→ SUB-PRESS SUBID=cwp/1/0/0 PRESSED=false          (bei onPointerUp / onPointerLeave / onPointerCancel)
+← SUB-PRESS OK SUBID="cwp/1/0/0"
+
+→ REMOVE-SUB SUBID=cwp/1/0/0
+← REMOVE-SUB OK SUBID="cwp/1/0/0"
 ```
 
-> Keepalive alle ~2s. Ohne PING/PONG kann Companion die Verbindung trennen.
-> Verbindung: **WebSocket** auf Port 16623 (`wsPort`). Protokoll ist zeilenbasiert (`\n`) über WS-Text-Frames.
-> Bei Socket-Close entfernt Companion alle Devices dieses Sockets automatisch.
+> **SUBID-Format:** `cwp/<page>/<row>/<col>` — alphanumerisch + `-` + `/` erlaubt.
+> **LOCATION-Format:** `<page>/<row>/<col>` — Companion native Syntax.
+> **PING/PONG Keepalive ist nötig!** Companion schließt idle-Verbindungen nach ~5-7s. Client sendet `PING <ts>` alle 2s, erwartet `PONG` innerhalb 6s. Auch eingehende `PING` von Companion mit `PONG` beantworten.
+> `CAPS SUBSCRIPTIONS=0` → User muss in Companion Settings „Button Subscriptions API" aktivieren.
+> `FONT_SIZE="auto"` → ignorieren oder in `render.fontSize` mappen.
+> Bei Socket-Close werden alle Subscriptions automatisch entfernt.
+
+### ADD-DEVICE (alt, nicht mehr verwendet — Referenz)
+
+```
+→ ADD-DEVICE DEVICEID="..." PRODUCT_NAME="..." KEYS_TOTAL=64 KEYS_PER_ROW=8 BITMAPS=72 COLORS=true TEXT=true
+← ADD-DEVICE OK DEVICEID="..."
+← KEY-STATE DEVICEID=... KEY=30 TYPE=BUTTON COLOR=rgb(255,0,0) TEXT=Live BITMAP=<base64>
+→ KEY-PRESS DEVICEID=... KEY=30 PRESSED=true/false
+→ REMOVE-DEVICE DEVICEID="..."
+```
+
+> Nicht mehr verwenden — durch Subscriptions ersetzt. Dokumentiert für Referenz.
 
 ---
 
@@ -195,15 +215,15 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 
 ```typescript
 // Backend → Frontend (Delta: ein Key hat sich geändert)
-{ t: "delta", hostId: string, page: number, key: number,
+{ t: "delta", hostId: string, page: number, row: number, col: number,
   bgColor?: string, textColor?: string, text?: string, bitmap?: string }
 
 // Backend → Frontend (Snapshot: alle Keys einer Session — bei neuem Client-Connect)
 { t: "snapshot", hostId: string, page: number,
-  keys: Record<number, KeyState> }   // keyIndex → { bgColor, textColor, text, bitmap }
+  keys: Record<string, KeyState> }   // "row:col" → { bgColor, textColor, text, bitmap }
 
-// Backend → Frontend (Session-Status)
-{ t: "sessionStatus", hostId: string, page: number,
+// Backend → Frontend (Session-Status — pro Host, kein page)
+{ t: "sessionStatus", hostId: string,
   status: "connecting" | "connected" | "stale" | "error" }
 
 // Frontend → Backend (Button-Press / Release)
@@ -252,7 +272,7 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 
 ### Text-Encoding
 - Companion encodiert Zeilenumbrüche als **literale zwei Zeichen `\n`** (Backslash + n), nicht als echten Newline.
-- Fix im Parser: `state.text = decoded.replace(/\\n/g, '\n')` in `SatelliteSession.ts`.
+- Fix im Parser: `state.text = decoded.replace(/\\n/g, '\n')` in `SatelliteClient.ts`.
 - Im Renderer: `text.split('\n').map((line, i) => ...)` mit `<br />` zwischen Zeilen.
 
 ### TEXT-Feld
@@ -307,16 +327,31 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 - Backend: `SessionManager.update()` — neue Sessions nach Ctrl+S starten (kein Neustart nötig)
 - 32/32 Tests grün, letzter Commit: `208702d`
 
-**Offene Touch-Verbesserungen (nächste Session):**
-- CompanionButton Ref im PropertiesPanel: visueller Button-Picker (Mini-Grid-Dialog) statt nur NumericInputs
-- Page-Input im Picker-Dialog: bessere Touch-UI (aktuell zu kleines Number-Input)
+### Phase 3.6 — Touch-UX ✅ FERTIG (Session 2026-04-03)
 
-### Phase 4 — Wizard & Setup-UI (nächste Priority)
-1. **Surface-Management klären:** Wann erstellt/löscht? Panel ohne Surface sichtbar — Lifecycle-Design nötig
-2. Host-Verwaltung (hinzufügen, entfernen, Verbindungsstatus)
-3. Surface-Grid-Konfiguration pro (hostId, page)
-4. Anleitung-Dialog: „Startup Page in Companion setzen"
-5. Validierung: Button außerhalb Grid → Warnung
+- `EditableElement`: `touch-action: none` → Shape/Label Touch-Drag funktioniert mit 1 Finger
+- `NumericInput`: ±-Buttons (44px) für Touch, `compact`-Prop für enge 2-Spalten-Layouts
+- `GeometryBlock`: 2-Spalten ohne Buttons (compact), Position+Größe in einer Card
+- `PropertiesPanel`: Breite 280→320px, mehr Abstände, Sections klarer getrennt
+- `CompanionButtonProps`: Ref-Picker nur aktiv wenn Host verbunden (`hostConnected` Check)
+- `CompanionButtonPickerDialog`: Page-Input als NumericInput mit ±-Buttons; Dialog positioniert neben PropertiesPanel (links/rechts je nach Panel-Seite)
+- Letzter Commit: `38e5cc1`
+
+### Phase 4 — Refactor: SatelliteClient (Button Subscriptions API) ✅ FERTIG (Session 2026-04-03)
+
+- `SatelliteClient.ts`: ADD-SUB/REMOVE-SUB/SUB-PRESS/SUB-STATE, PING/PONG Keepalive, Reconnect mit Re-Subscribe
+- `HostManager.ts`: 1 Client pro Host, Subscription-Diff auf Panel-Elementen, Picker-Subscriptions temporär
+- `StateStore.ts`: Key-Format `hostId:page:row:col` (kein keysPerRow mehr)
+- `ClientServer.ts`: `POST/DELETE /api/preview-page` für Button-Picker Live-Vorschau; Schema 1.2.0
+- Frontend: `sessionStatus` per Host, `getButtonState(h,p,row,col)`, Picker ohne pageAssignments
+- `CompanionButtonPickerDialog`: Page/Grid-Größe als Eingabe, preview-page API, vertikaler Scroll nach 8 Zeilen
+- Letzter Commit: `7457936`
+
+### Phase 5 — Host-Verwaltung UI (nach Refactor)
+1. Host hinzufügen/entfernen in der UI
+2. Verbindungsstatus live (connected/connecting/error)
+3. Companion-Version und API-Version anzeigen
+4. Warnung wenn `CAPS SUBSCRIPTIONS=0`
 
 ---
 
@@ -336,7 +371,7 @@ text:    { primary:'#e9edf2', secondary:'#8896aa', muted:'#4a5568' }
 |---|---|
 | Toolbar | 56px Höhe |
 | Left Sidebar | 200px Breite |
-| Properties Panel (Edit) | 280px Breite, rechts |
+| Properties Panel (Edit) | 320px Breite, rechts |
 | Grid-Dot-Raster | 40px |
 | Border-Radius Buttons | 8px |
 | Border-Radius Dialoge | 12px |
@@ -395,38 +430,24 @@ npm run dev -w @cwp/frontend   # Frontend auf :5173
 
 # Oder beides gleichzeitig:
 npm run dev
+
+# Nach Änderungen an packages/shared/src/types.ts:
+npm run build -w @cwp/shared   # WICHTIG: shared neu bauen bevor Backend compiliert
 ```
 
 ---
 
 ## Nächste Session — Aufgaben (Priorität)
 
-### ✅ Spec & Plan fertig + alle Entscheidungen getroffen (Session 4)
-- Edit-Mode Design-Spec vollständig (`docs/superpowers/specs/2026-04-01-edit-mode-design.md`)
-- Implementierungsplan mit 15 Tasks + TDD fertig (`docs/superpowers/plans/2026-04-01-edit-mode.md`)
-- Alle UI-Entscheidungen getroffen und in CLAUDE.md dokumentiert
+### Phase 5 — Host-Verwaltung UI — NÄCHSTE PRIORITY
+1. Host hinzufügen/entfernen in der UI (kein manuelles JSON-Editieren)
+2. Verbindungsstatus live in der Toolbar (connected/connecting/error pro Host)
+3. Companion-Version + API-Version anzeigen
+4. Warnung wenn `CAPS SUBSCRIPTIONS=0` (User muss in Companion Settings aktivieren)
 
-### ✅ Stabilitätstests abgeschlossen (Session 5)
-1. **Port-Freigabe:** `EADDRINUSE` behoben — `ClientServer.ts` fängt Fehler ab, gibt klare Meldung statt Stack-Trace
-2. **Graceful Shutdown:** Code korrekt implementiert (`stop()` → `sendRemoveDevice()`). Manuelle Verifikation mit Companion empfohlen (Windows-SIGINT per Script nicht simulierbar)
-3. **Absturz-Verhalten Backend:** Windows gibt Port nach Hard-Kill sofort frei — kein `EADDRINUSE`. Frontend-Bug gefixt: `useWebSocket.ts` markiert jetzt alle Sessions als `stale` bei `onclose` → ⚠ Overlay auf Buttons bis Reconnect
-4. **Absturz-Verhalten Frontend / Stuck-press:** `ClientServer.ts` Press-Tracker bereits implementiert — bei Tab-Close automatisch `PRESSED=false` gesendet (bereits in Phase 2 gebaut)
-5. **Debug-Logs bereinigt:** Alle `console.log` aus `SatelliteSession.ts` und `SessionManager.ts` entfernt — nur `warn`/`error` bleiben
-
-### Phase 3 — Edit-Mode (bereit zur Implementierung)
-Reihenfolge laut Plan:
-1. Store-Erweiterungen (selectedIds, updateElementGeometry, undo/redo, duplicate, delete)
-2. `EditableElement` Wrapper + `DragDeltaContext`
-3. `DndContext` in Canvas + Drag (Einzel + Gruppe)
-4. `snapModifier.ts` (magneticSnap)
-5. `ResizeHandles.tsx` + `geometry.ts`
-6. Rubber-Band Selektion (`RubberBand.tsx`)
-7. `PropertiesPanel.tsx` (Geometrie-Block → dann element-spezifisch)
-8. Canvas-Größen-Einstellung
-9. Keyboard-Shortcuts vervollständigen + `Ctrl+S` POST
-
-### Noch offen: MeterElement (separater Schritt nach Edit-Mode)
+### Noch offen: MeterElement (separater Schritt)
 - Visuell: vertikal oder horizontal? Peak-Hold als Linie? → noch nicht entschieden
+- Quelle = TEXT-Feld eines Companion-Buttons, Parser: "db"
 
 ---
 
