@@ -27,6 +27,7 @@ import { LabelElement } from '../Elements/LabelElement'
 import { EditableElement } from './EditableElement'
 import { RubberBand } from './RubberBand'
 import { PropertiesPanel } from '../PropertiesPanel/PropertiesPanel'
+import { AddElementMenu } from '../AddElement/AddElementMenu'
 
 interface CanvasProps {
   sendPress: (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
@@ -44,6 +45,10 @@ export function Canvas({ sendPress }: CanvasProps) {
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [dragDelta, setDragDelta] = useState<{ dx: number; dy: number } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{
+    screenPos: { x: number; y: number }
+    canvasPos: { x: number; y: number }
+  } | null>(null)
 
   const gridSize = panel?.grid?.size ?? 40
   const snapEnabled = panel?.grid?.snap ?? true
@@ -84,6 +89,16 @@ export function Canvas({ sendPress }: CanvasProps) {
     [updateElementGeometry],
   )
 
+  const handleContextMenu = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (mode !== 'edit') return
+    e.preventDefault()
+    const rect = containerRef.current?.getBoundingClientRect()
+    const canvasPos = rect
+      ? { x: e.clientX - rect.left, y: e.clientY - rect.top }
+      : { x: e.clientX, y: e.clientY }
+    setContextMenu({ screenPos: { x: e.clientX, y: e.clientY }, canvasPos })
+  }, [mode])
+
   const canvasBackground = panel?.canvas?.background ?? '#0f141a'
   const canvasWidth = panel?.canvas?.width
   const canvasHeight = panel?.canvas?.height
@@ -105,6 +120,7 @@ export function Canvas({ sendPress }: CanvasProps) {
             backgroundImage: DOT_GRID,
           }}
           onClick={mode === 'edit' ? () => clearSelection() : undefined}
+          onContextMenu={handleContextMenu}
         >
           {!panel ? (
             <div style={{
@@ -125,6 +141,15 @@ export function Canvas({ sendPress }: CanvasProps) {
           )}
         </div>
       </div>
+      {/* AddElementMenu als Overlay im Edit-Mode (Rechtsklick) */}
+      {mode === 'edit' && contextMenu && panel && (
+        <AddElementMenu
+          screenPos={contextMenu.screenPos}
+          canvasPos={contextMenu.canvasPos}
+          panelId={panel.id}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
       {/* Properties-Panel als Overlay im Edit-Mode */}
       {mode === 'edit' && <PropertiesPanel />}
     </div>
