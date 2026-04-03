@@ -115,3 +115,40 @@ describe('deleteElements', () => {
     expect(useAppStore.getState().selectedIds.size).toBe(0)
   })
 })
+
+describe('addElement', () => {
+  it('fügt Element ans Ende von panel.elements hinzu', () => {
+    const el: import('@cwp/shared').AnyElement = {
+      id: 'new-1', type: 'label', x: 10, y: 20, w: 200, h: 40, z: 3, text: 'Neu', style: {},
+    }
+    useAppStore.getState().addElement('panel-1', el)
+    const panel = useAppStore.getState().settings!.panels.find(p => p.id === 'panel-1')!
+    expect(panel.elements.at(-1)?.id).toBe('new-1')
+  })
+
+  it('setzt selectedIds auf das neue Element', () => {
+    const el: import('@cwp/shared').AnyElement = {
+      id: 'new-2', type: 'shape', x: 0, y: 0, w: 160, h: 100, z: 2, style: { fill: '#ff0000' },
+    }
+    useAppStore.getState().addElement('panel-1', el)
+    expect(useAppStore.getState().selectedIds.has('new-2')).toBe(true)
+    expect(useAppStore.getState().selectedIds.size).toBe(1)
+  })
+})
+
+describe('addPageAssignment', () => {
+  it('legt neues pageAssignment mit Default-SurfaceConfig an', () => {
+    useAppStore.getState().addPageAssignment('h1', 99)
+    const pa = useAppStore.getState().settings!.wizard?.pageAssignments?.['h1:99']
+    expect(pa).toBeDefined()
+    expect(pa!.surfaceConfig).toEqual({ keysPerRow: 8, rows: 8 })
+    expect(pa!.page).toBe(99)
+  })
+
+  it('überschreibt kein bestehendes pageAssignment', () => {
+    useAppStore.getState().addPageAssignment('h1', 99)
+    useAppStore.getState().addPageAssignment('h1', 99) // zweiter Aufruf
+    const pa = useAppStore.getState().settings!.wizard?.pageAssignments?.['h1:99']
+    expect(pa!.surfaceConfig.keysPerRow).toBe(8) // unveränderter Default
+  })
+})

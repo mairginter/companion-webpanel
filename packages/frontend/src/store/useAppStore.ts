@@ -3,6 +3,7 @@ import {
   KeyState,
   Settings,
   Panel,
+  AnyElement,
   DeltaMessage,
   SnapshotMessage,
   SessionStatusMessage,
@@ -57,6 +58,8 @@ interface AppStore {
 
   duplicateElements: (panelId: string, ids: string[]) => void
   deleteElements: (panelId: string, ids: string[]) => void
+  addElement: (panelId: string, element: AnyElement) => void
+  addPageAssignment: (hostId: string, page: number) => void
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   getButtonState: (hostId: string, page: number, keyIndex: number) => KeyState | undefined
@@ -270,6 +273,48 @@ export const useAppStore = create<AppStore>((set, get) => ({
               ? p
               : { ...p, elements: p.elements.filter((el) => !ids.includes(el.id)) },
           ),
+        },
+      }
+    }),
+
+  addElement: (panelId, element) =>
+    set((s) => {
+      if (!s.settings) return s
+      const maxZ = s.settings.panels
+        .find((p) => p.id === panelId)
+        ?.elements.reduce((m, e) => Math.max(m, e.z ?? 0), 0) ?? 0
+      const withZ = { ...element, z: maxZ + 1 }
+      return {
+        selectedIds: new Set([element.id]),
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) =>
+            p.id !== panelId ? p : { ...p, elements: [...p.elements, withZ] },
+          ),
+        },
+      }
+    }),
+
+  addPageAssignment: (hostId, page) =>
+    set((s) => {
+      if (!s.settings) return s
+      const key = `${hostId}:${page}`
+      const existing = s.settings.wizard?.pageAssignments?.[key]
+      if (existing) return s
+      return {
+        settings: {
+          ...s.settings,
+          wizard: {
+            ...s.settings.wizard,
+            pageAssignments: {
+              ...s.settings.wizard?.pageAssignments,
+              [key]: {
+                page,
+                instructionShown: false,
+                surfaceConfig: { keysPerRow: 8, rows: 8 },
+              },
+            },
+          },
         },
       }
     }),

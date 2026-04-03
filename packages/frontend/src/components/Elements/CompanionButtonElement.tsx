@@ -97,13 +97,12 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   // ─── Text-Positionierung ──────────────────────────────────────────────────
   // Kein Bitmap → Text vollflächig zentriert
   // Mit Bitmap → Text per textAlign (top/center/bottom)
-  const textPos: React.CSSProperties = bitmapSrc
-    ? textAlign === 'top'
+  const textPos: React.CSSProperties =
+    textAlign === 'top'
       ? { top: 4 }
       : textAlign === 'center'
       ? { top: '50%', transform: 'translateY(-50%)' }
-      : { bottom: 4 }
-    : { top: '50%', transform: 'translateY(-50%)' }   // immer zentriert ohne Bitmap
+      : { bottom: 4 }  // 'bottom' ist default
 
   const textStyle: React.CSSProperties = {
     position: 'absolute',
