@@ -280,10 +280,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   addElement: (panelId, element) =>
     set((s) => {
       if (!s.settings) return s
-      const maxZ = s.settings.panels
-        .find((p) => p.id === panelId)
-        ?.elements.reduce((m, e) => Math.max(m, e.z ?? 0), 0) ?? 0
-      const withZ = { ...element, z: maxZ + 1 }
+      const existingElements = s.settings.panels.find((p) => p.id === panelId)?.elements ?? []
+      // z < 0 → hinter alle bestehenden Elemente (z.B. Shape); z >= 0 → vorne
+      const withZ = element.z < 0
+        ? { ...element, z: (existingElements.reduce((m, e) => Math.min(m, e.z ?? 0), 0) - 1) }
+        : { ...element, z: (existingElements.reduce((m, e) => Math.max(m, e.z ?? 0), 0) + 1) }
       return {
         selectedIds: new Set([element.id]),
         settings: {

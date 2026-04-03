@@ -3,7 +3,7 @@
  *
  * Kleines Popup-Menü mit 3 Einträgen (CompanionButton, Label, Shape).
  * Wird von Toolbar-+ und Canvas-Rechtsklick geöffnet.
- * canvasPos = Zielposition auf dem Canvas für die Platzierung (Element wird zentriert).
+ * canvasPos = Zielposition auf dem Canvas — linke obere Ecke des neuen Elements.
  */
 import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
@@ -31,19 +31,16 @@ function makeDefault(
   ref?: { hostId: string; page: number; row: number; col: number },
 ): AnyElement {
   const id = crypto.randomUUID()
+  const x = Math.round(canvasPos.x), y = Math.round(canvasPos.y)
   if (type === 'label') {
-    const w = 200, h = 40
-    return { id, type, x: Math.round(canvasPos.x - w / 2), y: Math.round(canvasPos.y - h / 2), w, h, z: 0, text: 'Label', style: {} }
+    return { id, type, x, y, w: 200, h: 40, z: 0, text: 'Label', style: {} }
   }
   if (type === 'shape') {
-    const w = 160, h = 100
-    return { id, type, x: Math.round(canvasPos.x - w / 2), y: Math.round(canvasPos.y - h / 2), w, h, z: 0,
+    return { id, type, x, y, w: 160, h: 100, z: -1,
       style: { fill: '#1a2030', stroke: '#2a3344', strokeWidth: 1, borderRadius: 6 } }
   }
   // companionButton — ref wird vom Picker geliefert
-  const w = 120, h = 120
-  return { id, type: 'companionButton',
-    x: Math.round(canvasPos.x - w / 2), y: Math.round(canvasPos.y - h / 2), w, h, z: 0,
+  return { id, type: 'companionButton', x, y, w: 120, h: 120, z: 0,
     ref: ref!,
     render: { textAlign: 'center', showText: true, showBgColor: true },
   }

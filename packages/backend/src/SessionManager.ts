@@ -106,6 +106,44 @@ export class SessionManager {
     session.sendKeyPress(idx, pressed)
   }
 
+  /**
+   * Neue Sessions für neu hinzugekommene pageAssignments starten.
+   * Wird nach POST /api/settings aufgerufen — bestehende Sessions bleiben unberührt.
+   */
+  update(settings: Settings): void {
+    const { hosts, wizard } = settings
+    const assignments = wizard?.pageAssignments ?? {}
+
+    for (const [key, assignment] of Object.entries(assignments)) {
+      const { page, surfaceConfig } = assignment
+      const hostId = key.slice(0, key.lastIndexOf(':'))
+      const sessionKey = pageKey(hostId, page)
+
+      if (this.sessions.has(sessionKey)) continue  // bereits aktiv
+
+      const host = hosts.find((h) => h.id === hostId)
+      if (!host) continue
+
+      const session = new SatelliteSession(hostId, page, host.host, host.satellite.wsPort, surfaceConfig)
+
+      session.on('keyState', (keyIdx: number, state) => {
+        const delta = this.store.update(hostId, page, keyIdx, state)
+        if (delta) this.clientServer.broadcast(delta)
+      })
+      session.on('status', (status: SessionStatus) => {
+        this.clientServer.broadcast({ t: 'sessionStatus', hostId, page, status })
+      })
+      session.on('keysClear', () => {
+        this.store.clearSession(hostId, page)
+        this.clientServer.broadcast({ t: 'snapshot', hostId, page, keys: {} })
+      })
+
+      this.sessions.set(sessionKey, session)
+      session.start()
+      console.log(`[SessionManager] Neue Session gestartet: ${sessionKey}`)
+    }
+  }
+
   /** Graceful Shutdown: REMOVE-DEVICE für alle Sessions */
   async stop(): Promise<void> {
     await Promise.all([...this.sessions.values()].map((s) => s.stop()))

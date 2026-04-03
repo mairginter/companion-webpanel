@@ -173,7 +173,7 @@ export function CompanionButtonPickerDialog({ onConfirm, onClose }: Props) {
                     value={newPageInput}
                     onChange={(e) => setNewPageInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleNewPageConfirm()}
-                    style={{ ...SELECT_STYLE, width: '100%', boxSizing: 'border-box' }}
+                    style={{ ...SELECT_STYLE, width: '100%', boxSizing: 'border-box', height: 44, fontSize: 16 }}
                     autoFocus
                   />
                 </div>

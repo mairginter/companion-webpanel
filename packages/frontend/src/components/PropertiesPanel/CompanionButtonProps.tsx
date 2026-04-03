@@ -25,6 +25,23 @@ export function CompanionButtonProps({ element, panelId }: Props) {
     })
   }
 
+  const updateRef = (patch: Partial<CompanionButtonElement['ref']>) => {
+    if (!settings) return
+    setSettings({
+      ...settings,
+      panels: settings.panels.map((p) =>
+        p.id !== panelId ? p : {
+          ...p,
+          elements: p.elements.map((el) =>
+            el.id !== element.id ? el : { ...el, ref: { ...element.ref, ...patch } },
+          ),
+        },
+      ),
+    })
+  }
+
+  const hostName = settings?.hosts.find((h) => h.id === element.ref.hostId)?.name ?? element.ref.hostId
+
   const lbl: React.CSSProperties = { fontSize: 12, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px' }
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }
   const tog = (v: boolean | undefined, d: boolean) => v === undefined ? d : v
@@ -33,6 +50,15 @@ export function CompanionButtonProps({ element, panelId }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ ...lbl, marginBottom: 2 }}>CompanionButton</div>
+
+      {/* Ref: Host / Page / Row / Col */}
+      <div style={{ background: '#121821', borderRadius: 6, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={lbl}>Companion Ref</div>
+        <div style={{ fontSize: 12, color: '#8896aa' }}>Host: <span style={{ color: '#e9edf2' }}>{hostName}</span></div>
+        <NumericInput label="Page" value={element.ref.page} min={1} onChange={(v) => updateRef({ page: v })} />
+        <NumericInput label="Row"  value={element.ref.row}  min={0} onChange={(v) => updateRef({ row: v })} />
+        <NumericInput label="Col"  value={element.ref.col}  min={0} onChange={(v) => updateRef({ col: v })} />
+      </div>
       <div style={row}>
         <span style={lbl}>Show Background</span>
         <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showBgColor, true)} onChange={(e) => updateRender({ showBgColor: e.target.checked })} />

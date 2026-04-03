@@ -45,13 +45,15 @@ export class ClientServer {
   // Wichtig: bei disconnect → PRESSED=false für alle offenen Presses senden
   private clientPresses = new Map<WebSocket, Set<PressKey>>()
   private onPress: PressHandler
+  private onSettingsUpdate?: (settings: Settings) => void
   private settings: Settings
   private settingsPath: string
 
-  constructor(port: number, settings: Settings, settingsPath: string, onPress: PressHandler) {
+  constructor(port: number, settings: Settings, settingsPath: string, onPress: PressHandler, onSettingsUpdate?: (s: Settings) => void) {
     this.settings = settings
     this.settingsPath = settingsPath
     this.onPress = onPress
+    this.onSettingsUpdate = onSettingsUpdate
 
     // ─── HTTP Server ────────────────────────────────────────────────────────
     this.httpServer = http.createServer((req, res) => {
@@ -95,6 +97,7 @@ export class ClientServer {
 
             // In-Memory-Kopie aktualisieren damit GET /api/settings sofort den neuen Stand liefert
             this.settings = incoming
+            this.onSettingsUpdate?.(incoming)
 
             console.log('[ClientServer] Settings gespeichert')
             res.writeHead(200, { 'Content-Type': 'application/json' })

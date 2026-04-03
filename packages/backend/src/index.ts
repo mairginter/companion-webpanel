@@ -63,6 +63,7 @@ async function main(): Promise<void> {
     settings,
     SETTINGS_PATH,
     (hostId, page, row, col, pressed) => manager.handlePress(hostId, page, row, col, pressed),
+    (updatedSettings) => manager.update(updatedSettings),
   )
 
   manager = new SessionManager(store, clientServer)
