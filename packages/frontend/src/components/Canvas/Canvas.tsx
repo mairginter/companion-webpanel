@@ -179,7 +179,11 @@ function renderElements(
   mode: 'view' | 'edit',
   sendPress: CanvasProps['sendPress'],
 ) {
-  const sorted = [...elements].sort((a, b) => (a.z ?? 0) - (b.z ?? 0))
+  const sorted = [...elements].sort((a, b) => {
+    if (a.type === 'shape' && b.type !== 'shape') return -1
+    if (a.type !== 'shape' && b.type === 'shape') return 1
+    return (a.z ?? 0) - (b.z ?? 0)
+  })
   return sorted.map((el) => {
     const inner = renderInner(el, mode, sendPress)
     if (!inner) return null

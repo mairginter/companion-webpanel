@@ -65,6 +65,7 @@ export function EditableElement({ element, panelId, children }: Props) {
         outline: isSelected ? '2px solid #ff8a3d' : undefined,
         outlineOffset: isSelected ? '2px' : undefined,
         userSelect: 'none',
+        touchAction: 'none',
       }}
       onClick={handleClick}
       {...listeners}

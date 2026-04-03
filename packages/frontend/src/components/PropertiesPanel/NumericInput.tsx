@@ -1,6 +1,7 @@
 /**
  * NumericInput.tsx — Zahlenfeld für Properties Panel.
  * Mausrad ±1 (Shift ±10), Pfeiltasten ±1 (Shift ±10).
+ * Touch: −/+ Buttons (44px Tap-Target).
  * Store-Update bei blur oder Enter — Live-Preview via onChange.
  */
 import React, { useState, useCallback, useEffect } from 'react'
@@ -11,9 +12,11 @@ interface Props {
   min?: number
   label?: string
   unit?: string
+  /** Kein ±-Button — für enge 2-Spalten-Layouts. Tastatur/Wheel funktionieren weiterhin. */
+  compact?: boolean
 }
 
-export function NumericInput({ value, onChange, min, label, unit }: Props) {
+export function NumericInput({ value, onChange, min, label, unit, compact }: Props) {
   const [localValue, setLocalValue] = useState(String(value))
 
   useEffect(() => { setLocalValue(String(value)) }, [value])
@@ -46,6 +49,17 @@ export function NumericInput({ value, onChange, min, label, unit }: Props) {
     padding: '8px 10px', color: '#e9edf2', fontSize: 14,
     fontFamily: "'JetBrains Mono', 'Courier New', monospace",
     width: '100%', outline: 'none', boxSizing: 'border-box',
+    minWidth: 0,
+  }
+
+  const stepBtn: React.CSSProperties = {
+    width: 44, height: 44, minWidth: 44, flexShrink: 0,
+    borderRadius: 4, border: '1px solid #2a3344',
+    background: '#1a2030', color: '#e9edf2',
+    fontSize: 18, lineHeight: 1, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: 0, touchAction: 'manipulation',
+    userSelect: 'none',
   }
 
   return (
@@ -59,7 +73,9 @@ export function NumericInput({ value, onChange, min, label, unit }: Props) {
           onKeyDown={onKeyDown}
           onWheel={onWheel}
         />
-        {unit && <span style={{ fontSize: 12, color: '#4a5568' }}>{unit}</span>}
+        {unit && <span style={{ fontSize: 12, color: '#4a5568', flexShrink: 0 }}>{unit}</span>}
+        {!compact && <button style={stepBtn} onPointerDown={(e) => { e.preventDefault(); onChange(clamp(value - 1)) }}>−</button>}
+        {!compact && <button style={stepBtn} onPointerDown={(e) => { e.preventDefault(); onChange(clamp(value + 1)) }}>+</button>}
       </div>
     </div>
   )

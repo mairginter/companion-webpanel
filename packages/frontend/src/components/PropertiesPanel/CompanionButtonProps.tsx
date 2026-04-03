@@ -1,14 +1,21 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { CompanionButtonElement } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { NumericInput } from './NumericInput'
+import { CompanionButtonPickerDialog } from '../AddElement/CompanionButtonPickerDialog'
 
-interface Props { element: CompanionButtonElement; panelId: string }
+interface Props { element: CompanionButtonElement; panelId: string; side?: 'left' | 'right'; panelWidth?: number }
 
-export function CompanionButtonProps({ element, panelId }: Props) {
+export function CompanionButtonProps({ element, panelId, side = 'right', panelWidth = 320 }: Props) {
   const setSettings = useAppStore((s) => s.setSettings)
   const settings = useAppStore((s) => s.settings)
+  const sessionStatus = useAppStore((s) => s.sessionStatus)
   const r = element.render ?? {}
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  const hostConnected = Object.entries(sessionStatus).some(
+    ([k, v]) => k.startsWith(element.ref.hostId + ':') && v === 'connected',
+  )
 
   const updateRender = (patch: Partial<NonNullable<CompanionButtonElement['render']>>) => {
     if (!settings) return
@@ -51,14 +58,29 @@ export function CompanionButtonProps({ element, panelId }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ ...lbl, marginBottom: 2 }}>CompanionButton</div>
 
-      {/* Ref: Host / Page / Row / Col */}
+      {/* Ref: visueller Picker */}
       <div style={{ background: '#121821', borderRadius: 6, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={lbl}>Companion Ref</div>
-        <div style={{ fontSize: 12, color: '#8896aa' }}>Host: <span style={{ color: '#e9edf2' }}>{hostName}</span></div>
-        <NumericInput label="Page" value={element.ref.page} min={1} onChange={(v) => updateRef({ page: v })} />
-        <NumericInput label="Row"  value={element.ref.row}  min={0} onChange={(v) => updateRef({ row: v })} />
-        <NumericInput label="Col"  value={element.ref.col}  min={0} onChange={(v) => updateRef({ col: v })} />
+        <div style={{ fontSize: 12, color: '#8896aa' }}>
+          <span style={{ color: '#e9edf2' }}>{hostName}</span>
+          {' · '}
+          <span style={{ color: '#e9edf2' }}>P{element.ref.page}</span>
+          {' · '}
+          R{element.ref.row + 1} / C{element.ref.col + 1}
+        </div>
+        <button
+          onClick={() => hostConnected && setPickerOpen(true)}
+          disabled={!hostConnected}
+          style={{
+            padding: '10px 14px', borderRadius: 6, border: '1px solid #2a3344',
+            background: '#1a2030', color: hostConnected ? '#4a9eff' : '#4a5568', fontSize: 13,
+            cursor: hostConnected ? 'pointer' : 'not-allowed', textAlign: 'center', touchAction: 'manipulation',
+          }}
+        >
+          {hostConnected ? 'Ändern…' : 'Host offline'}
+        </button>
       </div>
+
       <div style={row}>
         <span style={lbl}>Show Background</span>
         <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showBgColor, true)} onChange={(e) => updateRender({ showBgColor: e.target.checked })} />
@@ -84,6 +106,17 @@ export function CompanionButtonProps({ element, panelId }: Props) {
         onChange={(v) => updateRender({ borderRadius: v })} />
       <NumericInput label="Font-Size" value={r.fontSize ?? 11} min={6} unit="px"
         onChange={(v) => updateRender({ fontSize: v })} />
+
+      {pickerOpen && (
+        <CompanionButtonPickerDialog
+          confirmLabel="Übernehmen"
+          initialRef={{ hostId: element.ref.hostId, page: element.ref.page }}
+          onConfirm={(ref) => { updateRef(ref); setPickerOpen(false) }}
+          onClose={() => setPickerOpen(false)}
+          alignSide={side}
+          panelWidth={panelWidth}
+        />
+      )}
     </div>
   )
 }

@@ -9,17 +9,44 @@
 import React, { useState, useMemo } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { pageKey } from '@cwp/shared'
+import { NumericInput } from '../PropertiesPanel/NumericInput'
 
 interface Props {
   onConfirm: (ref: { hostId: string; page: number; row: number; col: number }) => void
   onClose: () => void
+  confirmLabel?: string
+  /** Vorauswahl beim Öffnen */
+  initialRef?: { hostId?: string; page?: number }
+  /** Positionierung neben dem PropertiesPanel */
+  alignSide?: 'left' | 'right'
+  panelWidth?: number
 }
 
-const OVERLAY: React.CSSProperties = {
-  position: 'fixed', inset: 0,
-  background: 'rgba(0,0,0,0.6)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  zIndex: 1100,
+function overlayStyle(alignSide?: 'left' | 'right', panelWidth = 320): React.CSSProperties {
+  if (alignSide === 'right') {
+    return {
+      position: 'fixed', inset: 0,
+      background: 'rgba(0,0,0,0.6)',
+      display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+      paddingRight: panelWidth + 8,
+      zIndex: 1100,
+    }
+  }
+  if (alignSide === 'left') {
+    return {
+      position: 'fixed', inset: 0,
+      background: 'rgba(0,0,0,0.6)',
+      display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
+      paddingLeft: panelWidth + 8,
+      zIndex: 1100,
+    }
+  }
+  return {
+    position: 'fixed', inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 1100,
+  }
 }
 
 const DIALOG: React.CSSProperties = {
@@ -40,7 +67,7 @@ const SELECT_STYLE: React.CSSProperties = {
   borderRadius: 6, color: '#e9edf2', fontSize: 13, padding: '6px 8px',
 }
 
-export function CompanionButtonPickerDialog({ onConfirm, onClose }: Props) {
+export function CompanionButtonPickerDialog({ onConfirm, onClose, confirmLabel = 'Hinzufügen', initialRef, alignSide, panelWidth = 320 }: Props) {
   const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
   const buttons = useAppStore((s) => s.buttons)
@@ -54,9 +81,9 @@ export function CompanionButtonPickerDialog({ onConfirm, onClose }: Props) {
     )
   }, [settings, sessionStatus])
 
-  const [hostId, setHostId] = useState<string>(connectedHosts[0]?.id ?? '')
-  const [pageNum, setPageNum] = useState<number | null>(null)
-  const [newPageInput, setNewPageInput] = useState('')
+  const [hostId, setHostId] = useState<string>(initialRef?.hostId ?? connectedHosts[0]?.id ?? '')
+  const [pageNum, setPageNum] = useState<number | null>(initialRef?.page ?? null)
+  const [newPageInput, setNewPageInput] = useState(1)
   const [showNewPageInput, setShowNewPageInput] = useState(false)
   const [selectedKey, setSelectedKey] = useState<number | null>(null) // keyIndex
 
@@ -109,12 +136,11 @@ export function CompanionButtonPickerDialog({ onConfirm, onClose }: Props) {
   }
 
   const handleNewPageConfirm = () => {
-    const n = parseInt(newPageInput, 10)
-    if (!n || n < 1) return
-    addPageAssignment(hostId, n)
-    setPageNum(n)
+    if (!newPageInput || newPageInput < 1) return
+    addPageAssignment(hostId, newPageInput)
+    setPageNum(newPageInput)
     setShowNewPageInput(false)
-    setNewPageInput('')
+    setNewPageInput(1)
     setSelectedKey(null)
   }
 
@@ -127,7 +153,7 @@ export function CompanionButtonPickerDialog({ onConfirm, onClose }: Props) {
   const cellSize = Math.min(48, Math.floor(400 / keysPerRow))
 
   return (
-    <div style={OVERLAY} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div style={overlayStyle(alignSide, panelWidth)} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div style={DIALOG}>
         <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Companion Button wählen</div>
 
@@ -167,21 +193,19 @@ export function CompanionButtonPickerDialog({ onConfirm, onClose }: Props) {
             {showNewPageInput && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'flex-end' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={LABEL_STYLE}>Page-Nummer</div>
-                  <input
-                    type="number" min={1} max={99}
+                  <NumericInput
+                    label="Page-Nummer"
                     value={newPageInput}
-                    onChange={(e) => setNewPageInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleNewPageConfirm()}
-                    style={{ ...SELECT_STYLE, width: '100%', boxSizing: 'border-box', height: 44, fontSize: 16 }}
-                    autoFocus
+                    min={1}
+                    onChange={(v) => setNewPageInput(v)}
                   />
                 </div>
                 <button
                   onClick={handleNewPageConfirm}
                   style={{
-                    padding: '6px 14px', borderRadius: 6, border: '1px solid #4a9eff',
+                    height: 44, padding: '0 14px', borderRadius: 6, border: '1px solid #4a9eff',
                     background: 'rgba(74,158,255,0.12)', color: '#4a9eff', fontSize: 13, cursor: 'pointer',
+                    flexShrink: 0,
                   }}
                 >
                   OK
@@ -264,7 +288,7 @@ export function CompanionButtonPickerDialog({ onConfirm, onClose }: Props) {
               fontWeight: 600,
             }}
           >
-            Hinzufügen
+            {confirmLabel}
           </button>
         </div>
       </div>

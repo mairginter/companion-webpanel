@@ -52,7 +52,7 @@ export function PropertiesPanel() {
     : []
   const singleEl = selectedElements.length === 1 ? selectedElements[0] : null
 
-  const PANEL_W = 280
+  const PANEL_W = 320
   // Touch-freundlich: min. 44px Hit-Area
   const collapseBtn: React.CSSProperties = {
     background: '#1a2030',
@@ -135,10 +135,10 @@ export function PropertiesPanel() {
   const contentStyle: React.CSSProperties = {
     flex: 1,
     overflowY: 'auto',
-    padding: '12px 10px',
+    padding: '14px 12px',
     display: 'flex',
     flexDirection: 'column',
-    gap: 12,
+    gap: 16,
   }
 
   // Inhalt bestimmen
@@ -155,7 +155,7 @@ export function PropertiesPanel() {
           <>
             {specificContent}
             <div style={{ borderTop: '1px solid #2a3344', paddingTop: 12 }}>
-              <CompanionButtonProps element={singleEl} panelId={panel!.id} />
+              <CompanionButtonProps element={singleEl} panelId={panel!.id} side={side} panelWidth={PANEL_W} />
             </div>
           </>
         )
