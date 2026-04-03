@@ -3,10 +3,10 @@
  *
  * Startet das Companion Webpanel Backend:
  *  1. Settings laden aus CompanionWebpannelSettings.json (oder SETTINGS_PATH env)
- *  2. StateStore, ClientServer und SessionManager initialisieren
- *  3. Satellite-Sessions starten (Verbindungen zu Companion)
+ *  2. StateStore, ClientServer und HostManager initialisieren
+ *  3. Button-Subscriptions aus Panel-Elementen starten (Verbindungen zu Companion)
  *  4. Graceful Shutdown bei SIGINT/SIGTERM:
- *     - REMOVE-DEVICE an alle Companion-Instanzen senden
+ *     - REMOVE-SUB an alle Companion-Instanzen senden
  *     - Alle Frontend-Clients trennen
  *     - HTTP-Server schließen, Port freigeben
  *
@@ -19,7 +19,7 @@ import * as path from 'path'
 import { Settings } from '@cwp/shared'
 import { StateStore } from './state/StateStore'
 import { ClientServer } from './server/ClientServer'
-import { SessionManager } from './SessionManager'
+import { HostManager } from './HostManager'
 
 // ─── Config ────────────────────────────────────────────────────────────────
 
@@ -41,8 +41,8 @@ function loadSettings(): Settings {
   const raw = fs.readFileSync(SETTINGS_PATH, 'utf8')
   const settings = JSON.parse(raw) as Settings
 
-  if (settings.version !== '1.1.0') {
-    console.warn(`[Boot] Unbekannte Settings-Version: ${settings.version} (erwartet: 1.1.0)`)
+  if (settings.version !== '1.2.0') {
+    console.warn(`[Boot] Unbekannte Settings-Version: ${settings.version} (erwartet: 1.2.0)`)
   }
 
   console.log(`[Boot] Settings geladen: ${settings.hosts.length} Host(s), ${settings.panels.length} Panel(s)`)
@@ -54,19 +54,24 @@ async function main(): Promise<void> {
 
   const store = new StateStore()
 
-  // SessionManager muss vor ClientServer existieren, damit onPress-Callback klappt
-  // Aber ClientServer braucht SessionManager → forward reference via Closure
-  let manager: SessionManager
+  // HostManager muss vor ClientServer existieren — forward reference via Closure
+  let manager: HostManager
 
   const clientServer = new ClientServer(
     CLIENT_WS_PORT,
     settings,
     SETTINGS_PATH,
+    // onPress: Button-Press vom Frontend weiterleiten
     (hostId, page, row, col, pressed) => manager.handlePress(hostId, page, row, col, pressed),
-    (updatedSettings) => manager.update(updatedSettings),
+    // onSettingsUpdate: neue Subscriptions nach Ctrl+S synchronisieren
+    (updatedSettings) => manager.syncSubscriptions(updatedSettings),
+    // onPreviewPageAdd: temporäre Picker-Subscriptions starten
+    (hostId, page, keysPerRow, rows) => manager.addPickerSubscriptions(hostId, page, keysPerRow, rows),
+    // onPreviewPageRemove: temporäre Picker-Subscriptions beenden
+    (hostId, page) => manager.removePickerSubscriptions(hostId, page),
   )
 
-  manager = new SessionManager(store, clientServer)
+  manager = new HostManager(store, clientServer)
   manager.start(settings)
 
   // ─── Graceful Shutdown ─────────────────────────────────────────────────

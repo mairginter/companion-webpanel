@@ -26,13 +26,13 @@ interface AppStore {
   toggleMode: () => void
 
   // ─── Button State ─────────────────────────────────────────────────────────
-  /** key: "hostId:page:keyIndex" → KeyState */
+  /** key: "hostId:page:row:col" → KeyState */
   buttons: Record<string, KeyState>
   applyDelta: (msg: DeltaMessage) => void
   applySnapshot: (msg: SnapshotMessage) => void
 
   // ─── Session Status ───────────────────────────────────────────────────────
-  /** key: "hostId:page" → status */
+  /** key: hostId → status (pro Host, nicht pro Page) */
   sessionStatus: Record<string, SessionStatus>
   applySessionStatus: (msg: SessionStatusMessage) => void
   /** Alle bekannten Sessions auf 'stale' setzen — bei WS-Disconnect zum Backend */
@@ -59,11 +59,11 @@ interface AppStore {
   duplicateElements: (panelId: string, ids: string[]) => void
   deleteElements: (panelId: string, ids: string[]) => void
   addElement: (panelId: string, element: AnyElement) => void
-  addPageAssignment: (hostId: string, page: number) => void
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
-  getButtonState: (hostId: string, page: number, keyIndex: number) => KeyState | undefined
-  getSessionStatus: (hostId: string, page: number) => SessionStatus | undefined
+  getButtonState: (hostId: string, page: number, row: number, col: number) => KeyState | undefined
+  /** Verbindungsstatus eines Hosts (kein page-Parameter mehr nötig) */
+  getSessionStatus: (hostId: string) => SessionStatus | undefined
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -93,7 +93,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   buttons: {},
 
   applyDelta: (msg) => {
-    const k = `${pageKey(msg.hostId, msg.page)}:${msg.key}`
+    // Key-Format: "hostId:page:row:col"
+    const k = `${pageKey(msg.hostId, msg.page)}:${msg.row}:${msg.col}`
     set((s) => ({
       buttons: {
         ...s.buttons,
@@ -109,10 +110,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   applySnapshot: (msg) => {
+    // msg.keys: Record<"row:col", KeyState>
     const prefix = pageKey(msg.hostId, msg.page)
     const updates: Record<string, KeyState> = {}
-    for (const [idx, state] of Object.entries(msg.keys)) {
-      updates[`${prefix}:${idx}`] = state
+    for (const [rowCol, state] of Object.entries(msg.keys)) {
+      updates[`${prefix}:${rowCol}`] = state
     }
     set((s) => {
       const filtered = Object.fromEntries(
@@ -126,8 +128,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   sessionStatus: {},
 
   applySessionStatus: (msg) => {
-    const k = pageKey(msg.hostId, msg.page)
-    set((s) => ({ sessionStatus: { ...s.sessionStatus, [k]: msg.status } }))
+    // Key ist jetzt hostId (nicht mehr hostId:page)
+    set((s) => ({ sessionStatus: { ...s.sessionStatus, [msg.hostId]: msg.status } }))
   },
 
   markAllSessionsStale: () =>
@@ -144,7 +146,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((s) => {
       const next = new Set(addToSelection ? s.selectedIds : [])
       if (addToSelection && s.selectedIds.has(id)) {
-        next.delete(id)  // Shift+Klick auf selektiertes → abwählen
+        next.delete(id)
       } else {
         next.add(id)
       }
@@ -281,7 +283,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((s) => {
       if (!s.settings) return s
       const existingElements = s.settings.panels.find((p) => p.id === panelId)?.elements ?? []
-      // z < 0 → hinter alle bestehenden Elemente (z.B. Shape); z >= 0 → vorne
       const withZ = element.z < 0
         ? { ...element, z: Math.max(0, existingElements.reduce((m, e) => Math.min(m, e.z ?? 0), 0) - 1) }
         : { ...element, z: (existingElements.reduce((m, e) => Math.max(m, e.z ?? 0), 0) + 1) }
@@ -296,34 +297,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
     }),
 
-  addPageAssignment: (hostId, page) =>
-    set((s) => {
-      if (!s.settings) return s
-      const key = `${hostId}:${page}`
-      const existing = s.settings.wizard?.pageAssignments?.[key]
-      if (existing) return s
-      return {
-        settings: {
-          ...s.settings,
-          wizard: {
-            ...s.settings.wizard,
-            pageAssignments: {
-              ...s.settings.wizard?.pageAssignments,
-              [key]: {
-                page,
-                instructionShown: false,
-                surfaceConfig: { keysPerRow: 8, rows: 8 },
-              },
-            },
-          },
-        },
-      }
-    }),
-
   // ─── Helpers ──────────────────────────────────────────────────────────────
-  getButtonState: (hostId, page, keyIndex) =>
-    get().buttons[`${pageKey(hostId, page)}:${keyIndex}`],
+  getButtonState: (hostId, page, row, col) =>
+    get().buttons[`${pageKey(hostId, page)}:${row}:${col}`],
 
-  getSessionStatus: (hostId, page) =>
-    get().sessionStatus[pageKey(hostId, page)],
+  getSessionStatus: (hostId) =>
+    get().sessionStatus[hostId],
 }))

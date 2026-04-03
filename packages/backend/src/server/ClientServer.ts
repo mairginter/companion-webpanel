@@ -4,13 +4,15 @@
  * HTTP- und WebSocket-Server für alle verbundenen Browser-Clients (Frontend-PWA).
  *
  * Aufgaben:
- *  - GET /api/settings  → liefert die geladenen Settings als JSON an das Frontend
+ *  - GET  /api/settings  → liefert die geladenen Settings als JSON
+ *  - POST /api/settings  → speichert neue Settings (atomisch, tmp→rename)
+ *  - POST /api/preview-page  → startet temporäre Subscriptions für den Button-Picker-Dialog
+ *  - DELETE /api/preview-page → beendet temporäre Subscriptions (Picker geschlossen)
  *  - WebSocket-Verbindungen verwalten (connect, disconnect, broadcast)
- *  - Eingehende KEY-PRESS-Nachrichten vom Browser ans SessionManager weiterleiten
+ *  - Eingehende KEY-PRESS-Nachrichten vom Browser ans HostManager weiterleiten
  *  - Snapshots bei neuem Client-Connect senden (via onNewClient-Callback)
  *  - Press-Tracker: verfolgt pro Client welche Buttons gerade gedrückt gehalten werden,
- *    damit bei unerwartetem Disconnect (Tab-Close, Browser-Crash) automatisch
- *    PRESSED=false an Companion gesendet wird — verhindert "stuck buttons"
+ *    damit bei unerwartetem Disconnect automatisch PRESSED=false gesendet wird
  *  - Graceful Shutdown: alle Clients sofort terminieren, Port sauber freigeben
  */
 import * as http from 'http'
@@ -24,6 +26,8 @@ import {
 } from '@cwp/shared'
 
 export type PressHandler = (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
+export type PreviewPageHandler = (hostId: string, page: number, keysPerRow: number, rows: number) => void
+export type PreviewPageRemoveHandler = (hostId: string, page: number) => void
 
 // Eindeutiger Key für einen gehaltenen Button
 type PressKey = `${string}:${number}:${number}:${number}`
@@ -34,35 +38,41 @@ function pressKey(hostId: string, page: number, row: number, col: number): Press
 
 /**
  * HTTP + WebSocket Server für Frontend-Browser-Clients.
- * HTTP:      GET /api/settings  → liefert die geladenen Settings als JSON
- * WebSocket: Snapshot bei Connect, Delta-Broadcast, Press-Kommandos
  */
 export class ClientServer {
   private httpServer: http.Server
   private wss: WebSocketServer
   private clients = new Set<WebSocket>()
-  // Welche Buttons hält welcher Client gerade gedrückt?
-  // Wichtig: bei disconnect → PRESSED=false für alle offenen Presses senden
   private clientPresses = new Map<WebSocket, Set<PressKey>>()
   private onPress: PressHandler
   private onSettingsUpdate?: (settings: Settings) => void
+  private onPreviewPageAdd?: PreviewPageHandler
+  private onPreviewPageRemove?: PreviewPageRemoveHandler
   private settings: Settings
   private settingsPath: string
 
-  constructor(port: number, settings: Settings, settingsPath: string, onPress: PressHandler, onSettingsUpdate?: (s: Settings) => void) {
+  constructor(
+    port: number,
+    settings: Settings,
+    settingsPath: string,
+    onPress: PressHandler,
+    onSettingsUpdate?: (s: Settings) => void,
+    onPreviewPageAdd?: PreviewPageHandler,
+    onPreviewPageRemove?: PreviewPageRemoveHandler,
+  ) {
     this.settings = settings
     this.settingsPath = settingsPath
     this.onPress = onPress
     this.onSettingsUpdate = onSettingsUpdate
+    this.onPreviewPageAdd = onPreviewPageAdd
+    this.onPreviewPageRemove = onPreviewPageRemove
 
     // ─── HTTP Server ────────────────────────────────────────────────────────
     this.httpServer = http.createServer((req, res) => {
-      // CORS für Vite-Dev-Server (erlaubt GET und POST vom separaten Dev-Origin :5173)
       res.setHeader('Access-Control-Allow-Origin', '*')
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
-      // CORS Preflight (Browser sendet OPTIONS vor POST)
       if (req.method === 'OPTIONS') {
         res.writeHead(204)
         res.end()
@@ -75,27 +85,22 @@ export class ClientServer {
         res.end(json)
 
       } else if (req.method === 'POST' && req.url === '/api/settings') {
-        // Gesamten Request-Body einlesen
         let body = ''
         req.on('data', (chunk) => { body += chunk })
         req.on('end', () => {
           try {
             const incoming = JSON.parse(body) as Settings
 
-            // Minimalvalidierung: Version muss stimmen
-            if (incoming.version !== '1.1.0') {
+            if (incoming.version !== '1.2.0') {
               res.writeHead(400, { 'Content-Type': 'application/json' })
               res.end(JSON.stringify({ error: `Ungültige Schema-Version: ${incoming.version}` }))
               return
             }
 
-            // Atomar schreiben: erst temp-Datei, dann umbenennen —
-            // verhindert korrupte Settings-Datei bei Prozess-Crash während des Schreibens
             const tmpPath = this.settingsPath + '.tmp'
             fs.writeFileSync(tmpPath, JSON.stringify(incoming, null, 2), 'utf8')
             fs.renameSync(tmpPath, this.settingsPath)
 
-            // In-Memory-Kopie aktualisieren damit GET /api/settings sofort den neuen Stand liefert
             this.settings = incoming
             this.onSettingsUpdate?.(incoming)
 
@@ -110,13 +115,50 @@ export class ClientServer {
           }
         })
 
+      } else if (req.method === 'POST' && req.url === '/api/preview-page') {
+        // Temporäre Subscriptions für den Button-Picker-Dialog starten
+        // Body: { hostId, page, keysPerRow, rows }
+        let body = ''
+        req.on('data', (chunk) => { body += chunk })
+        req.on('end', () => {
+          try {
+            const { hostId, page, keysPerRow, rows } = JSON.parse(body)
+            if (!hostId || page === undefined || !keysPerRow || !rows) {
+              res.writeHead(400, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ error: 'hostId, page, keysPerRow, rows erforderlich' }))
+              return
+            }
+            this.onPreviewPageAdd?.(hostId, page, keysPerRow, rows)
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ ok: true }))
+          } catch {
+            res.writeHead(400, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: 'Ungültiger Request-Body' }))
+          }
+        })
+
+      } else if (req.method === 'DELETE' && req.url?.startsWith('/api/preview-page')) {
+        // Picker-Subscriptions beenden
+        // Query-Parameter: hostId + page
+        const url = new URL(req.url, `http://localhost`)
+        const hostId = url.searchParams.get('hostId')
+        const page = parseInt(url.searchParams.get('page') ?? '', 10)
+        if (!hostId || isNaN(page)) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'hostId und page erforderlich' }))
+          return
+        }
+        this.onPreviewPageRemove?.(hostId, page)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true }))
+
       } else {
         res.writeHead(404)
         res.end()
       }
     })
 
-    // ─── WebSocket Server (auf demselben Port via HTTP-Upgrade) ─────────────
+    // ─── WebSocket Server ─────────────────────────────────────────────────
     this.wss = new WebSocketServer({ server: this.httpServer })
 
     this.wss.on('connection', (ws: WebSocket, req: http.IncomingMessage) => {
@@ -134,11 +176,8 @@ export class ClientServer {
             const key = pressKey(msg.hostId, msg.page, msg.row, msg.col)
             const presses = this.clientPresses.get(ws)
             if (presses) {
-              if (msg.pressed) {
-                presses.add(key)
-              } else {
-                presses.delete(key)
-              }
+              if (msg.pressed) presses.add(key)
+              else presses.delete(key)
             }
             this.onPress(msg.hostId, msg.page, msg.row, msg.col, msg.pressed)
           }
@@ -149,13 +188,16 @@ export class ClientServer {
 
       const cleanup = () => {
         this.clients.delete(ws)
-        // Alle vom Client noch gehaltenen Buttons loslassen
         const presses = this.clientPresses.get(ws)
         if (presses && presses.size > 0) {
           console.warn(`[ClientServer] Client ${ip} getrennt mit ${presses.size} offenem/n Press(es) — sende PRESSED=false`)
           for (const key of presses) {
-            const [hostId, pageStr, rowStr, colStr] = key.split(':')
-            this.onPress(hostId, parseInt(pageStr), parseInt(rowStr), parseInt(colStr), false)
+            const parts = key.split(':')
+            const hostId = parts[0]
+            const page = parseInt(parts[1])
+            const row = parseInt(parts[2])
+            const col = parseInt(parts[3])
+            this.onPress(hostId, page, row, col, false)
           }
         }
         this.clientPresses.delete(ws)
@@ -204,13 +246,10 @@ export class ClientServer {
 
   close(): Promise<void> {
     return new Promise((resolve, reject) => {
-      // Alle verbundenen WS-Clients sofort terminieren — sonst wartet httpServer.close()
-      // bis alle Clients sich selbst trennen → Port bleibt blockiert
       for (const ws of this.clients) ws.terminate()
       this.clients.clear()
 
       this.wss.close()
-      // closeAllConnections() schließt HTTP keep-alive Verbindungen (Node 18+)
       if (typeof (this.httpServer as any).closeAllConnections === 'function') {
         ;(this.httpServer as any).closeAllConnections()
       }

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react'
-import { CompanionButtonElement as CompanionButtonElementType, keyIndex } from '@cwp/shared'
+import { CompanionButtonElement as CompanionButtonElementType } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { rawRgbBase64ToDataUrl } from '../../utils/bitmap'
 
@@ -26,14 +26,10 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   const textAlign = render?.textAlign ?? 'bottom'
   const fontSize = render?.fontSize ?? 11
 
-  const keysPerRow = useAppStore((s) => {
-    const pk = `${ref.hostId}:${ref.page}`
-    return s.settings?.wizard?.pageAssignments?.[pk]?.surfaceConfig.keysPerRow ?? 8
-  })
-
-  const keyIdx = keyIndex(ref.row, ref.col, keysPerRow)
-  const keyState = useAppStore((s) => s.getButtonState(ref.hostId, ref.page, keyIdx))
-  const sessionStatus = useAppStore((s) => s.getSessionStatus(ref.hostId, ref.page))
+  // Button-State direkt per row/col — kein keysPerRow-Lookup mehr nötig
+  const keyState = useAppStore((s) => s.getButtonState(ref.hostId, ref.page, ref.row, ref.col))
+  // Session-Status pro Host (nicht mehr pro Page)
+  const sessionStatus = useAppStore((s) => s.getSessionStatus(ref.hostId))
 
   const isStale = sessionStatus === 'stale' || sessionStatus === 'error'
   const hasData = !!keyState?.bgColor || !!keyState?.bitmap || !!keyState?.text
@@ -63,7 +59,6 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   const text = keyState?.text ?? ''
   const bitmap = keyState?.bitmap
 
-  // Konvertierung Raw-RGB → Data-URL, nur wenn showBitmap aktiv
   const bitmapSrc = useMemo(
     () => (showBitmap && bitmap ? rawRgbBase64ToDataUrl(bitmap, bitmapSize, bitmapSize) : ''),
     [showBitmap, bitmap, bitmapSize],
@@ -71,7 +66,6 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
 
   // ─── Container ────────────────────────────────────────────────────────────
   const containerStyle: React.CSSProperties = {
-    // isContained: EditableElement übernimmt position/left/top/width/height
     ...(isContained
       ? { position: 'relative' as const, width: '100%', height: '100%' }
       : { position: 'absolute' as const, left: element.x, top: element.y,
@@ -88,21 +82,18 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
     ...(isStale && { opacity: 0.5, outline: '2px solid #ff8a3d', outlineOffset: '-2px' }),
     ...(pressed && { transform: 'scale(0.97)', outline: '2.5px solid #ff5a5f', outlineOffset: '-2px' }),
     transition: pressed ? 'none' : 'transform 0.08s',
-    // Flex: Bitmap zentriert, Text als Overlay
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   }
 
   // ─── Text-Positionierung ──────────────────────────────────────────────────
-  // Kein Bitmap → Text vollflächig zentriert
-  // Mit Bitmap → Text per textAlign (top/center/bottom)
   const textPos: React.CSSProperties =
     textAlign === 'top'
       ? { top: 4 }
       : textAlign === 'center'
       ? { top: '50%', transform: 'translateY(-50%)' }
-      : { bottom: 4 }  // 'bottom' ist default
+      : { bottom: 4 }
 
   const textStyle: React.CSSProperties = {
     position: 'absolute',
@@ -127,7 +118,6 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
       onPointerLeave={handlePointerLeave}
       onPointerCancel={handlePointerLeave}
     >
-      {/* Bitmap — nur rendern wenn Data-URL erfolgreich erzeugt */}
       {bitmapSrc && (
         <img
           src={bitmapSrc}
@@ -139,7 +129,6 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
         />
       )}
 
-      {/* Text — mehrzeilig, zentriert */}
       {showText && text && (
         <span style={textStyle}>
           {text.split('\n').map((line, i, arr) =>
@@ -150,7 +139,6 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
         </span>
       )}
 
-      {/* Stale-Indikator */}
       {isStale && (
         <div style={{ position: 'absolute', top: 2, right: 4, fontSize: 10, color: '#ff8a3d', pointerEvents: 'none' }}>
           ⚠
@@ -159,4 +147,3 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
     </div>
   )
 })
-

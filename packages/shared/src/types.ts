@@ -1,10 +1,9 @@
-// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.1.0) ───
+// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.2.0) ───
 
 export interface Settings {
-  version: '1.1.0'
+  version: '1.2.0'
   activeHostId: string
   hosts: HostProfile[]
-  wizard?: WizardState
   panels: Panel[]
 }
 
@@ -14,25 +13,6 @@ export interface HostProfile {
   host: string
   satellite: { wsPort: number }
   notes?: string
-}
-
-export interface WizardState {
-  completed?: boolean
-  /** key: "hostId:page" */
-  pageAssignments?: Record<string, PageAssignment>
-}
-
-export interface PageAssignment {
-  page: number
-  instructionShown: boolean
-  confirmedByUser?: boolean
-  surfaceConfig: SurfaceConfig
-  ts?: number
-}
-
-export interface SurfaceConfig {
-  keysPerRow: number
-  rows: number
 }
 
 // ─── Canvas / Element Types ───────────────────────────────────────────────────
@@ -144,7 +124,8 @@ export interface DeltaMessage {
   t: 'delta'
   hostId: string
   page: number
-  key: number
+  row: number
+  col: number
   bgColor?: string
   textColor?: string
   text?: string
@@ -156,15 +137,14 @@ export interface SnapshotMessage {
   t: 'snapshot'
   hostId: string
   page: number
-  /** key index → state */
-  keys: Record<number, KeyState>
+  /** "row:col" → state */
+  keys: Record<string, KeyState>
 }
 
 /** Backend → Frontend: Satellite connection status changed */
 export interface SessionStatusMessage {
   t: 'sessionStatus'
   hostId: string
-  page: number
   status: 'connecting' | 'connected' | 'stale' | 'error'
 }
 
@@ -181,19 +161,9 @@ export interface PressMessage {
 export type BackendToFrontend = DeltaMessage | SnapshotMessage | SessionStatusMessage
 export type FrontendToBackend = PressMessage
 
-// ─── Satellite Session Key Helpers ───────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Berechnet keyIndex aus row/col/keysPerRow */
-export function keyIndex(row: number, col: number, keysPerRow: number): number {
-  return row * keysPerRow + col
-}
-
-/** DEVICEID-Format für die Satellite API */
-export function deviceId(hostId: string, page: number): string {
-  return `webpanel:${hostId}:page:${page}`
-}
-
-/** Schlüssel für pageAssignments-Map */
+/** Schlüssel für hostId:page Lookups (z.B. als Snapshot-Prefix) */
 export function pageKey(hostId: string, page: number): string {
   return `${hostId}:${page}`
 }

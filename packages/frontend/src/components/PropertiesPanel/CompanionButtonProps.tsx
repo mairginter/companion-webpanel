@@ -13,9 +13,7 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
   const r = element.render ?? {}
   const [pickerOpen, setPickerOpen] = useState(false)
 
-  const hostConnected = Object.entries(sessionStatus).some(
-    ([k, v]) => k.startsWith(element.ref.hostId + ':') && v === 'connected',
-  )
+  const hostConnected = sessionStatus[element.ref.hostId] === 'connected'
 
   const updateRender = (patch: Partial<NonNullable<CompanionButtonElement['render']>>) => {
     if (!settings) return

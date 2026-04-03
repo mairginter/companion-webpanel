@@ -3,13 +3,18 @@
  *
  * Modal-Dialog zur Auswahl eines Companion-Buttons.
  * Zeigt nur verbundene Hosts (sessionStatus === 'connected').
- * Page-Dropdown: konfigurierte Pages + "+" für neue Page.
- * Mini-Grid: bgColor + Text aus Store, Klick → row/col setzen.
+ *
+ * Für Live-Preview: beim Öffnen/Wechsel einer Page werden temporäre
+ * Subscriptions per POST /api/preview-page gestartet, sodass das Mini-Grid
+ * echte Button-Zustände von Companion zeigt.
+ * Beim Schließen werden diese Subscriptions per DELETE /api/preview-page entfernt.
  */
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { pageKey } from '@cwp/shared'
 import { NumericInput } from '../PropertiesPanel/NumericInput'
+
+const BACKEND_BASE = import.meta.env.DEV ? `http://${window.location.hostname}:8080` : ''
 
 interface Props {
   onConfirm: (ref: { hostId: string; page: number; row: number; col: number }) => void
@@ -67,86 +72,95 @@ const SELECT_STYLE: React.CSSProperties = {
   borderRadius: 6, color: '#e9edf2', fontSize: 13, padding: '6px 8px',
 }
 
-export function CompanionButtonPickerDialog({ onConfirm, onClose, confirmLabel = 'Hinzufügen', initialRef, alignSide, panelWidth = 320 }: Props) {
+export function CompanionButtonPickerDialog({
+  onConfirm, onClose, confirmLabel = 'Hinzufügen', initialRef, alignSide, panelWidth = 320,
+}: Props) {
   const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
   const buttons = useAppStore((s) => s.buttons)
-  const addPageAssignment = useAppStore((s) => s.addPageAssignment)
 
-  // Nur verbundene Hosts
+  // Nur verbundene Hosts anzeigen
   const connectedHosts = useMemo(() => {
     if (!settings) return []
-    return settings.hosts.filter((h) =>
-      Object.entries(sessionStatus).some(([k, v]) => k.startsWith(h.id + ':') && v === 'connected'),
-    )
+    return settings.hosts.filter((h) => sessionStatus[h.id] === 'connected')
   }, [settings, sessionStatus])
 
   const [hostId, setHostId] = useState<string>(initialRef?.hostId ?? connectedHosts[0]?.id ?? '')
-  const [pageNum, setPageNum] = useState<number | null>(initialRef?.page ?? null)
-  const [newPageInput, setNewPageInput] = useState(1)
-  const [showNewPageInput, setShowNewPageInput] = useState(false)
-  const [selectedKey, setSelectedKey] = useState<number | null>(null) // keyIndex
+  const [pageNum, setPageNum] = useState<number>(initialRef?.page ?? 1)
+  const [keysPerRow, setKeysPerRow] = useState(8)
+  const [rows, setRows] = useState(4)
+  const [selectedRow, setSelectedRow] = useState<number | null>(null)
+  const [selectedCol, setSelectedCol] = useState<number | null>(null)
+  const [loadingPreview, setLoadingPreview] = useState(false)
 
-  // Pages für gewählten Host
-  const pages = useMemo(() => {
-    if (!settings || !hostId) return []
-    const pa = settings.wizard?.pageAssignments ?? {}
-    return Object.entries(pa)
-      .filter(([k]) => k.startsWith(hostId + ':'))
-      .map(([k, v]) => ({ key: k, page: v.page, surfaceConfig: v.surfaceConfig }))
-      .sort((a, b) => a.page - b.page)
-  }, [settings, hostId])
+  // Trackt die zuletzt aktivierte Preview damit wir sie beim Wechsel/Schließen entfernen
+  const activePreview = useRef<{ hostId: string; page: number } | null>(null)
 
-  const activePage = pages.find((p) => p.page === pageNum)
-  const keysPerRow = activePage?.surfaceConfig.keysPerRow ?? 8
-  const rows = activePage?.surfaceConfig.rows ?? 8
+  const startPreview = async (hId: string, page: number, kpr: number, r: number) => {
+    // Alte Preview entfernen falls vorhanden
+    if (activePreview.current) {
+      const { hostId: oldHost, page: oldPage } = activePreview.current
+      fetch(`${BACKEND_BASE}/api/preview-page?hostId=${encodeURIComponent(oldHost)}&page=${oldPage}`, {
+        method: 'DELETE',
+      }).catch(() => {})
+      activePreview.current = null
+    }
 
-  // Mini-Grid Button-States
+    setLoadingPreview(true)
+    try {
+      await fetch(`${BACKEND_BASE}/api/preview-page`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hostId: hId, page, keysPerRow: kpr, rows: r }),
+      })
+      activePreview.current = { hostId: hId, page }
+    } catch {
+      console.warn('[Picker] Preview-Subscriptions konnten nicht gestartet werden')
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
+  // Preview starten wenn hostId, pageNum, keysPerRow oder rows sich ändern
+  useEffect(() => {
+    if (!hostId) return
+    startPreview(hostId, pageNum, keysPerRow, rows)
+    // Preview entfernen wenn Dialog unmountet
+    return () => {
+      if (activePreview.current) {
+        const { hostId: h, page: p } = activePreview.current
+        fetch(`${BACKEND_BASE}/api/preview-page?hostId=${encodeURIComponent(h)}&page=${p}`, {
+          method: 'DELETE',
+        }).catch(() => {})
+        activePreview.current = null
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostId, pageNum, keysPerRow, rows])
+
+  // Mini-Grid: Button-Zustände aus dem Store lesen
   const gridCells = useMemo(() => {
-    if (pageNum === null) return []
+    if (!hostId) return []
     const prefix = pageKey(hostId, pageNum)
-    const cells: Array<{ keyIndex: number; bgColor?: string; text?: string }> = []
-    for (let i = 0; i < keysPerRow * rows; i++) {
-      const state = buttons[`${prefix}:${i}`]
-      cells.push({ keyIndex: i, bgColor: state?.bgColor, text: state?.text })
+    const cells: Array<{ row: number; col: number; bgColor?: string; text?: string }> = []
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < keysPerRow; c++) {
+        const state = buttons[`${prefix}:${r}:${c}`]
+        cells.push({ row: r, col: c, bgColor: state?.bgColor, text: state?.text })
+      }
     }
     return cells
   }, [buttons, hostId, pageNum, keysPerRow, rows])
 
-  const selectedRow = selectedKey !== null ? Math.floor(selectedKey / keysPerRow) : null
-  const selectedCol = selectedKey !== null ? selectedKey % keysPerRow : null
-
   const handleHostChange = (id: string) => {
     setHostId(id)
-    setPageNum(null)
-    setSelectedKey(null)
-    setShowNewPageInput(false)
-  }
-
-  const handlePageChange = (value: string) => {
-    if (value === '__new__') {
-      setShowNewPageInput(true)
-      setPageNum(null)
-      setSelectedKey(null)
-    } else {
-      setShowNewPageInput(false)
-      setPageNum(Number(value))
-      setSelectedKey(null)
-    }
-  }
-
-  const handleNewPageConfirm = () => {
-    if (!newPageInput || newPageInput < 1) return
-    addPageAssignment(hostId, newPageInput)
-    setPageNum(newPageInput)
-    setShowNewPageInput(false)
-    setNewPageInput(1)
-    setSelectedKey(null)
+    setSelectedRow(null)
+    setSelectedCol(null)
   }
 
   const handleConfirm = () => {
-    if (pageNum === null || selectedKey === null) return
-    onConfirm({ hostId, page: pageNum, row: selectedRow!, col: selectedCol! })
+    if (selectedRow === null || selectedCol === null) return
+    onConfirm({ hostId, page: pageNum, row: selectedRow, col: selectedCol })
   }
 
   // Zellgröße: max 48px, passt in 400px Dialog-Breite
@@ -163,8 +177,8 @@ export function CompanionButtonPickerDialog({ onConfirm, onClose, confirmLabel =
           </div>
         ) : (
           <>
-            {/* Host + Page Zeile */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            {/* Host + Page */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={LABEL_STYLE}>Host</div>
                 <select style={SELECT_STYLE} value={hostId} onChange={(e) => handleHostChange(e.target.value)}>
@@ -174,95 +188,91 @@ export function CompanionButtonPickerDialog({ onConfirm, onClose, confirmLabel =
                 </select>
               </div>
               <div style={{ flex: 1 }}>
-                <div style={LABEL_STYLE}>Page</div>
-                <select
-                  style={SELECT_STYLE}
-                  value={showNewPageInput ? '__new__' : (pageNum ?? '')}
-                  onChange={(e) => handlePageChange(e.target.value)}
-                >
-                  <option value="" disabled>— wählen —</option>
-                  {pages.map((p) => (
-                    <option key={p.key} value={p.page}>Page {p.page}</option>
-                  ))}
-                  <option value="__new__">+ Neue Page…</option>
-                </select>
+                <NumericInput
+                  label="Page"
+                  value={pageNum}
+                  min={1}
+                  onChange={(v) => { setPageNum(v); setSelectedRow(null); setSelectedCol(null) }}
+                  compact
+                />
               </div>
             </div>
 
-            {/* Neue Page Input */}
-            {showNewPageInput && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'flex-end' }}>
-                <div style={{ flex: 1 }}>
-                  <NumericInput
-                    label="Page-Nummer"
-                    value={newPageInput}
-                    min={1}
-                    onChange={(v) => setNewPageInput(v)}
-                  />
-                </div>
-                <button
-                  onClick={handleNewPageConfirm}
-                  style={{
-                    height: 44, padding: '0 14px', borderRadius: 6, border: '1px solid #4a9eff',
-                    background: 'rgba(74,158,255,0.12)', color: '#4a9eff', fontSize: 13, cursor: 'pointer',
-                    flexShrink: 0,
-                  }}
-                >
-                  OK
-                </button>
+            {/* Grid-Größe */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+              <div style={{ flex: 1 }}>
+                <NumericInput
+                  label="Spalten"
+                  value={keysPerRow}
+                  min={1}
+                  onChange={(v) => { setKeysPerRow(v); setSelectedRow(null); setSelectedCol(null) }}
+                  compact
+                />
               </div>
-            )}
+              <div style={{ flex: 1 }}>
+                <NumericInput
+                  label="Zeilen"
+                  value={rows}
+                  min={1}
+                  onChange={(v) => { setRows(v); setSelectedRow(null); setSelectedCol(null) }}
+                  compact
+                />
+              </div>
+            </div>
 
             {/* Mini-Grid */}
-            {pageNum !== null && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={LABEL_STYLE}>Button wählen</div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${keysPerRow}, ${cellSize}px)`,
-                  gap: 2,
-                  background: '#0f141a',
-                  padding: 8,
-                  borderRadius: 8,
-                  border: '1px solid #2a3344',
-                  overflowX: 'auto',
-                }}>
-                  {gridCells.map(({ keyIndex, bgColor, text }) => {
-                    const isSelected = selectedKey === keyIndex
-                    return (
-                      <div
-                        key={keyIndex}
-                        onClick={() => setSelectedKey(keyIndex)}
-                        title={`Row ${Math.floor(keyIndex / keysPerRow)}, Col ${keyIndex % keysPerRow}`}
-                        style={{
-                          width: cellSize, height: cellSize,
-                          background: bgColor ?? '#1a2030',
-                          border: isSelected ? '2px solid #4a9eff' : '1px solid #2a3344',
-                          borderRadius: 4,
-                          cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 9, color: '#e9edf2',
-                          overflow: 'hidden',
-                          boxSizing: 'border-box',
-                          transition: 'border-color 0.1s',
-                        }}
-                      >
-                        {text && (
-                          <span style={{ fontSize: 8, lineHeight: 1.1, textAlign: 'center', padding: '0 2px', overflow: 'hidden' }}>
-                            {text.split('\n')[0]}
-                          </span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-                {selectedKey !== null && (
-                  <div style={{ fontSize: 11, color: '#8896aa', marginTop: 6 }}>
-                    Zeile {selectedRow! + 1}, Spalte {selectedCol! + 1}
-                  </div>
-                )}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ ...LABEL_STYLE, marginBottom: 6 }}>
+                Button wählen{loadingPreview ? ' (Vorschau lädt…)' : ''}
               </div>
-            )}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${keysPerRow}, ${cellSize}px)`,
+                gap: 2,
+                background: '#0f141a',
+                padding: 8,
+                borderRadius: 8,
+                border: '1px solid #2a3344',
+                overflowX: 'auto',
+                overflowY: 'auto',
+                // Scrollbar nach 8 Zeilen: 8 × Zellgröße + 7 × 2px Gap + 16px Padding
+                maxHeight: 8 * cellSize + 7 * 2 + 16,
+              }}>
+                {gridCells.map(({ row, col, bgColor, text }) => {
+                  const isSelected = selectedRow === row && selectedCol === col
+                  return (
+                    <div
+                      key={`${row}:${col}`}
+                      onClick={() => { setSelectedRow(row); setSelectedCol(col) }}
+                      title={`Zeile ${row + 1}, Spalte ${col + 1}`}
+                      style={{
+                        width: cellSize, height: cellSize,
+                        background: bgColor ?? '#1a2030',
+                        border: isSelected ? '2px solid #4a9eff' : '1px solid #2a3344',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 9, color: '#e9edf2',
+                        overflow: 'hidden',
+                        boxSizing: 'border-box',
+                        transition: 'border-color 0.1s',
+                      }}
+                    >
+                      {text && (
+                        <span style={{ fontSize: 8, lineHeight: 1.1, textAlign: 'center', padding: '0 2px', overflow: 'hidden' }}>
+                          {text.split('\n')[0]}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              {selectedRow !== null && selectedCol !== null && (
+                <div style={{ fontSize: 11, color: '#8896aa', marginTop: 6 }}>
+                  Zeile {selectedRow + 1}, Spalte {selectedCol + 1}
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -279,12 +289,12 @@ export function CompanionButtonPickerDialog({ onConfirm, onClose, confirmLabel =
           </button>
           <button
             onClick={handleConfirm}
-            disabled={pageNum === null || selectedKey === null}
+            disabled={selectedRow === null || selectedCol === null}
             style={{
               padding: '7px 16px', borderRadius: 6, border: '1px solid #4a9eff',
-              background: pageNum !== null && selectedKey !== null ? 'rgba(74,158,255,0.15)' : '#1a2030',
-              color: pageNum !== null && selectedKey !== null ? '#4a9eff' : '#4a5568',
-              fontSize: 13, cursor: pageNum !== null && selectedKey !== null ? 'pointer' : 'not-allowed',
+              background: selectedRow !== null && selectedCol !== null ? 'rgba(74,158,255,0.15)' : '#1a2030',
+              color: selectedRow !== null && selectedCol !== null ? '#4a9eff' : '#4a5568',
+              fontSize: 13, cursor: selectedRow !== null && selectedCol !== null ? 'pointer' : 'not-allowed',
               fontWeight: 600,
             }}
           >

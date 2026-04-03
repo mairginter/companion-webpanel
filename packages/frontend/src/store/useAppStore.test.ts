@@ -3,7 +3,7 @@ import { useAppStore } from './useAppStore'
 import type { Settings } from '@cwp/shared'
 
 const makeSettings = (): Settings => ({
-  version: '1.1.0',
+  version: '1.2.0',
   activeHostId: 'h1',
   hosts: [{ id: 'h1', name: 'H1', host: '127.0.0.1', satellite: { wsPort: 16623 } }],
   panels: [{
@@ -136,19 +136,26 @@ describe('addElement', () => {
   })
 })
 
-describe('addPageAssignment', () => {
-  it('legt neues pageAssignment mit Default-SurfaceConfig an', () => {
-    useAppStore.getState().addPageAssignment('h1', 99)
-    const pa = useAppStore.getState().settings!.wizard?.pageAssignments?.['h1:99']
-    expect(pa).toBeDefined()
-    expect(pa!.surfaceConfig).toEqual({ keysPerRow: 8, rows: 8 })
-    expect(pa!.page).toBe(99)
+describe('applyDelta / getButtonState', () => {
+  it('speichert Button-State per row/col', () => {
+    useAppStore.getState().applyDelta({
+      t: 'delta', hostId: 'h1', page: 1, row: 0, col: 2,
+      bgColor: '#ff0000', text: 'Live',
+    })
+    const state = useAppStore.getState().getButtonState('h1', 1, 0, 2)
+    expect(state?.bgColor).toBe('#ff0000')
+    expect(state?.text).toBe('Live')
   })
+})
 
-  it('überschreibt kein bestehendes pageAssignment', () => {
-    useAppStore.getState().addPageAssignment('h1', 99)
-    useAppStore.getState().addPageAssignment('h1', 99) // zweiter Aufruf
-    const pa = useAppStore.getState().settings!.wizard?.pageAssignments?.['h1:99']
-    expect(pa!.surfaceConfig.keysPerRow).toBe(8) // unveränderter Default
+describe('applySessionStatus / getSessionStatus', () => {
+  it('speichert Status pro Host', () => {
+    useAppStore.getState().applySessionStatus({ t: 'sessionStatus', hostId: 'h1', status: 'connected' })
+    expect(useAppStore.getState().getSessionStatus('h1')).toBe('connected')
+  })
+  it('markAllSessionsStale setzt alle auf stale', () => {
+    useAppStore.getState().applySessionStatus({ t: 'sessionStatus', hostId: 'h1', status: 'connected' })
+    useAppStore.getState().markAllSessionsStale()
+    expect(useAppStore.getState().getSessionStatus('h1')).toBe('stale')
   })
 })
