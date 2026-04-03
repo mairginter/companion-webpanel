@@ -123,7 +123,7 @@ describe('addElement', () => {
     }
     useAppStore.getState().addElement('panel-1', el)
     const panel = useAppStore.getState().settings!.panels.find(p => p.id === 'panel-1')!
-    expect(panel.elements.at(-1)?.id).toBe('new-1')
+    expect(panel.elements[panel.elements.length - 1]?.id).toBe('new-1')
   })
 
   it('setzt selectedIds auf das neue Element', () => {
