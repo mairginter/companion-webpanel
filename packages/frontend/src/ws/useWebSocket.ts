@@ -20,6 +20,7 @@ export function useWebSocket(): {
   const applyDelta = useAppStore((s) => s.applyDelta)
   const applySnapshot = useAppStore((s) => s.applySnapshot)
   const applySessionStatus = useAppStore((s) => s.applySessionStatus)
+  const applyHostInfo = useAppStore((s) => s.applyHostInfo)
   const markAllSessionsStale = useAppStore((s) => s.markAllSessionsStale)
 
   const connect = useCallback(() => {
@@ -51,6 +52,9 @@ export function useWebSocket(): {
           case 'sessionStatus':
             applySessionStatus(msg)
             break
+          case 'hostInfo':
+            applyHostInfo(msg)
+            break
         }
       } catch {
         console.warn('[WS] Ungültige Nachricht vom Backend')
@@ -71,7 +75,7 @@ export function useWebSocket(): {
     socket.onerror = (err) => {
       console.error('[WS] Fehler:', err)
     }
-  }, [applyDelta, applySnapshot, applySessionStatus, markAllSessionsStale])
+  }, [applyDelta, applySnapshot, applySessionStatus, applyHostInfo, markAllSessionsStale])
 
   useEffect(() => {
     connect()

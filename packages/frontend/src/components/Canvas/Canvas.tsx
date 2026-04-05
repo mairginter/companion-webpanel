@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/core'
 import { AnyElement } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
+import { getTextureCss, getTextureBackgroundSize } from '../../utils/textures'
 import { DragDeltaContext } from '../../context/DragDeltaContext'
 import { createMagneticSnapModifier } from '../../canvas/snapModifier'
 import { CompanionButtonElement } from '../Elements/CompanionButtonElement'
@@ -102,6 +103,20 @@ export function Canvas({ sendPress }: CanvasProps) {
   const canvasBackground = panel?.canvas?.background ?? '#0f141a'
   const canvasWidth = panel?.canvas?.width
   const canvasHeight = panel?.canvas?.height
+  const textureCss = getTextureCss(panel?.canvas?.texture)
+  const textureBgSize = getTextureBackgroundSize(panel?.canvas?.texture)
+
+  // backgroundImage: Textur + Dot-Grid (Dot-Grid liegt oben)
+  const backgroundImageLayers = [
+    DOT_GRID,
+    ...(textureCss !== 'none' ? [textureCss] : []),
+  ].join(', ')
+
+  // backgroundSize: DOT_GRID braucht kein explizites size (SVG hat eigene Größe),
+  // aber Textur-Gradienten brauchen ggf. eine Kachel-Größe
+  const backgroundSizeLayers = textureBgSize
+    ? ['auto', textureBgSize].join(', ')
+    : undefined
 
   // Äußerer Container: position:relative — PropertiesPanel als absolute Overlay-Sibling
   const content = (
@@ -117,7 +132,8 @@ export function Canvas({ sendPress }: CanvasProps) {
             minWidth: '100%',
             minHeight: '100%',
             background: canvasBackground,
-            backgroundImage: DOT_GRID,
+            backgroundImage: backgroundImageLayers,
+            ...(backgroundSizeLayers ? { backgroundSize: backgroundSizeLayers } : {}),
           }}
           onClick={mode === 'edit' ? () => clearSelection() : undefined}
           onContextMenu={handleContextMenu}

@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useWebSocket } from './ws/useWebSocket'
 import { useSettings } from './api/useSettings'
 import { useAppStore } from './store/useAppStore'
 import { Toolbar } from './components/Toolbar/Toolbar'
 import { Canvas } from './components/Canvas/Canvas'
+import { HostManagerModal } from './components/HostManager/HostManagerModal'
 
 const styles: Record<string, React.CSSProperties> = {
   app: {
@@ -28,6 +29,12 @@ export function App() {
   const { saveSettings } = useSettings()
   const mode = useAppStore((s) => s.mode)
   const toggleMode = useAppStore((s) => s.toggleMode)
+  const [hostManagerOpen, setHostManagerOpen] = useState(false)
+
+  const handleSave = useCallback(() => {
+    const s = useAppStore.getState().settings
+    if (s) saveSettings(s)
+  }, [saveSettings])
 
   // Vollständige Keyboard-Shortcuts
   useEffect(() => {
@@ -156,10 +163,16 @@ export function App() {
 
   return (
     <div style={styles.app}>
-      <Toolbar mode={mode} onToggleMode={toggleMode} />
+      <Toolbar mode={mode} onToggleMode={toggleMode} onOpenHostManager={() => setHostManagerOpen(true)} onSave={handleSave} />
       <div style={styles.body}>
         <Canvas sendPress={sendPress} />
       </div>
+      {hostManagerOpen && (
+        <HostManagerModal
+          onClose={() => setHostManagerOpen(false)}
+          saveSettings={saveSettings}
+        />
+      )}
     </div>
   )
 }

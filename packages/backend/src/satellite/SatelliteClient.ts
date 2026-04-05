@@ -58,6 +58,9 @@ export class SatelliteClient extends EventEmitter {
   private status: ClientStatus = 'connecting'
   private destroyed = false
 
+  private companionVersion = ''
+  private apiVersion = ''
+
   private reconnectTimer: NodeJS.Timeout | null = null
   private reconnectAttempt = 0
   private keepaliveTimer: NodeJS.Timeout | null = null
@@ -131,6 +134,10 @@ export class SatelliteClient extends EventEmitter {
 
   getStatus(): ClientStatus {
     return this.status
+  }
+
+  getVersionInfo(): { companionVersion: string; apiVersion: string } {
+    return { companionVersion: this.companionVersion, apiVersion: this.apiVersion }
   }
 
   // ─── Connection ────────────────────────────────────────────────────────────
@@ -216,11 +223,12 @@ export class SatelliteClient extends EventEmitter {
 
   private handleBegin(line: string): void {
     // BEGIN CompanionVersion="4.3.0+..." ApiVersion="1.10.0"
-    // Nur loggen — auf CAPS warten bevor wir subscriben
+    // Versionen speichern + Event emittieren — auf CAPS warten bevor wir subscriben
     const params = parseParams(line.slice('BEGIN '.length))
-    const apiVersion = params['ApiVersion'] ?? '?'
-    const companionVersion = params['CompanionVersion'] ?? '?'
-    console.log(`[SatelliteClient ${this.hostId}] Companion ${companionVersion} API ${apiVersion}`)
+    this.apiVersion = params['ApiVersion'] ?? '?'
+    this.companionVersion = params['CompanionVersion'] ?? '?'
+    console.log(`[SatelliteClient ${this.hostId}] Companion ${this.companionVersion} API ${this.apiVersion}`)
+    this.emit('begin', this.companionVersion, this.apiVersion)
   }
 
   private handleCaps(line: string): void {

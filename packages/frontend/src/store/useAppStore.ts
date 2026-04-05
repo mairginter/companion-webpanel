@@ -2,11 +2,13 @@ import { create } from 'zustand'
 import {
   KeyState,
   Settings,
+  HostProfile,
   Panel,
   AnyElement,
   DeltaMessage,
   SnapshotMessage,
   SessionStatusMessage,
+  HostInfoMessage,
   pageKey,
 } from '@cwp/shared'
 
@@ -38,6 +40,24 @@ interface AppStore {
   /** Alle bekannten Sessions auf 'stale' setzen — bei WS-Disconnect zum Backend */
   markAllSessionsStale: () => void
 
+  // ─── Host Info (Companion-Version nach Handshake) ─────────────────────────
+  /** key: hostId → { companionVersion, apiVersion } */
+  hostInfo: Record<string, { companionVersion: string; apiVersion: string }>
+  applyHostInfo: (msg: HostInfoMessage) => void
+
+  // ─── Host CRUD ────────────────────────────────────────────────────────────
+  addHost: (host: HostProfile) => void
+  updateHost: (host: HostProfile) => void
+  /** Löscht einen Host. deleteRefs=true entfernt auch alle Panel-Elemente die diesen Host referenzieren. */
+  removeHost: (hostId: string, deleteRefs: boolean) => void
+
+  // ─── Panel CRUD ───────────────────────────────────────────────────────────
+  /** Neues leeres Panel anlegen, wird sofort aktiv */
+  createPanel: (name: string) => Panel
+  renamePanel: (panelId: string, name: string) => void
+  /** Panel löschen. Falls aktiv, wird das nächste Panel aktiviert. Gibt false zurück wenn es das letzte Panel ist. */
+  deletePanel: (panelId: string) => boolean
+
   // ─── Edit Mode ────────────────────────────────────────────────────────────
   selectedIds: Set<string>
   selectElement: (id: string, addToSelection: boolean) => void
@@ -64,6 +84,8 @@ interface AppStore {
   getButtonState: (hostId: string, page: number, row: number, col: number) => KeyState | undefined
   /** Verbindungsstatus eines Hosts (kein page-Parameter mehr nötig) */
   getSessionStatus: (hostId: string) => SessionStatus | undefined
+  /** Gibt true zurück wenn hostId in settings.hosts existiert */
+  hostExists: (hostId: string) => boolean
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -72,8 +94,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   activePanelId: null,
 
   setSettings: (settings) => {
-    const activePanelId = settings.panels[0]?.id ?? null
-    set({ settings, activePanelId })
+    set((s) => {
+      // activePanelId nur ändern wenn das aktuelle Panel nicht mehr in den neuen Settings existiert
+      const stillExists = settings.panels.some((p) => p.id === s.activePanelId)
+      const activePanelId = stillExists ? s.activePanelId : (settings.panels[0]?.id ?? null)
+      return { settings, activePanelId }
+    })
   },
 
   setActivePanelId: (id) => set({ activePanelId: id }),
@@ -138,6 +164,91 @@ export const useAppStore = create<AppStore>((set, get) => ({
         Object.keys(s.sessionStatus).map((k) => [k, 'stale' as SessionStatus]),
       ),
     })),
+
+  // ─── Host Info ────────────────────────────────────────────────────────────
+  hostInfo: {},
+
+  applyHostInfo: (msg) =>
+    set((s) => ({
+      hostInfo: {
+        ...s.hostInfo,
+        [msg.hostId]: { companionVersion: msg.companionVersion, apiVersion: msg.apiVersion },
+      },
+    })),
+
+  // ─── Host CRUD ────────────────────────────────────────────────────────────
+  addHost: (host) =>
+    set((s) => {
+      if (!s.settings) return s
+      return { settings: { ...s.settings, hosts: [...s.settings.hosts, host] } }
+    }),
+
+  updateHost: (host) =>
+    set((s) => {
+      if (!s.settings) return s
+      return {
+        settings: {
+          ...s.settings,
+          hosts: s.settings.hosts.map((h) => (h.id === host.id ? host : h)),
+        },
+      }
+    }),
+
+  removeHost: (hostId, deleteRefs) =>
+    set((s) => {
+      if (!s.settings) return s
+      const hosts = s.settings.hosts.filter((h) => h.id !== hostId)
+      const panels = deleteRefs
+        ? s.settings.panels.map((p) => ({
+            ...p,
+            elements: p.elements.filter(
+              (el) => !(el.type === 'companionButton' && (el as any).ref?.hostId === hostId),
+            ),
+          }))
+        : s.settings.panels
+      return { settings: { ...s.settings, hosts, panels } }
+    }),
+
+  // ─── Panel CRUD ───────────────────────────────────────────────────────────
+  createPanel: (name) => {
+    const panel: Panel = {
+      id: crypto.randomUUID(),
+      name,
+      zoom: 1,
+      defaultMode: 'view',
+      grid: { enabled: true, size: 40, snap: true },
+      canvas: { width: 1920, height: 1080, background: '#0f141a' },
+      elements: [],
+    }
+    set((s) => {
+      if (!s.settings) return s
+      return {
+        settings: { ...s.settings, panels: [...s.settings.panels, panel] },
+        activePanelId: panel.id,
+      }
+    })
+    return panel
+  },
+
+  renamePanel: (panelId, name) =>
+    set((s) => {
+      if (!s.settings) return s
+      return {
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) => p.id === panelId ? { ...p, name } : p),
+        },
+      }
+    }),
+
+  deletePanel: (panelId) => {
+    const { settings, activePanelId } = get()
+    if (!settings || settings.panels.length <= 1) return false
+    const remaining = settings.panels.filter((p) => p.id !== panelId)
+    const nextActive = activePanelId === panelId ? (remaining[0]?.id ?? null) : activePanelId
+    set({ settings: { ...settings, panels: remaining }, activePanelId: nextActive })
+    return true
+  },
 
   // ─── Edit Mode ────────────────────────────────────────────────────────────
   selectedIds: new Set<string>(),
@@ -303,4 +414,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   getSessionStatus: (hostId) =>
     get().sessionStatus[hostId],
+
+  hostExists: (hostId) =>
+    (get().settings?.hosts ?? []).some((h) => h.id === hostId),
 }))

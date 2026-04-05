@@ -78,6 +78,16 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Surface löschen | Nur wenn kein Button in der Konfig mehr auf diese Page zeigt | Subscription wird entfernt sobald letzter Ref weg ist |
 | Panel ohne Surface | Zulassen (stale-Anzeige reicht) | Kein Blocking — Button zeigt ⚠ bis Companion verbunden |
 | Button Picker im Picker-Dialog | Temporäre Subscriptions beim Öffnen, REMOVE-SUB beim Schließen | Live-Preview im Mini-Grid ohne permanente Subscription |
+| Canvas-Texturen | CSS `background-image` Overlay (SVG data-URI + linear-gradient); `TextureOption.backgroundSize` für Kachelung | `textures.ts` — 8 Optionen: none, leather, carbon, metal, linen, dots, hex, concrete |
+| Textur-Kachelung | `TextureOption.backgroundSize?: string`; Canvas kombiniert DOT_GRID + Textur via `backgroundSize: 'auto, <size>'` | linear-gradient Texturen brauchen explizite backgroundSize zum Kacheln |
+| HostProfile Felder | `autoConnect?: boolean`, `showInToolbar?: boolean` | autoConnect=false → kein SatelliteClient; showInToolbar=false → kein Status-Dot in Toolbar |
+| Host-Verwaltung | `HostManagerModal` — Add/Edit/Delete, Verbinden/Trennen, inline im Modal | Kein separates Settings-Fenster — Modal direkt aus Toolbar |
+| Host-Status in Toolbar | Status-Dots gefiltert nach `showInToolbar !== false`; Tooltip: Name, IP, Status, Version, Notizen | `⛔` wenn Host nicht mehr in Settings; `⚠` nur wenn Host existiert aber stale |
+| Companion-Version | `SatelliteClient` speichert version nach `BEGIN`-Handshake; `HostInfoMessage` WS-Nachricht ans Frontend | `hostInfo` im Store pro `hostId` |
+| Speichern-Button | Material Icon `save` in Toolbar, 600ms Flash-Animation bei Klick | Neben Panel-Dropdown; identisch mit Ctrl+S |
+| Panel-Verwaltung Toolbar | Inline Rename (✎/blur), Delete (✕/disabled wenn letztes), `+ Neues Panel` mit ✓/✕ | Kein eigenes Modal — alles direkt im Toolbar-Dropdown |
+| Material Icons | Google Fonts CDN (`Material Icons`) in `index.html` | `save` und `settings` Icons in Toolbar |
+| setSettings Bug-Fix | `setSettings()` preserviert `activePanelId` wenn Panel noch existiert | War: immer auf `panels[0]` zurückgesprungen → Canvas-Settings-Änderung sprang auf erstes Panel |
 
 ---
 
@@ -112,17 +122,19 @@ CompanionWebpannel/
     │   └── index.ts                              ← Entry Point, Graceful Shutdown
     │                                                (Phase 6: +createBackend() Factory-Export)
     ├── frontend/src/
-    │   ├── store/useAppStore.ts                  ← Zustand-Store (settings, buttons, sessionStatus, mode, activePanelId)
-    │   ├── ws/useWebSocket.ts                    ← WS-Hook mit Auto-Reconnect
+    │   ├── store/useAppStore.ts                  ← Zustand-Store (settings, buttons, sessionStatus, hostInfo, mode, activePanelId)
+    │   │                                            addHost/updateHost/removeHost, createPanel/renamePanel/deletePanel
+    │   ├── ws/useWebSocket.ts                    ← WS-Hook mit Auto-Reconnect (inkl. hostInfo handler)
     │   ├── api/useSettings.ts                    ← GET /api/settings beim Start + saveSettings() für POST
     │   ├── utils/bitmap.ts                       ← Raw-RGB base64 → Canvas Data-URL Konvertierung
-    │   ├── App.tsx + main.tsx                    ← App-Shell mit Keyboard-Shortcuts
+    │   ├── utils/textures.ts                     ← ✅ Canvas-Texturen (8 Optionen, SVG+CSS-Gradienten, backgroundSize)
+    │   ├── App.tsx + main.tsx                    ← App-Shell mit Keyboard-Shortcuts + HostManagerModal
     │   └── components/
-    │       ├── Toolbar/Toolbar.tsx               ← Toolbar mit Mode-Toggle
-    │       ├── Sidebar/Sidebar.tsx               ← Einklappbare Panel-Liste
-    │       ├── Canvas/Canvas.tsx                 ← Canvas mit Element-Rendering (nach z-Index sortiert)
+    │       ├── Toolbar/Toolbar.tsx               ← ✅ Toolbar: Mode-Toggle, Panel-Dropdown (CRUD), Speichern, Status-Dots, ?-Button
+    │       ├── HostManager/HostManagerModal.tsx  ← ✅ Host Add/Edit/Delete/Connect, inline Form, Delete-Dialog
+    │       ├── Canvas/Canvas.tsx                 ← Canvas mit Element-Rendering + Textur-Layering
     │       └── Elements/
-    │           ├── CompanionButtonElement.tsx    ← ✅ Vollständig (bgColor, Bitmap, Text, States)
+    │           ├── CompanionButtonElement.tsx    ← ✅ Vollständig (bgColor, Bitmap, Text, States, ⛔ hostMissing)
     │           ├── ShapeElement.tsx              ← ✅ Rechteck mit fill/stroke/borderRadius
     │           └── LabelElement.tsx              ← ✅ Statischer Text mit Style-Optionen
     └── electron/                                 ← (geplant Phase 6) Electron Wrapper
@@ -374,11 +386,16 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 - `CompanionButtonPickerDialog`: Page/Grid-Größe als Eingabe, preview-page API, vertikaler Scroll nach 8 Zeilen
 - Letzter Commit: `7457936`
 
-### Phase 5 — Host-Verwaltung UI (nach Refactor)
-1. Host hinzufügen/entfernen in der UI
-2. Verbindungsstatus live (connected/connecting/error)
-3. Companion-Version und API-Version anzeigen
-4. ✅ Warnung wenn `CAPS SUBSCRIPTIONS=0` — Toolbar Badge (Session 2026-04-05)
+### Phase 5 — Host-Verwaltung UI ✅ FERTIG (Session 2026-04-05)
+1. ✅ Host hinzufügen/entfernen/bearbeiten — `HostManagerModal`
+2. ✅ Verbindungsstatus live in Toolbar (Status-Dots pro Host)
+3. ✅ Companion-Version + API-Version anzeigen (Tooltip + Modal)
+4. ✅ Warnung wenn `CAPS SUBSCRIPTIONS=0` — Toolbar Badge
+- ✅ Panel-Verwaltung: Create/Rename/Delete im Toolbar-Dropdown
+- ✅ Speichern-Button mit Material Icon + Flash-Animation
+- ✅ Canvas-Texturen (8 Optionen in PropertiesPanel → Canvas-Einstellungen)
+- ✅ Bug-Fix: Canvas-Settings-Änderung sprang auf erstes Panel (setSettings preserviert activePanelId)
+- 50/50 Tests grün, letzter Commit dieser Session: siehe git log
 
 ### Phase 6 — Electron Wrapper (Spec + Plan fertig ✅)
 Design-Spec: `docs/superpowers/specs/2026-04-05-electron-tray-design.md`
@@ -498,12 +515,6 @@ Einfach den Plan öffnen und Task für Task umsetzen (superpowers:subagent-drive
 Hinweis vor Start: Tray-Icons (3× PNG 16×16) und App-Icons (.ico / .icns) anlegen — siehe `packages/electron/assets/README.md`.
 
 Nächste offene Tasks: 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 (Task 1 ✅ erledigt)
-
-### Phase 5 — Host-Verwaltung UI (teilweise erledigt)
-1. Host hinzufügen/entfernen in der UI (kein manuelles JSON-Editieren)
-2. Verbindungsstatus live in der Toolbar (connected/connecting/error pro Host)
-3. Companion-Version + API-Version anzeigen
-4. ✅ Warnung wenn `CAPS SUBSCRIPTIONS=0` — erledigt Session 2026-04-05
 
 ### Noch offen: MeterElement (separater Schritt)
 - Visuell: vertikal oder horizontal? Peak-Hold als Linie? → noch nicht entschieden

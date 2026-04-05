@@ -15,6 +15,10 @@ export interface HostProfile {
   host: string
   satellite: { wsPort: number }
   notes?: string
+  /** Automatisch beim Start verbinden. Default: true */
+  autoConnect?: boolean
+  /** In der Toolbar als Status-Dot anzeigen. Default: true */
+  showInToolbar?: boolean
 }
 
 // ─── Canvas / Element Types ───────────────────────────────────────────────────
@@ -107,7 +111,7 @@ export interface Panel {
   zoom: number
   defaultMode: 'view' | 'edit'
   grid: { enabled: boolean; size: number; snap: boolean }
-  canvas?: { width?: number; height?: number; background?: string }
+  canvas?: { width?: number; height?: number; background?: string; texture?: string }
   elements: AnyElement[]
 }
 
@@ -143,6 +147,14 @@ export interface SnapshotMessage {
   keys: Record<string, KeyState>
 }
 
+/** Backend → Frontend: Companion version info after handshake */
+export interface HostInfoMessage {
+  t: 'hostInfo'
+  hostId: string
+  companionVersion: string
+  apiVersion: string
+}
+
 /** Backend → Frontend: Satellite connection status changed */
 export interface SessionStatusMessage {
   t: 'sessionStatus'
@@ -167,7 +179,7 @@ export interface PressMessage {
   pressed: boolean
 }
 
-export type BackendToFrontend = DeltaMessage | SnapshotMessage | SessionStatusMessage
+export type BackendToFrontend = DeltaMessage | SnapshotMessage | SessionStatusMessage | HostInfoMessage
 export type FrontendToBackend = PressMessage
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

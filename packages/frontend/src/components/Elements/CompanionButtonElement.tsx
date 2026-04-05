@@ -30,6 +30,8 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   const keyState = useAppStore((s) => s.getButtonState(ref.hostId, ref.page, ref.row, ref.col))
   // Session-Status pro Host (nicht mehr pro Page)
   const sessionStatus = useAppStore((s) => s.getSessionStatus(ref.hostId))
+  // Prüfen ob der Host noch in den Settings existiert
+  const hostMissing = useAppStore((s) => !s.hostExists(ref.hostId))
 
   const isStale = sessionStatus === 'stale' || sessionStatus === 'error'
   const hasData = !!keyState?.bgColor || !!keyState?.bitmap || !!keyState?.text
@@ -139,7 +141,15 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
         </span>
       )}
 
-      {isStale && (
+      {hostMissing && (
+        <div
+          title="Host nicht mehr in den Settings vorhanden"
+          style={{ position: 'absolute', top: 2, right: 4, fontSize: 11, pointerEvents: 'none' }}
+        >
+          ⛔
+        </div>
+      )}
+      {!hostMissing && isStale && (
         <div style={{ position: 'absolute', top: 2, right: 4, fontSize: 10, color: '#ff8a3d', pointerEvents: 'none' }}>
           ⚠
         </div>

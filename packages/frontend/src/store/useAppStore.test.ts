@@ -168,3 +168,139 @@ describe('applySessionStatus / getSessionStatus', () => {
     expect(useAppStore.getState().getSessionStatus('h1')).toBe('stale')
   })
 })
+
+describe('applyHostInfo', () => {
+  it('speichert companionVersion und apiVersion pro Host', () => {
+    useAppStore.getState().applyHostInfo({
+      t: 'hostInfo', hostId: 'h1',
+      companionVersion: '4.3.0+9146', apiVersion: '1.10.0',
+    })
+    const info = useAppStore.getState().hostInfo['h1']
+    expect(info?.companionVersion).toBe('4.3.0+9146')
+    expect(info?.apiVersion).toBe('1.10.0')
+  })
+  it('überschreibt vorherige Version-Info', () => {
+    useAppStore.getState().applyHostInfo({ t: 'hostInfo', hostId: 'h1', companionVersion: 'old', apiVersion: '1.0' })
+    useAppStore.getState().applyHostInfo({ t: 'hostInfo', hostId: 'h1', companionVersion: 'new', apiVersion: '2.0' })
+    expect(useAppStore.getState().hostInfo['h1']?.companionVersion).toBe('new')
+  })
+})
+
+describe('Host CRUD', () => {
+  const newHost: import('@cwp/shared').HostProfile = {
+    id: 'h2', name: 'Studio B', host: '10.0.0.2', satellite: { wsPort: 16623 }, autoConnect: true,
+  }
+
+  it('addHost fügt Host zu settings.hosts hinzu', () => {
+    useAppStore.getState().addHost(newHost)
+    const hosts = useAppStore.getState().settings!.hosts
+    expect(hosts).toHaveLength(2)
+    expect(hosts.find(h => h.id === 'h2')?.name).toBe('Studio B')
+  })
+
+  it('updateHost ersetzt bestehenden Host', () => {
+    useAppStore.getState().updateHost({ ...newHost, id: 'h1', name: 'Updated' })
+    const hosts = useAppStore.getState().settings!.hosts
+    expect(hosts[0].name).toBe('Updated')
+    expect(hosts).toHaveLength(1)
+  })
+
+  it('removeHost entfernt Host ohne Refs löschen', () => {
+    useAppStore.getState().removeHost('h1', false)
+    const hosts = useAppStore.getState().settings!.hosts
+    expect(hosts).toHaveLength(0)
+  })
+
+  it('removeHost mit deleteRefs=true löscht verknüpfte companionButton-Elemente', () => {
+    // Panel mit einem companionButton der h1 referenziert anlegen
+    const settingsWithBtn: import('@cwp/shared').Settings = {
+      version: '1.3.0',
+      activeHostId: 'h1',
+      hosts: [{ id: 'h1', name: 'H1', host: '127.0.0.1', satellite: { wsPort: 16623 } }],
+      panels: [{
+        id: 'p1', name: 'P', zoom: 1, defaultMode: 'view',
+        grid: { enabled: true, size: 40, snap: true },
+        elements: [
+          { id: 'cb1', type: 'companionButton', x: 0, y: 0, w: 72, h: 72, z: 0,
+            ref: { hostId: 'h1', page: 1, row: 0, col: 0 } },
+          { id: 'lbl1', type: 'label', x: 0, y: 0, w: 100, h: 30, z: 1, text: 'X', style: {} },
+        ],
+      }],
+    }
+    useAppStore.getState().setSettings(settingsWithBtn)
+    useAppStore.getState().removeHost('h1', true)
+    const elements = useAppStore.getState().settings!.panels[0].elements
+    expect(elements.find(e => e.id === 'cb1')).toBeUndefined()
+    expect(elements.find(e => e.id === 'lbl1')).toBeDefined() // Label bleibt
+  })
+
+  it('removeHost mit deleteRefs=false lässt Elemente stehen', () => {
+    const settingsWithBtn: import('@cwp/shared').Settings = {
+      version: '1.3.0',
+      activeHostId: 'h1',
+      hosts: [{ id: 'h1', name: 'H1', host: '127.0.0.1', satellite: { wsPort: 16623 } }],
+      panels: [{
+        id: 'p1', name: 'P', zoom: 1, defaultMode: 'view',
+        grid: { enabled: true, size: 40, snap: true },
+        elements: [
+          { id: 'cb1', type: 'companionButton', x: 0, y: 0, w: 72, h: 72, z: 0,
+            ref: { hostId: 'h1', page: 1, row: 0, col: 0 } },
+        ],
+      }],
+    }
+    useAppStore.getState().setSettings(settingsWithBtn)
+    useAppStore.getState().removeHost('h1', false)
+    const elements = useAppStore.getState().settings!.panels[0].elements
+    expect(elements.find(e => e.id === 'cb1')).toBeDefined() // Button bleibt (zeigt ⛔)
+  })
+})
+
+describe('Panel CRUD', () => {
+  it('createPanel fügt neues Panel hinzu und aktiviert es', () => {
+    const panel = useAppStore.getState().createPanel('Live Show')
+    const state = useAppStore.getState()
+    expect(state.settings!.panels).toHaveLength(2)
+    expect(panel.name).toBe('Live Show')
+    expect(state.activePanelId).toBe(panel.id)
+  })
+
+  it('renamePanel benennt Panel um', () => {
+    useAppStore.getState().renamePanel('panel-1', 'Renamed')
+    expect(useAppStore.getState().settings!.panels[0].name).toBe('Renamed')
+  })
+
+  it('deletePanel entfernt Panel und gibt true zurück', () => {
+    const panel2 = useAppStore.getState().createPanel('Panel 2')
+    const result = useAppStore.getState().deletePanel(panel2.id)
+    expect(result).toBe(true)
+    expect(useAppStore.getState().settings!.panels).toHaveLength(1)
+  })
+
+  it('deletePanel gibt false zurück wenn letztes Panel', () => {
+    const result = useAppStore.getState().deletePanel('panel-1')
+    expect(result).toBe(false)
+    expect(useAppStore.getState().settings!.panels).toHaveLength(1)
+  })
+
+  it('deletePanel wechselt activePanelId wenn aktives Panel gelöscht wird', () => {
+    const panel2 = useAppStore.getState().createPanel('Panel 2')
+    // panel2 ist jetzt aktiv
+    expect(useAppStore.getState().activePanelId).toBe(panel2.id)
+    useAppStore.getState().deletePanel(panel2.id)
+    // zurück auf panel-1
+    expect(useAppStore.getState().activePanelId).toBe('panel-1')
+  })
+})
+
+describe('hostExists', () => {
+  it('gibt true zurück wenn Host in settings ist', () => {
+    expect(useAppStore.getState().hostExists('h1')).toBe(true)
+  })
+  it('gibt false zurück für unbekannten Host', () => {
+    expect(useAppStore.getState().hostExists('unknown-xyz')).toBe(false)
+  })
+  it('gibt false zurück nach removeHost', () => {
+    useAppStore.getState().removeHost('h1', false)
+    expect(useAppStore.getState().hostExists('h1')).toBe(false)
+  })
+})

@@ -3,6 +3,7 @@ import { Panel } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { ColorPicker } from './ColorPicker'
 import { NumericInput } from './NumericInput'
+import { TEXTURES } from '../../utils/textures'
 
 interface Props { panel: Panel; panelId: string }
 
@@ -66,6 +67,34 @@ export function CanvasSettings({ panel, panelId }: Props) {
       )}
       <ColorPicker label="Hintergrundfarbe" value={panel.canvas?.background ?? '#0f141a'}
         onChange={(v) => updateCanvas({ background: v })} />
+
+      {/* Textur */}
+      <div>
+        <div style={lbl}>Textur</div>
+        <select
+          value={panel.canvas?.texture ?? 'none'}
+          style={sel}
+          onChange={(e) => updateCanvas({ texture: e.target.value === 'none' ? undefined : e.target.value })}
+        >
+          {TEXTURES.map((t) => (
+            <option key={t.id} value={t.id}>{t.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Vorschau-Streifen */}
+      {panel.canvas?.texture && panel.canvas.texture !== 'none' && (() => {
+        const tex: TextureOption | undefined = TEXTURES.find((t) => t.id === panel.canvas?.texture)
+        return tex ? (
+          <div style={{
+            height: 28, borderRadius: 4,
+            border: '1px solid #2a3344',
+            background: panel.canvas?.background ?? '#0f141a',
+            backgroundImage: tex.css,
+            backgroundSize: tex.backgroundSize,
+          }} />
+        ) : null
+      })()}
     </div>
   )
 }

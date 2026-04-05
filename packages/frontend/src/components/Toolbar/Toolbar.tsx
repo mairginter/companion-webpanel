@@ -5,6 +5,32 @@ import { AddElementMenu } from '../AddElement/AddElementMenu'
 interface ToolbarProps {
   mode: 'view' | 'edit'
   onToggleMode: () => void
+  onOpenHostManager?: () => void
+  onSave?: () => void
+}
+
+type SessionStatus = 'connecting' | 'connected' | 'stale' | 'error' | 'caps-disabled'
+
+function statusDotColor(status: SessionStatus | undefined): string {
+  switch (status) {
+    case 'connected':     return '#21d07a'
+    case 'connecting':    return '#4a9eff'
+    case 'stale':         return '#ff8a3d'
+    case 'error':         return '#ff5a5f'
+    case 'caps-disabled': return '#8896aa'
+    default:              return '#4a5568'
+  }
+}
+
+function statusLabel(status: SessionStatus | undefined): string {
+  switch (status) {
+    case 'connected':     return 'Verbunden'
+    case 'connecting':    return 'Verbinde…'
+    case 'stale':         return 'Unterbrochen'
+    case 'error':         return 'Fehler'
+    case 'caps-disabled': return 'CAPS SUBSCRIPTIONS=0'
+    default:              return 'Unbekannt'
+  }
 }
 
 const s: React.CSSProperties = {
@@ -42,10 +68,16 @@ const modeButtonStyle = (active: boolean): React.CSSProperties => ({
   height: 32,
 })
 
-export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
+export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: ToolbarProps) {
   const panels = useAppStore((s) => s.settings?.panels ?? [])
   const activePanelId = useAppStore((s) => s.activePanelId)
   const setActivePanelId = useAppStore((s) => s.setActivePanelId)
+  const createPanel = useAppStore((s) => s.createPanel)
+  const renamePanel = useAppStore((s) => s.renamePanel)
+  const deletePanel = useAppStore((s) => s.deletePanel)
+  const hosts = useAppStore((s) => s.settings?.hosts ?? [])
+  const sessionStatus = useAppStore((s) => s.sessionStatus)
+  const hostInfo = useAppStore((s) => s.hostInfo)
   const capsDisabledHosts = useAppStore((s) =>
     Object.entries(s.sessionStatus)
       .filter(([, status]) => status === 'caps-disabled')
@@ -53,6 +85,12 @@ export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
   )
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  // Welches Panel gerade inline umbenannt wird
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  // Neues Panel — Eingabezeile unten im Dropdown
+  const [creatingPanel, setCreatingPanel] = useState(false)
+  const [newPanelName, setNewPanelName] = useState('')
   const [addMenuOpen, setAddMenuOpen] = useState(false)
   const addBtnRef = useRef<HTMLButtonElement>(null)
 
@@ -66,6 +104,13 @@ export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
   }, [])
 
   const activePanel = panels.find((p) => p.id === activePanelId)
+  const [saveFlash, setSaveFlash] = useState(false)
+
+  const handleSaveClick = useCallback(() => {
+    onSave?.()
+    setSaveFlash(true)
+    setTimeout(() => setSaveFlash(false), 600)
+  }, [onSave])
 
   // Schließen bei Klick außerhalb
   useEffect(() => {
@@ -109,34 +154,182 @@ export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
           <div style={{
             position: 'absolute', top: '100%', left: 0, marginTop: 4,
             background: '#1a2030', border: '1px solid #2a3344', borderRadius: 6,
-            minWidth: 200, zIndex: 500, boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            minWidth: 240, zIndex: 500, boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
             overflow: 'hidden',
           }}>
             {panels.length === 0 && (
               <div style={{ padding: '10px 14px', color: '#4a5568', fontSize: 13 }}>Keine Panels</div>
             )}
-            {panels.map((panel) => (
-              <div
-                key={panel.id}
-                onClick={() => { setActivePanelId(panel.id); setDropdownOpen(false) }}
-                style={{
-                  padding: '10px 14px',
-                  fontSize: 13,
-                  color: panel.id === activePanelId ? '#4a9eff' : '#e9edf2',
-                  background: panel.id === activePanelId ? 'rgba(74,158,255,0.08)' : 'transparent',
-                  borderLeft: `3px solid ${panel.id === activePanelId ? '#4a9eff' : 'transparent'}`,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {panel.name}
-              </div>
-            ))}
+            {panels.map((panel) => {
+              const isActive = panel.id === activePanelId
+              const isRenaming = renamingId === panel.id
+              return (
+                <div key={panel.id} style={{
+                  display: 'flex', alignItems: 'center',
+                  borderLeft: `3px solid ${isActive ? '#4a9eff' : 'transparent'}`,
+                  background: isActive ? 'rgba(74,158,255,0.08)' : 'transparent',
+                }}>
+                  {isRenaming ? (
+                    <input
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && renameValue.trim()) {
+                          renamePanel(panel.id, renameValue.trim())
+                          onSave?.()
+                          setRenamingId(null)
+                        } else if (e.key === 'Escape') {
+                          setRenamingId(null)
+                        }
+                        e.stopPropagation()
+                      }}
+                      onBlur={() => {
+                        if (renameValue.trim()) renamePanel(panel.id, renameValue.trim())
+                        onSave?.()
+                        setRenamingId(null)
+                      }}
+                      style={{
+                        flex: 1, margin: '4px 8px', padding: '3px 6px',
+                        background: '#121821', border: '1px solid #4a9eff',
+                        borderRadius: 4, color: '#e9edf2', fontSize: 13, outline: 'none',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      onClick={() => { setActivePanelId(panel.id); setDropdownOpen(false) }}
+                      style={{
+                        flex: 1, padding: '9px 12px',
+                        fontSize: 13, color: isActive ? '#4a9eff' : '#e9edf2',
+                        cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {panel.name}
+                    </div>
+                  )}
+                  {!isRenaming && (
+                    <div style={{ display: 'flex', gap: 2, paddingRight: 6, flexShrink: 0 }}>
+                      <button
+                        title="Umbenennen"
+                        onClick={(e) => { e.stopPropagation(); setRenameValue(panel.name); setRenamingId(panel.id) }}
+                        style={{ background: 'none', border: 'none', color: '#4a5568', cursor: 'pointer', fontSize: 13, padding: '2px 4px', borderRadius: 3 }}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        title={panels.length <= 1 ? 'Letztes Panel kann nicht gelöscht werden' : 'Panel löschen'}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (deletePanel(panel.id)) onSave?.()
+                        }}
+                        disabled={panels.length <= 1}
+                        style={{ background: 'none', border: 'none', color: panels.length <= 1 ? '#2a3344' : '#ff5a5f', cursor: panels.length <= 1 ? 'default' : 'pointer', fontSize: 13, padding: '2px 4px', borderRadius: 3 }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* Trennlinie + Neues Panel */}
+            <div style={{ borderTop: '1px solid #2a3344', padding: '6px 8px' }}>
+              {creatingPanel ? (
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <input
+                    autoFocus
+                    placeholder="Panel-Name…"
+                    value={newPanelName}
+                    onChange={(e) => setNewPanelName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newPanelName.trim()) {
+                        createPanel(newPanelName.trim())
+                        onSave?.()
+                        setNewPanelName('')
+                        setCreatingPanel(false)
+                        setDropdownOpen(false)
+                      } else if (e.key === 'Escape') {
+                        setCreatingPanel(false)
+                        setNewPanelName('')
+                      }
+                      e.stopPropagation()
+                    }}
+                    style={{
+                      flex: 1, padding: '5px 8px',
+                      background: '#121821', border: '1px solid #4a9eff',
+                      borderRadius: 4, color: '#e9edf2', fontSize: 13, outline: 'none',
+                    }}
+                  />
+                  <button
+                    title="Erstellen (Enter)"
+                    disabled={!newPanelName.trim()}
+                    onMouseDown={(e) => {
+                      e.preventDefault() // verhindert blur auf input
+                      if (!newPanelName.trim()) return
+                      createPanel(newPanelName.trim())
+                      onSave?.()
+                      setNewPanelName('')
+                      setCreatingPanel(false)
+                      setDropdownOpen(false)
+                    }}
+                    style={{
+                      padding: '0 10px', borderRadius: 4, flexShrink: 0,
+                      background: newPanelName.trim() ? 'rgba(33,208,122,0.15)' : 'transparent',
+                      border: `1px solid ${newPanelName.trim() ? '#21d07a' : '#2a3344'}`,
+                      color: newPanelName.trim() ? '#21d07a' : '#4a5568',
+                      fontSize: 16, cursor: newPanelName.trim() ? 'pointer' : 'default',
+                    }}
+                  >
+                    ✓
+                  </button>
+                  <button
+                    title="Abbrechen (Escape)"
+                    onMouseDown={(e) => { e.preventDefault(); setCreatingPanel(false); setNewPanelName('') }}
+                    style={{
+                      padding: '0 8px', borderRadius: 4, flexShrink: 0,
+                      background: 'transparent', border: '1px solid #2a3344',
+                      color: '#4a5568', fontSize: 14, cursor: 'pointer',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCreatingPanel(true) }}
+                  style={{
+                    width: '100%', textAlign: 'left', background: 'none', border: 'none',
+                    color: '#4a9eff', fontSize: 13, cursor: 'pointer', padding: '3px 4px',
+                  }}
+                >
+                  + Neues Panel
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
+
+      {/* Speichern — direkt neben Panel-Dropdown */}
+      <button
+        onClick={handleSaveClick}
+        title="Speichern (Ctrl+S)"
+        style={{
+          width: 32, height: 32, padding: 0,
+          borderRadius: 6,
+          border: `1px solid ${saveFlash ? '#21d07a' : '#2a3344'}`,
+          background: saveFlash ? 'rgba(33,208,122,0.18)' : '#1a2030',
+          color: saveFlash ? '#21d07a' : '#8896aa',
+          cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+          transform: saveFlash ? 'scale(0.92)' : 'scale(1)',
+          flexShrink: 0,
+        }}
+      >
+        <span className="material-icons" style={{ fontSize: 18 }}>save</span>
+      </button>
 
       <div style={dividerStyle} />
 
@@ -166,6 +359,73 @@ export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
       )}
 
       <div style={{ flex: 1 }} />
+
+      {/* Host Status Dots — nur Hosts mit showInToolbar !== false */}
+      {hosts.some(h => h.showInToolbar !== false) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {hosts.filter(h => h.showInToolbar !== false).map((host) => {
+            const status = sessionStatus[host.id]
+            const info = hostInfo[host.id]
+            const dotColor = statusDotColor(status)
+            const tooltip = [
+              host.name,
+              `${host.host}:${host.satellite.wsPort}`,
+              statusLabel(status),
+              info ? `Companion ${info.companionVersion}` : '',
+              info ? `API ${info.apiVersion}` : '',
+              host.notes ? `Notizen: ${host.notes}` : '',
+            ].filter(Boolean).join('\n')
+            return (
+              <div
+                key={host.id}
+                title={tooltip}
+                onClick={onOpenHostManager}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '3px 8px',
+                  borderRadius: 5,
+                  border: '1px solid #2a3344',
+                  background: '#121821',
+                  cursor: onOpenHostManager ? 'pointer' : 'default',
+                  fontSize: 12,
+                  color: '#8896aa',
+                  maxWidth: 140,
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: dotColor,
+                  flexShrink: 0,
+                  boxShadow: status === 'connected' ? `0 0 4px ${dotColor}` : 'none',
+                }} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {host.name}
+                </span>
+              </div>
+            )
+          })}
+          <button
+            style={{ ...modeButtonStyle(false), width: 36, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={onOpenHostManager}
+            title="Hosts verwalten"
+          >
+            <span className="material-icons" style={{ fontSize: 18 }}>settings</span>
+          </button>
+        </div>
+      )}
+
+      {hosts.length === 0 && (
+        <button
+          style={{ ...modeButtonStyle(false), fontSize: 12, color: '#ff8a3d', borderColor: '#ff8a3d' }}
+          onClick={onOpenHostManager}
+          title="Hosts verwalten"
+        >
+          + Host hinzufügen
+        </button>
+      )}
+
+      <div style={dividerStyle} />
 
       {/* CAPS SUBSCRIPTIONS=0 Warnung */}
       {capsDisabledHosts.length > 0 && (

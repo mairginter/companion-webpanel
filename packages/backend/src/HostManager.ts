@@ -60,9 +60,23 @@ export class HostManager {
     // Desired: hostId → Set<"page/row/col"> aus allen companionButton-Elementen
     const desired = this.buildDesiredSubs(settings)
 
+    // Hosts mit autoConnect=false: laufenden Client stoppen falls vorhanden
+    for (const host of settings.hosts) {
+      if (host.autoConnect === false && this.clients.has(host.id)) {
+        const client = this.clients.get(host.id)!
+        client.stop().catch(() => {})
+        this.clients.delete(host.id)
+        this.realSubKeys.delete(host.id)
+        this.clientServer.broadcast({ t: 'sessionStatus', hostId: host.id, status: 'stale' })
+      }
+    }
+
     // Für jeden Host in den Settings: Client sicherstellen + Subscriptions diffsen
     for (const host of settings.hosts) {
       const { id: hostId, host: hostAddr, satellite } = host
+
+      // autoConnect=false → kein Client starten
+      if (host.autoConnect === false) continue
 
       // SatelliteClient anlegen falls noch nicht vorhanden
       if (!this.clients.has(hostId)) {
@@ -169,6 +183,10 @@ export class HostManager {
       if (delta) this.clientServer.broadcast(delta)
     })
 
+    client.on('begin', (companionVersion: string, apiVersion: string) => {
+      this.clientServer.broadcast({ t: 'hostInfo', hostId, companionVersion, apiVersion })
+    })
+
     client.on('status', (status: ClientStatus) => {
       this.clientServer.broadcast({ t: 'sessionStatus', hostId, status })
 
@@ -221,11 +239,12 @@ export class HostManager {
 
       // Aktuellen Host-Status senden
       if (ws.readyState === 1 /* OPEN */) {
-        ws.send(JSON.stringify({
-          t: 'sessionStatus',
-          hostId,
-          status: client.getStatus(),
-        }))
+        ws.send(JSON.stringify({ t: 'sessionStatus', hostId, status: client.getStatus() }))
+        // Version-Info senden falls bereits bekannt (nach erstem BEGIN)
+        const { companionVersion, apiVersion } = client.getVersionInfo()
+        if (companionVersion) {
+          ws.send(JSON.stringify({ t: 'hostInfo', hostId, companionVersion, apiVersion }))
+        }
       }
     }
   }
