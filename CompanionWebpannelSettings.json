@@ -16,7 +16,7 @@
     {
       "id": "panel-main",
       "name": "Main Panel",
-      "zoom": 1.0,
+      "zoom": 1,
       "defaultMode": "view",
       "grid": {
         "enabled": false,
@@ -24,8 +24,8 @@
         "snap": true
       },
       "canvas": {
-        "width": 1440,
-        "height": 900,
+        "width": 1280,
+        "height": 720,
         "background": "#101214"
       },
       "elements": [
@@ -50,14 +50,14 @@
             "showText": true,
             "textAlign": "bottom",
             "borderRadius": 8,
-            "opacity": 1.0
+            "opacity": 1
           }
         },
         {
           "id": "btn-scene2",
           "type": "companionButton",
-          "x": 130,
-          "y": 20,
+          "x": 408,
+          "y": 133,
           "w": 100,
           "h": 100,
           "z": 0,
@@ -72,8 +72,9 @@
             "bitmapSize": 72,
             "enforceMinSize": true,
             "showText": true,
-            "textAlign": "bottom",
-            "borderRadius": 8
+            "textAlign": "center",
+            "borderRadius": 8,
+            "fontSize": 16
           }
         },
         {
@@ -90,6 +91,34 @@
             "fontSize": 13,
             "fontWeight": "600",
             "align": "left"
+          }
+        },
+        {
+          "id": "7c184884-a42c-4cdd-b3cc-963cd348021f",
+          "type": "label",
+          "x": 544,
+          "y": 160,
+          "w": 63,
+          "h": 40,
+          "z": 1,
+          "text": "Alex",
+          "style": {
+            "color": "#dae2ec"
+          }
+        },
+        {
+          "id": "8ad76e3d-7516-4277-b5a7-f5d03e1a85fd",
+          "type": "shape",
+          "x": 381,
+          "y": 113,
+          "w": 253,
+          "h": 143.5,
+          "z": 0,
+          "style": {
+            "fill": "#4e6ec6",
+            "stroke": "#2a3344",
+            "strokeWidth": 1,
+            "borderRadius": 6
           }
         }
       ]

@@ -42,6 +42,14 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | REMOVE-DEVICE | Beim graceful shutdown senden | Companion UI sauber halten |
 | Duplicate DEVICEID | Idempotent (selber Socket) | Companion entfernt altes Device automatisch bei Reconnect |
 | Page via API setzen | **Entfällt** — keine Pages/Surfaces mehr nötig | Subscriptions arbeiten direkt mit PAGE/ROW/COL — kein Startup-Page-Setup |
+| Desktop-Packaging | Electron 33 + electron-builder 25 | Startup-Fenster + Tray = Electron-Stärke; pkg wäre 40MB kleiner aber kein natives Fenster |
+| Electron-Prozessmodell | Backend läuft direkt im Electron Main Process | Kein Child-Process — einfacher, kein IPC für Backend-Daten nötig |
+| Electron-Build | esbuild bundelt main.ts + backend in dist/main.js | Löst Monorepo-Modul-Auflösung elegant — kein webpack nötig |
+| Frontend im Electron-Build | build.mjs kopiert frontend/dist → electron/frontend/ | electron-builder inkludiert es via `files: [frontend/**]` |
+| Static-File-Serving | ClientServer bekommt optionales `staticDir`-Param | Dev: undefined (Vite serviert auf :5173) · Packaged: app.getAppPath()/frontend |
+| Settings-Version | v1.3.0 (geplant) — fügt `server.port` hinzu | Konfigurierter Backend-Port in JSON statt nur env-Variable |
+| Port Auto-Fallback | findFreePort(configuredPort, 10) bei Start | Falls 8080 belegt → 8081…8089 testen; User sieht Auto-Badge im Startup-Fenster |
+| Port manuell ändern | Startup-Fenster hat editierbares Port-Feld | Nur explizite Änderung wird in Settings gespeichert; Auto-Fallback ist Session-temporär |
 | Edit-Mode Drag-Ansatz | Hybrid: @dnd-kit + DragDeltaContext | @dnd-kit für Drag-Logik, React Context für Group-Drag ohne per-frame Store-Updates |
 | Edit-Mode Resize-Ansatz | Custom Pointer Events (kein @dnd-kit) | `setPointerCapture` für zuverlässiges Tracking auch über Canvas-Rand hinaus |
 | Properties Panel Position | `position:absolute` Overlay (Canvas behält volle Breite) | Kein Canvas-Schrumpfen — Panel liegt über Canvas |
@@ -80,13 +88,17 @@ CompanionWebpannel/
 ├── CLAUDE.md                                     ← diese Datei
 ├── Companion-Webpanel-Umsetzungsbeschreibung.md  ← Anforderungen (Referenz)
 ├── Webpanel-Architektur.md                       ← Architektur-Doku (aktuell, v1.1)
-├── CompanionWebpannelSettings.schema.json        ← JSON-Schema v1.2.0 (wizard/surfaceConfig entfernt)
+├── CompanionWebpannelSettings.schema.json        ← JSON-Schema v1.2.0 (v1.3.0 geplant: +server.port)
 ├── CompanionWebpannelSettings.json               ← Laufzeit-Konfiguration (Beispiel, anpassen!)
+├── electron-builder.yml                          ← (geplant Phase 6) Release-Config Win+Mac
 ├── bitfocus-companion-module-sources.md          ← API-Quellen / Docs-Links
+├── docs/satellite-api-protocol.md                ← Satellite API Protokoll-Referenz (v1.10 / Companion 4.3+)
 ├── docs/superpowers/
-│   ├── specs/2026-04-01-edit-mode-design.md      ← ✅ Edit-Mode Design-Spec (vollständig)
-│   └── plans/2026-04-01-edit-mode.md             ← ✅ Edit-Mode Implementierungsplan (15 Tasks, TDD)
-├── package.json                                  ← npm workspaces root
+│   ├── specs/2026-04-01-edit-mode-design.md      ← ✅ Edit-Mode Design-Spec
+│   ├── specs/2026-04-05-electron-tray-design.md  ← ✅ Electron Wrapper Design-Spec (Phase 6)
+│   ├── plans/2026-04-01-edit-mode.md             ← ✅ Edit-Mode Implementierungsplan
+│   └── plans/2026-04-05-electron-tray.md         ← ✅ Electron Wrapper Implementierungsplan (13 Tasks)
+├── package.json                                  ← npm workspaces root (inkl. @cwp/electron geplant)
 └── packages/
     ├── shared/src/types.ts                       ← Alle TypeScript-Typen (Settings, WS-Messages, Elemente)
     ├── backend/src/
@@ -94,22 +106,36 @@ CompanionWebpannel/
     │   ├── state/StateStore.ts                   ← In-Memory State + Delta-Logik (Key: hostId:page:row:col)
     │   ├── server/ClientServer.ts                ← HTTP (GET+POST /api/settings, POST+DELETE /api/preview-page)
     │   │                                            + WS-Server für Browser-Clients, stuck-press Fix
+    │   │                                            (Phase 6: +staticDir für Frontend-Serving im Electron-Build)
     │   ├── HostManager.ts                        ← Orchestrierung: 1 SatelliteClient pro Host, Subscription-Diff
+    │   │                                            (Phase 6: +onStatusChange Callback)
     │   └── index.ts                              ← Entry Point, Graceful Shutdown
-    └── frontend/src/
-        ├── store/useAppStore.ts                  ← Zustand-Store (settings, buttons, sessionStatus, mode, activePanelId)
-        ├── ws/useWebSocket.ts                    ← WS-Hook mit Auto-Reconnect
-        ├── api/useSettings.ts                    ← GET /api/settings beim Start + saveSettings() für POST
-        ├── utils/bitmap.ts                       ← Raw-RGB base64 → Canvas Data-URL Konvertierung
-        ├── App.tsx + main.tsx                    ← App-Shell mit Keyboard-Shortcuts
-        └── components/
-            ├── Toolbar/Toolbar.tsx               ← Toolbar mit Mode-Toggle
-            ├── Sidebar/Sidebar.tsx               ← Einklappbare Panel-Liste
-            ├── Canvas/Canvas.tsx                 ← Canvas mit Element-Rendering (nach z-Index sortiert)
-            └── Elements/
-                ├── CompanionButtonElement.tsx    ← ✅ Vollständig (bgColor, Bitmap, Text, States)
-                ├── ShapeElement.tsx              ← ✅ Rechteck mit fill/stroke/borderRadius
-                └── LabelElement.tsx              ← ✅ Statischer Text mit Style-Optionen
+    │                                                (Phase 6: +createBackend() Factory-Export)
+    ├── frontend/src/
+    │   ├── store/useAppStore.ts                  ← Zustand-Store (settings, buttons, sessionStatus, mode, activePanelId)
+    │   ├── ws/useWebSocket.ts                    ← WS-Hook mit Auto-Reconnect
+    │   ├── api/useSettings.ts                    ← GET /api/settings beim Start + saveSettings() für POST
+    │   ├── utils/bitmap.ts                       ← Raw-RGB base64 → Canvas Data-URL Konvertierung
+    │   ├── App.tsx + main.tsx                    ← App-Shell mit Keyboard-Shortcuts
+    │   └── components/
+    │       ├── Toolbar/Toolbar.tsx               ← Toolbar mit Mode-Toggle
+    │       ├── Sidebar/Sidebar.tsx               ← Einklappbare Panel-Liste
+    │       ├── Canvas/Canvas.tsx                 ← Canvas mit Element-Rendering (nach z-Index sortiert)
+    │       └── Elements/
+    │           ├── CompanionButtonElement.tsx    ← ✅ Vollständig (bgColor, Bitmap, Text, States)
+    │           ├── ShapeElement.tsx              ← ✅ Rechteck mit fill/stroke/borderRadius
+    │           └── LabelElement.tsx              ← ✅ Statischer Text mit Style-Optionen
+    └── electron/                                 ← (geplant Phase 6) Electron Wrapper
+        ├── src/
+        │   ├── main.ts                           ← Entry Point + IPC-Handler
+        │   ├── preload.ts                        ← contextBridge (cwpApi)
+        │   ├── startupWindow.ts                  ← BrowserWindow Lifecycle
+        │   ├── tray.ts                           ← Tray-Icon + Kontextmenü
+        │   ├── portCheck.ts                      ← isPortFree() + findFreePort()
+        │   ├── settingsHelper.ts                 ← load/save/default aus userData-Dir
+        │   └── types.ts                          ← AppStatus, HostStatus (IPC-Payload)
+        ├── renderer/startup.html                 ← Startup-Fenster UI
+        └── assets/                               ← Tray-Icons + App-Icons
 ```
 
 ---
@@ -353,6 +379,25 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 3. Companion-Version und API-Version anzeigen
 4. Warnung wenn `CAPS SUBSCRIPTIONS=0`
 
+### Phase 6 — Electron Wrapper (Spec + Plan fertig ✅)
+Design-Spec: `docs/superpowers/specs/2026-04-05-electron-tray-design.md`
+Implementierungsplan: `docs/superpowers/plans/2026-04-05-electron-tray.md` (13 Tasks)
+
+Überblick der 13 Tasks:
+1. Settings v1.3.0 (+server.port)
+2. ClientServer: optionaler staticDir-Parameter (Frontend-Serving)  
+3. HostManager: onStatusChange Callback + createBackend() Factory
+4. Electron Package Scaffolding (package.json, tsconfig, build.mjs)
+5. portCheck.ts — TDD
+6. settingsHelper.ts — TDD (load/save/migrate aus userData)
+7. AppStatus Type (IPC-Payload)
+8. startup.html — Renderer UI (Port, Host-Status, Open/Quit)
+9. preload.ts — contextBridge (cwpApi)
+10. startupWindow.ts — BrowserWindow Lifecycle
+11. tray.ts — Tray-Icon + Kontextmenü
+12. main.ts — Boot-Sequenz + IPC-Handler
+13. electron-builder.yml + Build Scripts (Win/Mac)
+
 ---
 
 ## UI Design System (festgelegt in Session 2)
@@ -431,6 +476,12 @@ npm run dev -w @cwp/frontend   # Frontend auf :5173
 # Oder beides gleichzeitig:
 npm run dev
 
+# Electron-Dev (nach Phase 6 implementiert):
+npm run electron:dev           # baut alles + startet Electron
+
+# Release bauen (Win/Mac):
+npm run release
+
 # Nach Änderungen an packages/shared/src/types.ts:
 npm run build -w @cwp/shared   # WICHTIG: shared neu bauen bevor Backend compiliert
 ```
@@ -439,7 +490,13 @@ npm run build -w @cwp/shared   # WICHTIG: shared neu bauen bevor Backend compili
 
 ## Nächste Session — Aufgaben (Priorität)
 
-### Phase 5 — Host-Verwaltung UI — NÄCHSTE PRIORITY
+### Phase 6 — Electron Wrapper — NÄCHSTE PRIORITY
+Plan fertig: `docs/superpowers/plans/2026-04-05-electron-tray.md` (13 Tasks, TDD)
+Einfach den Plan öffnen und Task für Task umsetzen (superpowers:subagent-driven-development empfohlen).
+
+Hinweis vor Start: Tray-Icons (3× PNG 16×16) und App-Icons (.ico / .icns) anlegen — siehe `packages/electron/assets/README.md`.
+
+### Phase 5 — Host-Verwaltung UI (noch ausstehend)
 1. Host hinzufügen/entfernen in der UI (kein manuelles JSON-Editieren)
 2. Verbindungsstatus live in der Toolbar (connected/connecting/error pro Host)
 3. Companion-Version + API-Version anzeigen
@@ -453,6 +510,7 @@ npm run build -w @cwp/shared   # WICHTIG: shared neu bauen bevor Backend compili
 
 ## Quellen (wichtig für Implementierung)
 
-- Satellite API Protokoll: https://github.com/bitfocus/companion/wiki/Satellite-API
+- Satellite API Protokoll: `docs/satellite-api-protocol.md` (lokal, v1.10 / Companion 4.3+)  
+  Update: `gh api "repos/bitfocus/website/contents/for-developers/Satellite-API.md" --jq '.content' | base64 -d > docs/satellite-api-protocol.md`
 - companion-satellite Referenz-Impl.: https://github.com/bitfocus/companion-satellite
 - Alle API-Quellen: `bitfocus-companion-module-sources.md`
