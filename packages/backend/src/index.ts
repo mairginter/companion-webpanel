@@ -41,8 +41,8 @@ function loadSettings(): Settings {
   const raw = fs.readFileSync(SETTINGS_PATH, 'utf8')
   const settings = JSON.parse(raw) as Settings
 
-  if (settings.version !== '1.2.0') {
-    console.warn(`[Boot] Unbekannte Settings-Version: ${settings.version} (erwartet: 1.2.0)`)
+  if (settings.version !== '1.3.0') {
+    console.warn(`[Boot] Unbekannte Settings-Version: ${settings.version} (erwartet: 1.3.0)`)
   }
 
   console.log(`[Boot] Settings geladen: ${settings.hosts.length} Host(s), ${settings.panels.length} Panel(s)`)

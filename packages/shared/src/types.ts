@@ -1,10 +1,12 @@
-// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.2.0) ───
+// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.3.0) ───
 
 export interface Settings {
-  version: '1.2.0'
+  version: '1.3.0'
   activeHostId: string
   hosts: HostProfile[]
   panels: Panel[]
+  /** Backend-Server-Konfiguration (optional — default port: 8080) */
+  server?: { port?: number }
 }
 
 export interface HostProfile {
@@ -145,7 +147,14 @@ export interface SnapshotMessage {
 export interface SessionStatusMessage {
   t: 'sessionStatus'
   hostId: string
-  status: 'connecting' | 'connected' | 'stale' | 'error'
+  /**
+   * connecting  — Verbindungsaufbau läuft
+   * connected   — Companion verbunden, Subscriptions aktiv
+   * stale       — Verbindung unterbrochen, Reconnect läuft
+   * error       — Verbindungsfehler (generisch)
+   * caps-disabled — CAPS SUBSCRIPTIONS=0: Feature in Companion Settings deaktiviert
+   */
+  status: 'connecting' | 'connected' | 'stale' | 'error' | 'caps-disabled'
 }
 
 /** Frontend → Backend: user pressed or released a button */

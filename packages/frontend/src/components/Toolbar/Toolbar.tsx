@@ -46,6 +46,11 @@ export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
   const panels = useAppStore((s) => s.settings?.panels ?? [])
   const activePanelId = useAppStore((s) => s.activePanelId)
   const setActivePanelId = useAppStore((s) => s.setActivePanelId)
+  const capsDisabledHosts = useAppStore((s) =>
+    Object.entries(s.sessionStatus)
+      .filter(([, status]) => status === 'caps-disabled')
+      .map(([hostId]) => hostId),
+  )
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [addMenuOpen, setAddMenuOpen] = useState(false)
@@ -161,6 +166,27 @@ export function Toolbar({ mode, onToggleMode }: ToolbarProps) {
       )}
 
       <div style={{ flex: 1 }} />
+
+      {/* CAPS SUBSCRIPTIONS=0 Warnung */}
+      {capsDisabledHosts.length > 0 && (
+        <div
+          title={`Button Subscriptions API deaktiviert für: ${capsDisabledHosts.join(', ')}.\nIn Companion Settings → "Button Subscriptions API" aktivieren.`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '4px 10px',
+            borderRadius: 6,
+            border: '1px solid #ff8a3d',
+            background: 'rgba(255,138,61,0.12)',
+            color: '#ff8a3d',
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'default',
+          }}
+        >
+          <span style={{ fontSize: 14 }}>!</span>
+          CAPS SUBSCRIPTIONS=0
+        </div>
+      )}
 
       {/* Help */}
       <button

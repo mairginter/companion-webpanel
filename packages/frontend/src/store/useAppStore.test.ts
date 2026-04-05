@@ -3,7 +3,7 @@ import { useAppStore } from './useAppStore'
 import type { Settings } from '@cwp/shared'
 
 const makeSettings = (): Settings => ({
-  version: '1.2.0',
+  version: '1.3.0',
   activeHostId: 'h1',
   hosts: [{ id: 'h1', name: 'H1', host: '127.0.0.1', satellite: { wsPort: 16623 } }],
   panels: [{
@@ -155,6 +155,15 @@ describe('applySessionStatus / getSessionStatus', () => {
   })
   it('markAllSessionsStale setzt alle auf stale', () => {
     useAppStore.getState().applySessionStatus({ t: 'sessionStatus', hostId: 'h1', status: 'connected' })
+    useAppStore.getState().markAllSessionsStale()
+    expect(useAppStore.getState().getSessionStatus('h1')).toBe('stale')
+  })
+  it('speichert caps-disabled Status', () => {
+    useAppStore.getState().applySessionStatus({ t: 'sessionStatus', hostId: 'h1', status: 'caps-disabled' })
+    expect(useAppStore.getState().getSessionStatus('h1')).toBe('caps-disabled')
+  })
+  it('markAllSessionsStale setzt caps-disabled auf stale', () => {
+    useAppStore.getState().applySessionStatus({ t: 'sessionStatus', hostId: 'h1', status: 'caps-disabled' })
     useAppStore.getState().markAllSessionsStale()
     expect(useAppStore.getState().getSessionStatus('h1')).toBe('stale')
   })

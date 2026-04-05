@@ -30,7 +30,7 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Surface-Zuordnung | **Entfällt** — Button Subscriptions API (seit Companion 4.3 / API 1.10.0) | Kein ADD-DEVICE, kein Surface in Companion UI sichtbar |
 | KEY-PRESS Timing | Echte Haltezeit (onPointerDown/Up/Leave/Cancel) | Long-Press-Aktionen in Companion funktionieren |
 | Max. Connections | 1 SatelliteClient pro Host (statt 1 Session pro Page) | Alle Subscriptions über eine WS-Verbindung |
-| Schema-Version | 1.2.0 | wizard/surfaceConfig entfernt — kein pageAssignment mehr nötig |
+| Schema-Version | 1.3.0 | +server.port (Phase 6 Task 1 ✅); wizard/surfaceConfig entfernt — kein pageAssignment mehr nötig |
 | Monorepo-Tool | npm workspaces | Kein extra Tool nötig, standard npm |
 | Frontend Build | Vite + vite-plugin-pwa | Schnell, modernes HMR, PWA out-of-the-box |
 | State-Management Frontend | Zustand | Minimal, kein Boilerplate, gut für WS-Deltas |
@@ -47,7 +47,7 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Electron-Build | esbuild bundelt main.ts + backend in dist/main.js | Löst Monorepo-Modul-Auflösung elegant — kein webpack nötig |
 | Frontend im Electron-Build | build.mjs kopiert frontend/dist → electron/frontend/ | electron-builder inkludiert es via `files: [frontend/**]` |
 | Static-File-Serving | ClientServer bekommt optionales `staticDir`-Param | Dev: undefined (Vite serviert auf :5173) · Packaged: app.getAppPath()/frontend |
-| Settings-Version | v1.3.0 (geplant) — fügt `server.port` hinzu | Konfigurierter Backend-Port in JSON statt nur env-Variable |
+| Settings-Version | 1.3.0 ✅ — `server.port` implementiert | Konfigurierter Backend-Port in JSON statt nur env-Variable |
 | Port Auto-Fallback | findFreePort(configuredPort, 10) bei Start | Falls 8080 belegt → 8081…8089 testen; User sieht Auto-Badge im Startup-Fenster |
 | Port manuell ändern | Startup-Fenster hat editierbares Port-Feld | Nur explizite Änderung wird in Settings gespeichert; Auto-Fallback ist Session-temporär |
 | Edit-Mode Drag-Ansatz | Hybrid: @dnd-kit + DragDeltaContext | @dnd-kit für Drag-Logik, React Context für Group-Drag ohne per-frame Store-Updates |
@@ -88,7 +88,7 @@ CompanionWebpannel/
 ├── CLAUDE.md                                     ← diese Datei
 ├── Companion-Webpanel-Umsetzungsbeschreibung.md  ← Anforderungen (Referenz)
 ├── Webpanel-Architektur.md                       ← Architektur-Doku (aktuell, v1.1)
-├── CompanionWebpannelSettings.schema.json        ← JSON-Schema v1.2.0 (v1.3.0 geplant: +server.port)
+├── CompanionWebpannelSettings.schema.json        ← JSON-Schema v1.3.0 (+server.port ✅)
 ├── CompanionWebpannelSettings.json               ← Laufzeit-Konfiguration (Beispiel, anpassen!)
 ├── electron-builder.yml                          ← (geplant Phase 6) Release-Config Win+Mac
 ├── bitfocus-companion-module-sources.md          ← API-Quellen / Docs-Links
@@ -250,7 +250,8 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 
 // Backend → Frontend (Session-Status — pro Host, kein page)
 { t: "sessionStatus", hostId: string,
-  status: "connecting" | "connected" | "stale" | "error" }
+  status: "connecting" | "connected" | "stale" | "error" | "caps-disabled" }
+// caps-disabled = CAPS SUBSCRIPTIONS=0, Toolbar zeigt orange Badge
 
 // Frontend → Backend (Button-Press / Release)
 { t: "press", hostId: string, page: number, row: number, col: number, pressed: boolean }
@@ -377,14 +378,14 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 1. Host hinzufügen/entfernen in der UI
 2. Verbindungsstatus live (connected/connecting/error)
 3. Companion-Version und API-Version anzeigen
-4. Warnung wenn `CAPS SUBSCRIPTIONS=0`
+4. ✅ Warnung wenn `CAPS SUBSCRIPTIONS=0` — Toolbar Badge (Session 2026-04-05)
 
 ### Phase 6 — Electron Wrapper (Spec + Plan fertig ✅)
 Design-Spec: `docs/superpowers/specs/2026-04-05-electron-tray-design.md`
 Implementierungsplan: `docs/superpowers/plans/2026-04-05-electron-tray.md` (13 Tasks)
 
 Überblick der 13 Tasks:
-1. Settings v1.3.0 (+server.port)
+1. ✅ Settings v1.3.0 (+server.port) — Session 2026-04-05
 2. ClientServer: optionaler staticDir-Parameter (Frontend-Serving)  
 3. HostManager: onStatusChange Callback + createBackend() Factory
 4. Electron Package Scaffolding (package.json, tsconfig, build.mjs)
@@ -496,15 +497,26 @@ Einfach den Plan öffnen und Task für Task umsetzen (superpowers:subagent-drive
 
 Hinweis vor Start: Tray-Icons (3× PNG 16×16) und App-Icons (.ico / .icns) anlegen — siehe `packages/electron/assets/README.md`.
 
-### Phase 5 — Host-Verwaltung UI (noch ausstehend)
+Nächste offene Tasks: 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 (Task 1 ✅ erledigt)
+
+### Phase 5 — Host-Verwaltung UI (teilweise erledigt)
 1. Host hinzufügen/entfernen in der UI (kein manuelles JSON-Editieren)
 2. Verbindungsstatus live in der Toolbar (connected/connecting/error pro Host)
 3. Companion-Version + API-Version anzeigen
-4. Warnung wenn `CAPS SUBSCRIPTIONS=0` (User muss in Companion Settings aktivieren)
+4. ✅ Warnung wenn `CAPS SUBSCRIPTIONS=0` — erledigt Session 2026-04-05
 
 ### Noch offen: MeterElement (separater Schritt)
 - Visuell: vertikal oder horizontal? Peak-Hold als Linie? → noch nicht entschieden
 - Quelle = TEXT-Feld eines Companion-Buttons, Parser: "db"
+
+---
+
+## Dev-Gotchas
+
+- **Settings-Version bump** → immer 5 Stellen anfassen: `schema.json` + `types.ts` + `backend/index.ts` + `backend/server/ClientServer.ts` + `CompanionWebpannelSettings.json`
+- **vitest/esbuild strippt TypeScript** → Type-Fehler erscheinen NICHT als Test-Failures. Für echten TS-Check: `npx tsc --noEmit -p packages/frontend/tsconfig.json` (nicht `tsconfig.app.json` — existiert nicht)
+- **shared neu bauen nach Typänderungen** → `npm run build -w @cwp/shared` (WICHTIG: sonst kompiliert Backend gegen alten Stand)
+- **Test-Fixture-Version** → `makeSettings()` in `useAppStore.test.ts` verwendet `version: '1.3.0'` (bei nächster Version-Bump anpassen)
 
 ---
 

@@ -22,7 +22,7 @@ import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 import { KeyState } from '@cwp/shared'
 
-export type ClientStatus = 'connecting' | 'connected' | 'stale' | 'error'
+export type ClientStatus = 'connecting' | 'connected' | 'stale' | 'error' | 'caps-disabled'
 
 // Exponential Backoff: 1s, 2s, 4s, 8s, 16s, 30s (cap)
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 30000]
@@ -234,8 +234,7 @@ export class SatelliteClient extends EventEmitter {
         `[SatelliteClient ${this.hostId}] CAPS SUBSCRIPTIONS=0 — ` +
         `"Button Subscriptions API" in Companion Settings aktivieren!`,
       )
-      this.setStatus('error')
-      this.emit('capsError')
+      this.setStatus('caps-disabled')
       return
     }
 

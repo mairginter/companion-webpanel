@@ -176,11 +176,6 @@ export class HostManager {
       // (stale-Status reicht als visueller Hinweis, Daten bleiben im Store)
     })
 
-    client.on('capsError', () => {
-      // CAPS SUBSCRIPTIONS=0 — Companion hat die Funktion deaktiviert
-      // Status wurde bereits auf 'error' gesetzt, Frontend zeigt ⚠
-    })
-
     this.clients.set(hostId, client)
     client.start()
   }
