@@ -23,7 +23,7 @@ await esbuild.build({
   outfile: 'dist/main.js',
   // @cwp/* über relative Pfade auflösen
   alias: {
-    '@cwp/shared': path.join(root, 'packages/shared/src/index.ts'),
+    '@cwp/shared': path.join(root, 'packages/shared/src/types.ts'),
     '@cwp/backend': path.join(root, 'packages/backend/src/index.ts'),
   },
 })

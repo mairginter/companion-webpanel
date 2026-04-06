@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Companion Webpanel</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f141a;
+      color: #e9edf2;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    /* Drag-Handle: obere Leiste (kein nativer Rahmen) */
+    .titlebar {
+      -webkit-app-region: drag;
+      background: #121821;
+      padding: 12px 16px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #2a3344;
+    }
+
+    .titlebar-icon { font-size: 18px; }
+
+    .titlebar-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e9edf2;
+    }
+
+    .titlebar-version {
+      font-size: 11px;
+      color: #4a5568;
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      -webkit-app-region: no-drag;
+    }
+
+    .content {
+      flex: 1;
+      padding: 20px 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Port-Zeile */
+    .port-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .port-label {
+      font-size: 12px;
+      color: #8896aa;
+      white-space: nowrap;
+    }
+
+    .port-url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #4a9eff;
+    }
+
+    .port-input {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      width: 60px;
+      background: #1a2030;
+      border: 1px solid #2a3344;
+      border-radius: 4px;
+      color: #e9edf2;
+      padding: 3px 6px;
+      outline: none;
+    }
+
+    .port-input:focus { border-color: #4a9eff; }
+
+    .port-auto-badge {
+      font-size: 10px;
+      background: #ff8a3d22;
+      color: #ff8a3d;
+      border: 1px solid #ff8a3d44;
+      border-radius: 3px;
+      padding: 1px 5px;
+    }
+
+    /* Fehler-Banner */
+    .error-banner {
+      display: none;
+      background: #ff5a5f22;
+      border: 1px solid #ff5a5f44;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #ff5a5f;
+    }
+
+    /* Host-Status-Liste */
+    .hosts {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .host-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .host-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-connecting { background: #ff8a3d; animation: pulse 1.2s ease-in-out infinite; }
+    .dot-connected  { background: #21d07a; }
+    .dot-stale      { background: #ff8a3d; }
+    .dot-error      { background: #ff5a5f; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .host-name { color: #8896aa; }
+
+    .host-status-text {
+      margin-left: auto;
+      font-size: 11px;
+      color: #4a5568;
+    }
+
+    /* Buttons */
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    button {
+      flex: 1;
+      padding: 9px 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s;
+    }
+
+    button:hover { opacity: 0.85; }
+
+    .btn-primary {
+      background: #4a9eff;
+      color: #0f141a;
+    }
+
+    .btn-secondary {
+      background: #1a2030;
+      color: #8896aa;
+      border: 1px solid #2a3344;
+    }
+
+    /* Kein-Host-Hinweis */
+    .no-hosts {
+      font-size: 12px;
+      color: #4a5568;
+      text-align: center;
+      padding: 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="titlebar">
+    <span class="titlebar-icon">🎛</span>
+    <span class="titlebar-title">Companion Webpanel</span>
+    <span class="titlebar-version" id="version">v1.0.0</span>
+  </div>
+
+  <div class="content">
+    <!-- Port-Zeile -->
+    <div class="port-row">
+      <span class="port-label">Panel läuft auf:</span>
+      <span class="port-url">http://localhost:</span>
+      <input
+        class="port-input"
+        id="portInput"
+        type="number"
+        min="1024"
+        max="65535"
+        value="8080"
+        title="Port ändern und Enter drücken"
+      />
+      <span class="port-auto-badge" id="autoBadge" style="display:none">auto</span>
+    </div>
+
+    <!-- Fehler-Banner (nur sichtbar wenn kein Port gefunden) -->
+    <div class="error-banner" id="errorBanner">
+      ⚠ Kein Port verfügbar (8080–8089). Port manuell eingeben und Enter drücken.
+    </div>
+
+    <!-- Host-Status -->
+    <div class="hosts" id="hosts">
+      <div class="no-hosts">Warte auf Verbindung…</div>
+    </div>
+
+    <!-- Aktions-Buttons -->
+    <div class="actions">
+      <button class="btn-primary" id="btnOpen">Open Panel</button>
+      <button class="btn-secondary" id="btnQuit">Quit</button>
+    </div>
+  </div>
+
+  <script>
+    const api = window.cwpApi
+
+    // ─── Status rendern ──────────────────────────────────────────────────────
+
+    function renderStatus(status) {
+      // Port
+      document.getElementById('portInput').value = status.port
+      const autoBadge = document.getElementById('autoBadge')
+      autoBadge.style.display = status.portAuto ? 'inline' : 'none'
+
+      // Fehler-Banner (port === 0 = kein Port gefunden)
+      const errorBanner = document.getElementById('errorBanner')
+      errorBanner.style.display = status.port === 0 ? 'block' : 'none'
+
+      // Hosts
+      const hostsEl = document.getElementById('hosts')
+      if (!status.hosts || status.hosts.length === 0) {
+        hostsEl.innerHTML = '<div class="no-hosts">Keine Hosts konfiguriert</div>'
+        return
+      }
+
+      hostsEl.innerHTML = status.hosts.map(h => `
+        <div class="host-row">
+          <div class="host-dot dot-${h.status}"></div>
+          <span class="host-name">${h.name || h.id}</span>
+          <span class="host-status-text">${h.status}</span>
+        </div>
+      `).join('')
+    }
+
+    // ─── Init ────────────────────────────────────────────────────────────────
+
+    api.getStatus().then(renderStatus)
+
+    api.onStatusUpdate(renderStatus)
+
+    // ─── Port-Änderung ───────────────────────────────────────────────────────
+
+    const portInput = document.getElementById('portInput')
+    portInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return
+      const port = parseInt(portInput.value, 10)
+      if (isNaN(port) || port < 1024 || port > 65535) return
+      api.changePort(port)
+    })
+
+    // ─── Buttons ─────────────────────────────────────────────────────────────
+
+    document.getElementById('btnOpen').addEventListener('click', () => api.openPanel())
+    document.getElementById('btnQuit').addEventListener('click', () => api.quit())
+  </script>
+</body>
+</html>

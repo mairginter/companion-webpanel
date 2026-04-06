@@ -1,0 +1,42 @@
+appId: com.companionwebpanel.app
+productName: CompanionWebpanel
+copyright: "Copyright © 2026"
+
+# electron-builder verwendet packages/electron als App-Root
+# (wo package.json mit main: "dist/main.js" liegt)
+directories:
+  app: packages/electron
+  output: release
+  buildResources: packages/electron/assets
+
+# Dateien die in das Package kommen (relativ zu packages/electron/)
+# build.mjs kopiert frontend/dist → packages/electron/frontend/ vor dem Packaging
+files:
+  - dist/**          # kompilierter Electron-Code (main.js, preload.js)
+  - renderer/**      # startup.html
+  - frontend/**      # Frontend PWA (von build.mjs kopiert)
+
+# Windows
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: packages/electron/assets/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: packages/electron/assets/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+# macOS
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: packages/electron/assets/icon.icns
+  category: public.app-category.utilities
+
+dmg:
+  title: "Companion Webpanel ${version}"
