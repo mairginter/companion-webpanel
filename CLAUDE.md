@@ -89,6 +89,7 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Material Icons | Google Fonts CDN (`Material Icons`) in `index.html` | `save` und `settings` Icons in Toolbar |
 | setSettings Bug-Fix | `setSettings()` preserviert `activePanelId` wenn Panel noch existiert | War: immer auf `panels[0]` zurückgesprungen → Canvas-Settings-Änderung sprang auf erstes Panel |
 | ELECTRON_RUN_AS_NODE Fix | `scripts/launch-electron.mjs` löscht `ELECTRON_RUN_AS_NODE` vor Spawn | Claude Code / VS Code setzen diese Variable → Electron läuft im reinen Node-Modus statt GUI |
+| App-Name (userData-Pfad) | `app.setName('CompanionWebpanel')` in main.ts vor Single-Instance-Lock | npm workspace `name` muss `@cwp/electron` bleiben — `app.setName()` steuert userData-Verzeichnis unabhängig |
 
 ---
 
@@ -531,23 +532,27 @@ npm run build -w @cwp/shared   # WICHTIG: shared neu bauen bevor Backend compili
 
 ## Nächste Session — Aufgaben (Priorität)
 
-### Smoke-Test Electron App ✅ GRUNDLEGEND BESTANDEN (Session 2026-04-06)
-> **ELECTRON_RUN_AS_NODE Fix:** Claude Code / VS Code Terminals setzen `ELECTRON_RUN_AS_NODE=1` → Electron läuft im reinen Node-Modus. Fix: `scripts/launch-electron.mjs` löscht die Variable vor dem Spawn. `npm run electron:dev` nutzt jetzt diesen Launcher.
-> **ARM64-Windows:** Electron funktioniert auch auf ARM64 — das Problem war nie architekturspezifisch sondern die Umgebungsvariable.
-
-```bash
-npm run electron:dev   # baut Frontend + Backend + startet Electron (ELECTRON_RUN_AS_NODE wird automatisch bereinigt)
-```
-Ergebnis x64:
+### Smoke-Test Electron App ✅ BESTANDEN (Session 2026-04-06)
 - ✅ Startup-Fenster erscheint
-- ⬜ Panel-Funktionalität noch nicht getestet (spätere Session)
-- ⬜ Tray-Icon + Menü
-- ⬜ Port-Änderung
+- ✅ Panel erreichbar auf localhost:8080
+- ✅ Settings in `%APPDATA%\CompanionWebpanel\settings.json` persistiert
+- ⬜ Tray-Icon + Menü (noch nicht getestet)
+- ⬜ Port-Änderung im Startup-Fenster
 - ⬜ Quit / Graceful Shutdown
+
+### Electron Startup-Fenster — offene UX-Features
+- ⬜ App-Icon im Startup-Fenster anzeigen (BrowserWindow `icon`-Option)
+- ⬜ "Minimize to Tray"-Button im Startup-Fenster
+- ⬜ Headless-Modus: Panel ohne Startup-Fenster starten (CLI-Flag / Tray-only)
 
 ### macOS .icns Icon (wenn Mac-Release nötig)
 `packages/electron/assets/icon-512.png` → cloudconvert.com → ICNS → `packages/electron/assets/icon.icns`
 Dann `electron-builder.yml` Mac-Target testen.
+
+### Edit-Mode — offene Features
+- ⬜ Ctrl+C → Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
+- ⬜ Canvas Grid Snap für alle Elemente (Shape, Label, nicht nur CompanionButton)
+- ⬜ Rubber-Band Selektion: Kreis-Geste um mehrere Elemente zu markieren
 
 ### Noch offen: MeterElement (separater Schritt)
 - Visuell: vertikal oder horizontal? Peak-Hold als Linie? → noch nicht entschieden
@@ -573,6 +578,8 @@ Dann `electron-builder.yml` Mac-Target testen.
 - **vitest/esbuild strippt TypeScript** → Type-Fehler erscheinen NICHT als Test-Failures. Für echten TS-Check: `npx tsc --noEmit -p packages/frontend/tsconfig.json` (nicht `tsconfig.app.json` — existiert nicht)
 - **shared neu bauen nach Typänderungen** → `npm run build -w @cwp/shared` (WICHTIG: sonst kompiliert Backend gegen alten Stand)
 - **Test-Fixture-Version** → `makeSettings()` in `useAppStore.test.ts` verwendet `version: '1.3.0'` (bei nächster Version-Bump anpassen)
+- **caps-disabled Status** → muss konsistent in 3 Stellen sein: `SessionStatusMessage['status']` (shared/types.ts) + `HostStatus.status` (electron/types.ts) + `tray.ts` switch-Statement. Fehlt eine → TypeScript-Fehler oder fehlende Tray-Icon-Variante.
+- **Alte Electron-Instanz blockiert Single-Instance-Lock** → beim Neustart: `Get-Process electron | Stop-Process -Force` (PowerShell) — sonst startet neue Instanz sofort wieder.
 
 ---
 

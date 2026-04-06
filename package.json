@@ -21,6 +21,8 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "@esbuild/win32-arm64": "^0.28.0",
+    "@rollup/rollup-win32-arm64-msvc": "^4.60.1",
     "electron": "^33.4.11"
   }
 }
