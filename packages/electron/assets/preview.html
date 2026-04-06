@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Tray Icon Preview</title>
+<style>
+  body { background: #0f141a; color: #e9edf2; font-family: 'Inter', sans-serif; display: flex; gap: 40px; padding: 40px; align-items: flex-start; }
+  .card { background: #1a2030; border: 1px solid #2a3344; border-radius: 12px; padding: 24px; text-align: center; }
+  h3 { margin: 0 0 16px; font-size: 13px; color: #8896aa; text-transform: uppercase; letter-spacing: 0.08em; }
+  .icon-row { display: flex; gap: 24px; justify-content: center; align-items: center; margin-bottom: 12px; }
+  .icon-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .icon-item span { font-size: 11px; color: #8896aa; }
+  img.tray { width: 16px; height: 16px; image-rendering: pixelated; }
+  img.tray-lg { width: 64px; height: 64px; image-rendering: pixelated; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+  .green { background: #21d07a; }
+  .orange { background: #ff8a3d; }
+  .red { background: #ff5a5f; }
+  .size-label { font-size: 10px; color: #4a5568; }
+  img.app-icon { width: 128px; height: 128px; image-rendering: auto; border-radius: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+</style>
+</head>
+<body>
+<div class="card">
+  <h3>App Icon (128px Vorschau)</h3>
+  <div class="icon-row">
+    <div class="icon-item">
+      <img class="app-icon" src="icon-512.png" alt="app icon">
+      <span>icon-512.png</span>
+    </div>
+  </div>
+  <p class="size-label">512×512 — für macOS / Referenz</p>
+</div>
+
+<div class="card">
+  <h3>Tray Icons — Originalgröße (16×16)</h3>
+  <div class="icon-row">
+    <div class="icon-item">
+      <img class="tray" src="tray-connected.png" alt="connected">
+      <span>connected</span>
+      <span class="dot green"></span>
+    </div>
+    <div class="icon-item">
+      <img class="tray" src="tray-partial.png" alt="partial">
+      <span>partial</span>
+      <span class="dot orange"></span>
+    </div>
+    <div class="icon-item">
+      <img class="tray" src="tray-error.png" alt="error">
+      <span>error</span>
+      <span class="dot red"></span>
+    </div>
+  </div>
+  <p class="size-label">16×16 px — wie im System-Tray</p>
+</div>
+
+<div class="card">
+  <h3>Vergrößert (4×) zur Überprüfung</h3>
+  <div class="icon-row">
+    <div class="icon-item">
+      <img class="tray-lg" src="tray-connected.png" alt="connected">
+      <span>connected</span>
+    </div>
+    <div class="icon-item">
+      <img class="tray-lg" src="tray-partial.png" alt="partial">
+      <span>partial</span>
+    </div>
+    <div class="icon-item">
+      <img class="tray-lg" src="tray-error.png" alt="error">
+      <span>error</span>
+    </div>
+  </div>
+  <p class="size-label">64×64 px — pixel-perfect skaliert</p>
+</div>
+
+<div class="card">
+  <h3>Design-Erklärung</h3>
+  <p style="font-size:12px;color:#8896aa;text-align:left;line-height:1.6;max-width:200px;">
+    <strong style="color:#e9edf2">Button-Grid</strong><br>
+    2×3 helle Rechtecke = Mini-Companion-Panel<br><br>
+    <strong style="color:#e9edf2">Akzent-Button</strong><br>
+    Mittlerer linker Button = statusfarbe (aktive Taste)<br><br>
+    <strong style="color:#e9edf2">Regler</strong><br>
+    Kleiner Slider rechts = Fader/Control<br><br>
+    <strong style="color:#e9edf2">Status-Dot</strong><br>
+    2×2px unten rechts = Verbindungsstatus
+  </p>
+</div>
+</body>
+</html>

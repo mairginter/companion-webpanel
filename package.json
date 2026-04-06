@@ -11,7 +11,9 @@
     "build:electron": "npm run build && npm run build -w @cwp/electron",
     "electron:dev": "npm run build:electron && electron packages/electron",
     "release": "npm run build:electron && electron-builder --config electron-builder.yml",
-    "start": "npm run start -w @cwp/backend"
+    "start": "npm run start -w @cwp/backend",
+    "generate:icons": "node packages/electron/assets/generate-icons.mjs",
+    "generate:app-icon": "node packages/electron/assets/generate-app-icon.mjs"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

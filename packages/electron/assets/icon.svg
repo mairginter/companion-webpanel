@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Hintergrund: Blauer Gradient (Referenz-Stil) -->
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#2196F3"/>
+      <stop offset="100%" stop-color="#1565C0"/>
+    </linearGradient>
+
+    <!-- Oberer Schimmer (Material-Design Depth) -->
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="white" stop-opacity="0.18"/>
+      <stop offset="45%"  stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Meter-Gradient Grün -->
+    <linearGradient id="g-green" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#4de598"/>
+      <stop offset="100%" stop-color="#159a51"/>
+    </linearGradient>
+
+    <!-- Meter-Gradient Blau -->
+    <linearGradient id="g-blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#74bfff"/>
+      <stop offset="100%" stop-color="#2070cc"/>
+    </linearGradient>
+
+    <!-- Meter-Gradient Orange -->
+    <linearGradient id="g-orange" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#ffb36a"/>
+      <stop offset="100%" stop-color="#c85800"/>
+    </linearGradient>
+
+    <!-- Card-Clip -->
+    <clipPath id="card">
+      <rect width="512" height="512" rx="78" ry="78"/>
+    </clipPath>
+
+    <!-- Drop-Shadow für Buttons -->
+    <filter id="btnShadow" x="-15%" y="-15%" width="130%" height="145%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="black" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+
+  <!-- ── Hintergrund ─────────────────────────────────────────────── -->
+  <rect width="512" height="512" rx="78" fill="url(#bg)"/>
+
+  <!-- Diagonaler Schatten (wie Referenz-Bild, von oben-Mitte nach rechts-unten) -->
+  <polygon clip-path="url(#card)"
+           points="195,0 512,0 512,320"
+           fill="black" opacity="0.17"/>
+
+  <!-- Oberer Schimmer -->
+  <rect clip-path="url(#card)" width="512" height="512" fill="url(#shine)"/>
+
+
+  <!-- ── Button-Grid 3×3 (ersetzt Tortendiagramm) ───────────────── -->
+  <!--
+    Button-Größe: 60×60 px, Gap: 13 px
+    Gesamt: 3×60 + 2×13 = 206 px
+    Start: x=44, y=80
+    Spalten-X: 44, 117, 190
+    Zeilen-Y:  80, 153, 226
+  -->
+
+  <!-- Zeile 0: Rot · Orange · Gelb -->
+  <rect x="44"  y="80"  width="60" height="60" rx="11" fill="#EF5350" filter="url(#btnShadow)"/>
+  <rect x="117" y="80"  width="60" height="60" rx="11" fill="#FF9800" filter="url(#btnShadow)"/>
+  <rect x="190" y="80"  width="60" height="60" rx="11" fill="#FDD835" filter="url(#btnShadow)"/>
+
+  <!-- Zeile 1: Grün · Cyan · Lila -->
+  <rect x="44"  y="153" width="60" height="60" rx="11" fill="#4CAF50" filter="url(#btnShadow)"/>
+  <rect x="117" y="153" width="60" height="60" rx="11" fill="#03A9F4" filter="url(#btnShadow)"/>
+  <rect x="190" y="153" width="60" height="60" rx="11" fill="#9C27B0" filter="url(#btnShadow)"/>
+
+  <!-- Zeile 2: Weiß · Pink · Teal -->
+  <rect x="44"  y="226" width="60" height="60" rx="11" fill="white"   opacity="0.90" filter="url(#btnShadow)"/>
+  <rect x="117" y="226" width="60" height="60" rx="11" fill="#E91E63" filter="url(#btnShadow)"/>
+  <rect x="190" y="226" width="60" height="60" rx="11" fill="#009688" filter="url(#btnShadow)"/>
+
+  <!-- Highlight-Streifen oben auf jedem Button (3D-Effekt) -->
+  <rect x="44"  y="80"  width="60" height="15" rx="11" fill="white" opacity="0.18"/>
+  <rect x="117" y="80"  width="60" height="15" rx="11" fill="white" opacity="0.18"/>
+  <rect x="190" y="80"  width="60" height="15" rx="11" fill="white" opacity="0.18"/>
+  <rect x="44"  y="153" width="60" height="15" rx="11" fill="white" opacity="0.18"/>
+  <rect x="117" y="153" width="60" height="15" rx="11" fill="white" opacity="0.18"/>
+  <rect x="190" y="153" width="60" height="15" rx="11" fill="white" opacity="0.18"/>
+  <rect x="44"  y="226" width="60" height="15" rx="11" fill="white" opacity="0.28"/>
+  <rect x="117" y="226" width="60" height="15" rx="11" fill="white" opacity="0.18"/>
+  <rect x="190" y="226" width="60" height="15" rx="11" fill="white" opacity="0.18"/>
+
+
+  <!-- ── Meter-Bars vertikal 3× (ersetzt horizontale Streifen) ───── -->
+  <!--
+    3 Bars, je 50 px breit, Gap 22 px
+    Positionen: x = 288, 360, 432
+    Track: y=80..390 → Höhe 310 px
+    Füllstand von UNTEN (y=390):
+      Bar 1 Grün:  85% → 264 px → y_top = 126
+      Bar 2 Blau:  55% → 171 px → y_top = 219
+      Bar 3 Orange:30% →  93 px → y_top = 297
+  -->
+
+  <!-- Tracks (dunkler Hintergrund) -->
+  <rect x="288" y="80" width="50" height="310" rx="9" fill="black" opacity="0.28"/>
+  <rect x="360" y="80" width="50" height="310" rx="9" fill="black" opacity="0.28"/>
+  <rect x="432" y="80" width="50" height="310" rx="9" fill="black" opacity="0.28"/>
+
+  <!-- Bar 1 — Grün 85% -->
+  <rect x="288" y="126" width="50" height="264" rx="9" fill="url(#g-green)"/>
+  <!-- Bar 2 — Blau 55% -->
+  <rect x="360" y="219" width="50" height="171" rx="9" fill="url(#g-blue)"/>
+  <!-- Bar 3 — Orange 30% -->
+  <rect x="432" y="297" width="50" height="93"  rx="9" fill="url(#g-orange)"/>
+
+  <!-- Peak-Marker (weißer Strich am Bar-Top) -->
+  <rect x="288" y="122" width="50" height="4" rx="2" fill="white" opacity="0.88"/>
+  <rect x="360" y="215" width="50" height="4" rx="2" fill="white" opacity="0.88"/>
+  <rect x="432" y="293" width="50" height="4" rx="2" fill="white" opacity="0.88"/>
+
+  <!-- Bar-Glanz oben (heller Schimmer) -->
+  <rect x="288" y="126" width="50" height="28" rx="9" fill="white" opacity="0.22"/>
+  <rect x="360" y="219" width="50" height="28" rx="9" fill="white" opacity="0.22"/>
+  <rect x="432" y="297" width="50" height="28" rx="9" fill="white" opacity="0.22"/>
+
+
+  <!-- ── Statusdots unten (wie Referenz-Bild) ───────────────────── -->
+  <circle cx="88"  cy="415" r="17" fill="#EF5350"/>
+  <circle cx="132" cy="415" r="17" fill="#4CAF50"/>
+  <circle cx="176" cy="415" r="17" fill="#FF9800"/>
+</svg>
