@@ -100,7 +100,7 @@ CompanionWebpannel/
 ├── Webpanel-Architektur.md                       ← Architektur-Doku (aktuell, v1.1)
 ├── CompanionWebpannelSettings.schema.json        ← JSON-Schema v1.3.0 (+server.port ✅)
 ├── CompanionWebpannelSettings.json               ← Laufzeit-Konfiguration (Beispiel, anpassen!)
-├── electron-builder.yml                          ← (geplant Phase 6) Release-Config Win+Mac
+├── electron-builder.yml                          ← ✅ Release-Config Win+Mac (NSIS x64, DMG arm64+x64)
 ├── bitfocus-companion-module-sources.md          ← API-Quellen / Docs-Links
 ├── docs/satellite-api-protocol.md                ← Satellite API Protokoll-Referenz (v1.10 / Companion 4.3+)
 ├── docs/superpowers/
@@ -108,7 +108,7 @@ CompanionWebpannel/
 │   ├── specs/2026-04-05-electron-tray-design.md  ← ✅ Electron Wrapper Design-Spec (Phase 6)
 │   ├── plans/2026-04-01-edit-mode.md             ← ✅ Edit-Mode Implementierungsplan
 │   └── plans/2026-04-05-electron-tray.md         ← ✅ Electron Wrapper Implementierungsplan (13 Tasks)
-├── package.json                                  ← npm workspaces root (inkl. @cwp/electron geplant)
+├── package.json                                  ← npm workspaces root (inkl. @cwp/electron ✅)
 └── packages/
     ├── shared/src/types.ts                       ← Alle TypeScript-Typen (Settings, WS-Messages, Elemente)
     ├── backend/src/
@@ -116,11 +116,11 @@ CompanionWebpannel/
     │   ├── state/StateStore.ts                   ← In-Memory State + Delta-Logik (Key: hostId:page:row:col)
     │   ├── server/ClientServer.ts                ← HTTP (GET+POST /api/settings, POST+DELETE /api/preview-page)
     │   │                                            + WS-Server für Browser-Clients, stuck-press Fix
-    │   │                                            (Phase 6: +staticDir für Frontend-Serving im Electron-Build)
+    │   │                                            + staticDir-Param für Frontend-Serving im Electron-Build ✅
     │   ├── HostManager.ts                        ← Orchestrierung: 1 SatelliteClient pro Host, Subscription-Diff
-    │   │                                            (Phase 6: +onStatusChange Callback)
+    │   │                                            + onStatusChange Callback für Electron-Tray ✅
     │   └── index.ts                              ← Entry Point, Graceful Shutdown
-    │                                                (Phase 6: +createBackend() Factory-Export)
+    │                                                + createBackend() Factory-Export für Electron ✅
     ├── frontend/src/
     │   ├── store/useAppStore.ts                  ← Zustand-Store (settings, buttons, sessionStatus, hostInfo, mode, activePanelId)
     │   │                                            addHost/updateHost/removeHost, createPanel/renamePanel/deletePanel
@@ -137,17 +137,29 @@ CompanionWebpannel/
     │           ├── CompanionButtonElement.tsx    ← ✅ Vollständig (bgColor, Bitmap, Text, States, ⛔ hostMissing)
     │           ├── ShapeElement.tsx              ← ✅ Rechteck mit fill/stroke/borderRadius
     │           └── LabelElement.tsx              ← ✅ Statischer Text mit Style-Optionen
-    └── electron/                                 ← (geplant Phase 6) Electron Wrapper
+    └── electron/                                 ← ✅ Electron Wrapper (Phase 6 FERTIG)
         ├── src/
-        │   ├── main.ts                           ← Entry Point + IPC-Handler
+        │   ├── main.ts                           ← Entry Point + IPC-Handler (get-status, open-panel, change-port, quit)
         │   ├── preload.ts                        ← contextBridge (cwpApi)
-        │   ├── startupWindow.ts                  ← BrowserWindow Lifecycle
-        │   ├── tray.ts                           ← Tray-Icon + Kontextmenü
+        │   ├── startupWindow.ts                  ← BrowserWindow Lifecycle (400×240, frameless, hide-on-close)
+        │   ├── tray.ts                           ← Tray-Icon + Kontextmenü (connected/partial/error Icon)
         │   ├── portCheck.ts                      ← isPortFree() + findFreePort()
-        │   ├── settingsHelper.ts                 ← load/save/default aus userData-Dir
+        │   ├── settingsHelper.ts                 ← load/save/migrate aus userData-Dir
         │   └── types.ts                          ← AppStatus, HostStatus (IPC-Payload)
-        ├── renderer/startup.html                 ← Startup-Fenster UI
-        └── assets/                               ← Tray-Icons + App-Icons
+        ├── renderer/startup.html                 ← Startup-Fenster UI (Port-Edit, Host-Status, Open/Quit)
+        ├── tests/
+        │   ├── portCheck.test.ts                 ← 5 Tests ✅
+        │   └── settingsHelper.test.ts            ← 6 Tests ✅
+        └── assets/
+            ├── icon.svg                          ← ✅ Vektordesign (Button-Grid + Meter-Bars, editierbar)
+            ├── icon-512.png                      ← ✅ App-Icon 512×512 (macOS)
+            ├── icon-256.png                      ← ✅ App-Icon 256×256
+            ├── icon.ico                          ← ✅ Windows ICO (256px PNG-komprimiert)
+            ├── tray-connected.png                ← ✅ 16×16 grün (alle Hosts verbunden)
+            ├── tray-partial.png                  ← ✅ 16×16 orange (mind. 1 Host Fehler)
+            ├── tray-error.png                    ← ✅ 16×16 rot (alle Hosts Fehler)
+            ├── generate-icons.mjs                ← ✅ Tray-Icon Generator (pure Node)
+            └── generate-app-icon.mjs             ← ✅ App-Icon Generator (pure Node, 2× Supersampling)
 ```
 
 ---
@@ -397,24 +409,32 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 - ✅ Bug-Fix: Canvas-Settings-Änderung sprang auf erstes Panel (setSettings preserviert activePanelId)
 - 50/50 Tests grün, letzter Commit dieser Session: siehe git log
 
-### Phase 6 — Electron Wrapper (Spec + Plan fertig ✅)
+### Phase 6 — Electron Wrapper ✅ FERTIG (Session 2026-04-06)
 Design-Spec: `docs/superpowers/specs/2026-04-05-electron-tray-design.md`
 Implementierungsplan: `docs/superpowers/plans/2026-04-05-electron-tray.md` (13 Tasks)
 
-Überblick der 13 Tasks:
-1. ✅ Settings v1.3.0 (+server.port) — Session 2026-04-05
-2. ClientServer: optionaler staticDir-Parameter (Frontend-Serving)  
-3. HostManager: onStatusChange Callback + createBackend() Factory
-4. Electron Package Scaffolding (package.json, tsconfig, build.mjs)
-5. portCheck.ts — TDD
-6. settingsHelper.ts — TDD (load/save/migrate aus userData)
-7. AppStatus Type (IPC-Payload)
-8. startup.html — Renderer UI (Port, Host-Status, Open/Quit)
-9. preload.ts — contextBridge (cwpApi)
-10. startupWindow.ts — BrowserWindow Lifecycle
-11. tray.ts — Tray-Icon + Kontextmenü
-12. main.ts — Boot-Sequenz + IPC-Handler
-13. electron-builder.yml + Build Scripts (Win/Mac)
+Alle 13 Tasks erledigt:
+1. ✅ Settings v1.3.0 (+server.port)
+2. ✅ ClientServer: staticDir-Parameter (Frontend-Serving im Packaged-Build)
+3. ✅ HostManager: onStatusChange Callback + createBackend() Factory
+4. ✅ Electron Package Scaffolding (package.json, tsconfig, build.mjs, esbuild)
+5. ✅ portCheck.ts + 5 Tests
+6. ✅ settingsHelper.ts + 6 Tests (load/save/migrate aus userData)
+7. ✅ AppStatus / HostStatus Types (IPC-Payload)
+8. ✅ startup.html (Port-Edit, Auto-Badge, Host-Status-Dots, Open/Quit)
+9. ✅ preload.ts (contextBridge: cwpApi)
+10. ✅ startupWindow.ts (400×240 frameless, hide-on-close)
+11. ✅ tray.ts (connected/partial/error Icons, Kontextmenü)
+12. ✅ main.ts (Single-Instance-Lock, Boot-Sequenz, IPC-Handler, graceful shutdown)
+13. ✅ electron-builder.yml + npm Scripts (build:electron, electron:dev, release)
+
+### Phase 6.1 — Icons ✅ FERTIG (Session 2026-04-06)
+- ✅ Tray-Icons (16×16, 3 Varianten): Button-Grid Design + Status-Dot — `generate-icons.mjs`
+- ✅ App-Icon: icon.svg (Vektordesign, editierbar) → icon-512.png + icon-256.png + icon.ico
+  - Design: 3×3 farbige Buttons (links) + 3 vertikale Meter-Bars Grün/Blau/Orange (rechts)
+  - Pure Node.js Renderer (2× Supersampling, kein externes Dep) — ARM64-kompatibel
+- npm Scripts: `generate:icons` + `generate:app-icon`
+- Für macOS .icns: icon-512.png → cloudconvert.com
 
 ---
 
@@ -494,7 +514,7 @@ npm run dev -w @cwp/frontend   # Frontend auf :5173
 # Oder beides gleichzeitig:
 npm run dev
 
-# Electron-Dev (nach Phase 6 implementiert):
+# Electron-Dev (Phase 6 ✅ implementiert):
 npm run electron:dev           # baut alles + startet Electron
 
 # Release bauen (Win/Mac):
@@ -508,13 +528,20 @@ npm run build -w @cwp/shared   # WICHTIG: shared neu bauen bevor Backend compili
 
 ## Nächste Session — Aufgaben (Priorität)
 
-### Phase 6 — Electron Wrapper — NÄCHSTE PRIORITY
-Plan fertig: `docs/superpowers/plans/2026-04-05-electron-tray.md` (13 Tasks, TDD)
-Einfach den Plan öffnen und Task für Task umsetzen (superpowers:subagent-driven-development empfohlen).
+### Smoke-Test Electron App — EMPFOHLEN VOR WEITEREN FEATURES
+```bash
+npm run electron:dev   # baut Frontend + Backend + startet Electron
+```
+Checklist:
+- Startup-Fenster erscheint, zeigt Port + Host-Status
+- Tray-Icon erscheint, Menü öffnet sich
+- "Open Panel" öffnet Browser auf localhost:8080
+- Port-Änderung im Startup-Fenster funktioniert
+- Quit beendet App sauber
 
-Hinweis vor Start: Tray-Icons (3× PNG 16×16) und App-Icons (.ico / .icns) anlegen — siehe `packages/electron/assets/README.md`.
-
-Nächste offene Tasks: 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 (Task 1 ✅ erledigt)
+### macOS .icns Icon (wenn Mac-Release nötig)
+`packages/electron/assets/icon-512.png` → cloudconvert.com → ICNS → `packages/electron/assets/icon.icns`
+Dann `electron-builder.yml` Mac-Target testen.
 
 ### Noch offen: MeterElement (separater Schritt)
 - Visuell: vertikal oder horizontal? Peak-Hold als Linie? → noch nicht entschieden
