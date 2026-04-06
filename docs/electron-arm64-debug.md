@@ -35,54 +35,32 @@
 
 ---
 
-## Systemfehler (nicht durch Code behebbar)
+## Ursache gefunden: `ELECTRON_RUN_AS_NODE=1` (2026-04-06)
 
-### Electron JavaScript-Initialisierung schlägt fehl
-
-**Symptom:**
+### Symptom
 ```
 TypeError: Cannot read properties of undefined (reading 'requestSingleInstanceLock')
 ```
-
-**Diagnose:**
 ```js
 process.type       // undefined  ← sollte 'browser' sein
-process.versions.electron  // '28.3.3' ← C++ init läuft OK
+process.versions.electron  // '33.4.11' ← C++ init läuft OK
 require('electron')   // findet npm-Paket → gibt Pfad-String zurück → .app = undefined
 ```
 
-**Test ohne npm-Paket:**
+### Echte Ursache
+**`ELECTRON_RUN_AS_NODE=1`** war in der Prozessumgebung gesetzt!
+
+Claude Code (und VS Code allgemein) sind Electron-Apps die im Node-Modus laufen. Sie setzen `ELECTRON_RUN_AS_NODE=1` in ihrer Prozessumgebung. Alle Kind-Prozesse (auch unser `npm run electron:dev`) erben diese Variable. Wenn `electron.exe` diese Variable sieht, startet es im reinen Node-Modus — kein GUI, kein `process.type`, kein internes `require('electron')`.
+
+**Weder ARM64 noch x64 waren das Problem.** Beide Architekturen funktionieren — der Fehler war die geerbte Umgebungsvariable.
+
+### Fix
+`scripts/launch-electron.mjs` löscht `ELECTRON_RUN_AS_NODE` vor dem Spawn:
+```js
+delete process.env.ELECTRON_RUN_AS_NODE
+spawn(electronPath, ['packages/electron'], { stdio: 'inherit', env: process.env })
 ```
-Error: Cannot find module 'electron'
-```
-→ Auch ohne npm-Paket findet Electron das interne Modul NICHT.
-
-**Getestete Versionen:** v28.3.3, v32.x, v33.4.11  
-**Getestete Architekturen:** win32-arm64 (nativ), win32-x64 (Emulation)  
-**Ergebnis:** Alle identisch fehlerhaft
-
-**Ursache (Theorie):**  
-Electron's `lib/browser/init.ts` (JavaScript-Initialisierung) läuft nicht durch. Diese setzt `process.type = 'browser'` und registriert `require('electron')`. Das C++ läuft (`process.versions.electron` ist gesetzt), aber der JS-Init-Teil schlägt still fehl.
-
-Stack-Trace zeigt: `c._load` (Electron's Module-Hook aus `node:electron/js2c/node_init`) wird aufgerufen, delegiert aber direkt an Node's Standard-`Module._load` weiter, ohne `'electron'` abzufangen — wahrscheinlich weil die Builtin-Module-Liste leer ist.
-
-**Mögliche Systemursachen:**
-- Windows Security Feature (Device Guard / Smart App Control)
-- HVCI (Hypervisor Protected Code Integrity) blockiert V8-Initialisierung
-- ARM64-spezifischer Bug in Electron (alle Versionen?)
-
-**Status:** Auf x64-System testen
-
----
-
-## Nächster Test (x64-System)
-
-Checklist für Smoke-Test auf x64:
-1. `npm run electron:dev` startet ohne Fehler
-2. Startup-Fenster erscheint (400×240, frameless)
-3. Tray-Icon erscheint (grün/orange/rot je nach Host-Status)
-4. "Open Panel" öffnet Browser auf `localhost:8080`
-5. Port-Änderung im Startup-Fenster funktioniert + speichert
+`npm run electron:dev` nutzt jetzt diesen Launcher statt `electron` direkt.
 6. Quit schließt App sauber
 7. Backend startet (Hosts verbinden sich mit Companion wenn konfiguriert)
 

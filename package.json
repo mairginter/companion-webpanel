@@ -9,7 +9,7 @@
     "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm run dev -w @cwp/backend\" \"npm run dev -w @cwp/frontend\"",
     "build": "npm run build -w @cwp/shared && npm run build -w @cwp/backend && npm run build -w @cwp/frontend",
     "build:electron": "npm run build && npm run build -w @cwp/electron",
-    "electron:dev": "npm run build:electron && electron packages/electron",
+    "electron:dev": "npm run build:electron && node scripts/launch-electron.mjs",
     "release": "npm run build:electron && electron-builder --config electron-builder.yml",
     "start": "npm run start -w @cwp/backend",
     "generate:icons": "node packages/electron/assets/generate-icons.mjs",
@@ -19,5 +19,8 @@
     "concurrently": "^8.2.2",
     "electron-builder": "^25.0.0",
     "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "electron": "^33.4.11"
   }
 }

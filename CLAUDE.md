@@ -88,6 +88,7 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Panel-Verwaltung Toolbar | Inline Rename (✎/blur), Delete (✕/disabled wenn letztes), `+ Neues Panel` mit ✓/✕ | Kein eigenes Modal — alles direkt im Toolbar-Dropdown |
 | Material Icons | Google Fonts CDN (`Material Icons`) in `index.html` | `save` und `settings` Icons in Toolbar |
 | setSettings Bug-Fix | `setSettings()` preserviert `activePanelId` wenn Panel noch existiert | War: immer auf `panels[0]` zurückgesprungen → Canvas-Settings-Änderung sprang auf erstes Panel |
+| ELECTRON_RUN_AS_NODE Fix | `scripts/launch-electron.mjs` löscht `ELECTRON_RUN_AS_NODE` vor Spawn | Claude Code / VS Code setzen diese Variable → Electron läuft im reinen Node-Modus statt GUI |
 
 ---
 
@@ -109,6 +110,8 @@ CompanionWebpannel/
 │   ├── plans/2026-04-01-edit-mode.md             ← ✅ Edit-Mode Implementierungsplan
 │   └── plans/2026-04-05-electron-tray.md         ← ✅ Electron Wrapper Implementierungsplan (13 Tasks)
 ├── package.json                                  ← npm workspaces root (inkl. @cwp/electron ✅)
+├── scripts/
+│   └── launch-electron.mjs                       ← ✅ Electron-Launcher (löscht ELECTRON_RUN_AS_NODE)
 └── packages/
     ├── shared/src/types.ts                       ← Alle TypeScript-Typen (Settings, WS-Messages, Elemente)
     ├── backend/src/
@@ -528,23 +531,19 @@ npm run build -w @cwp/shared   # WICHTIG: shared neu bauen bevor Backend compili
 
 ## Nächste Session — Aufgaben (Priorität)
 
-### Smoke-Test Electron App — AUF X64-SYSTEM TESTEN
-> **ARM64-Windows-Info:** Auf ARM64-Windows schlägt Electron's JS-Initialisierung still fehl (`process.type` bleibt `undefined`, `require('electron')` findet nur den npm-Pfad-String). Betrifft alle getesteten Versionen (v28, v32, v33). Details: `docs/electron-arm64-debug.md`
-
-Behobene Build-Fehler (bereits gefixt, brauchen kein Re-Fix auf x64):
-- `TextureOption` nicht importiert in `CanvasSettings.tsx` ✅
-- `standalone.ts` ausgelagert — `index.ts` läuft nicht mehr beim Electron-Import ✅
-- `@esbuild/win32-arm64` fehlte ✅
+### Smoke-Test Electron App ✅ GRUNDLEGEND BESTANDEN (Session 2026-04-06)
+> **ELECTRON_RUN_AS_NODE Fix:** Claude Code / VS Code Terminals setzen `ELECTRON_RUN_AS_NODE=1` → Electron läuft im reinen Node-Modus. Fix: `scripts/launch-electron.mjs` löscht die Variable vor dem Spawn. `npm run electron:dev` nutzt jetzt diesen Launcher.
+> **ARM64-Windows:** Electron funktioniert auch auf ARM64 — das Problem war nie architekturspezifisch sondern die Umgebungsvariable.
 
 ```bash
-npm run electron:dev   # baut Frontend + Backend + startet Electron
+npm run electron:dev   # baut Frontend + Backend + startet Electron (ELECTRON_RUN_AS_NODE wird automatisch bereinigt)
 ```
-Checklist (auf x64-System):
-- Startup-Fenster erscheint, zeigt Port + Host-Status
-- Tray-Icon erscheint, Menü öffnet sich
-- "Open Panel" öffnet Browser auf localhost:8080
-- Port-Änderung im Startup-Fenster funktioniert
-- Quit beendet App sauber
+Ergebnis x64:
+- ✅ Startup-Fenster erscheint
+- ⬜ Panel-Funktionalität noch nicht getestet (spätere Session)
+- ⬜ Tray-Icon + Menü
+- ⬜ Port-Änderung
+- ⬜ Quit / Graceful Shutdown
 
 ### macOS .icns Icon (wenn Mac-Release nötig)
 `packages/electron/assets/icon-512.png` → cloudconvert.com → ICNS → `packages/electron/assets/icon.icns`
@@ -569,6 +568,7 @@ Dann `electron-builder.yml` Mac-Target testen.
 
 ## Dev-Gotchas
 
+- **ELECTRON_RUN_AS_NODE** → Claude Code und VS Code Terminals setzen `ELECTRON_RUN_AS_NODE=1` automatisch. `npm run electron:dev` verwendet `scripts/launch-electron.mjs` der diese Variable löscht. Bei manuellem `electron`-Aufruf im Claude-Code-Terminal: `ELECTRON_RUN_AS_NODE= electron packages/electron` (Unix) oder separates Terminal verwenden.
 - **Settings-Version bump** → immer 5 Stellen anfassen: `schema.json` + `types.ts` + `backend/standalone.ts` + `backend/server/ClientServer.ts` + `CompanionWebpannelSettings.json`
 - **vitest/esbuild strippt TypeScript** → Type-Fehler erscheinen NICHT als Test-Failures. Für echten TS-Check: `npx tsc --noEmit -p packages/frontend/tsconfig.json` (nicht `tsconfig.app.json` — existiert nicht)
 - **shared neu bauen nach Typänderungen** → `npm run build -w @cwp/shared` (WICHTIG: sonst kompiliert Backend gegen alten Stand)
