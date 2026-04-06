@@ -3,7 +3,7 @@ import { Panel } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { ColorPicker } from './ColorPicker'
 import { NumericInput } from './NumericInput'
-import { TEXTURES } from '../../utils/textures'
+import { TEXTURES, TextureOption } from '../../utils/textures'
 
 interface Props { panel: Panel; panelId: string }
 

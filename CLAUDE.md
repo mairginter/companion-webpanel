@@ -119,8 +119,8 @@ CompanionWebpannel/
     │   │                                            + staticDir-Param für Frontend-Serving im Electron-Build ✅
     │   ├── HostManager.ts                        ← Orchestrierung: 1 SatelliteClient pro Host, Subscription-Diff
     │   │                                            + onStatusChange Callback für Electron-Tray ✅
-    │   └── index.ts                              ← Entry Point, Graceful Shutdown
-    │                                                + createBackend() Factory-Export für Electron ✅
+    │   ├── index.ts                              ← Nur createBackend() Factory-Export für Electron ✅
+    │   └── standalone.ts                         ← Standalone Entry Point (npm start/dev) mit loadSettings() + main()
     ├── frontend/src/
     │   ├── store/useAppStore.ts                  ← Zustand-Store (settings, buttons, sessionStatus, hostInfo, mode, activePanelId)
     │   │                                            addHost/updateHost/removeHost, createPanel/renamePanel/deletePanel
@@ -528,11 +528,18 @@ npm run build -w @cwp/shared   # WICHTIG: shared neu bauen bevor Backend compili
 
 ## Nächste Session — Aufgaben (Priorität)
 
-### Smoke-Test Electron App — EMPFOHLEN VOR WEITEREN FEATURES
+### Smoke-Test Electron App — AUF X64-SYSTEM TESTEN
+> **ARM64-Windows-Info:** Auf ARM64-Windows schlägt Electron's JS-Initialisierung still fehl (`process.type` bleibt `undefined`, `require('electron')` findet nur den npm-Pfad-String). Betrifft alle getesteten Versionen (v28, v32, v33). Details: `docs/electron-arm64-debug.md`
+
+Behobene Build-Fehler (bereits gefixt, brauchen kein Re-Fix auf x64):
+- `TextureOption` nicht importiert in `CanvasSettings.tsx` ✅
+- `standalone.ts` ausgelagert — `index.ts` läuft nicht mehr beim Electron-Import ✅
+- `@esbuild/win32-arm64` fehlte ✅
+
 ```bash
 npm run electron:dev   # baut Frontend + Backend + startet Electron
 ```
-Checklist:
+Checklist (auf x64-System):
 - Startup-Fenster erscheint, zeigt Port + Host-Status
 - Tray-Icon erscheint, Menü öffnet sich
 - "Open Panel" öffnet Browser auf localhost:8080
@@ -562,7 +569,7 @@ Dann `electron-builder.yml` Mac-Target testen.
 
 ## Dev-Gotchas
 
-- **Settings-Version bump** → immer 5 Stellen anfassen: `schema.json` + `types.ts` + `backend/index.ts` + `backend/server/ClientServer.ts` + `CompanionWebpannelSettings.json`
+- **Settings-Version bump** → immer 5 Stellen anfassen: `schema.json` + `types.ts` + `backend/standalone.ts` + `backend/server/ClientServer.ts` + `CompanionWebpannelSettings.json`
 - **vitest/esbuild strippt TypeScript** → Type-Fehler erscheinen NICHT als Test-Failures. Für echten TS-Check: `npx tsc --noEmit -p packages/frontend/tsconfig.json` (nicht `tsconfig.app.json` — existiert nicht)
 - **shared neu bauen nach Typänderungen** → `npm run build -w @cwp/shared` (WICHTIG: sonst kompiliert Backend gegen alten Stand)
 - **Test-Fixture-Version** → `makeSettings()` in `useAppStore.test.ts` verwendet `version: '1.3.0'` (bei nächster Version-Bump anpassen)
