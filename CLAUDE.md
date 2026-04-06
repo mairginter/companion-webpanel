@@ -543,7 +543,7 @@ npm run build -w @cwp/shared   # WICHTIG: shared neu bauen bevor Backend compili
 ### Electron Startup-Fenster — offene UX-Features
 - ⬜ App-Icon im Startup-Fenster anzeigen (BrowserWindow `icon`-Option)
 - ⬜ "Minimize to Tray"-Button im Startup-Fenster
-- ⬜ Headless-Modus: Panel ohne Startup-Fenster starten (CLI-Flag / Tray-only)
+- ⬜ Panel APP Modus - Panel ohne Browserleiste APPmodus starten
 
 ### macOS .icns Icon (wenn Mac-Release nötig)
 `packages/electron/assets/icon-512.png` → cloudconvert.com → ICNS → `packages/electron/assets/icon.icns`
