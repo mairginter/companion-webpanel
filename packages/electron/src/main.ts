@@ -135,7 +135,8 @@ async function main(): Promise<void> {
   // ─── App-Lifecycle ─────────────────────────────────────────────────────────
 
   // Tray-App: nicht beenden wenn alle Fenster geschlossen
-  app.on('window-all-closed', (e: Event) => e.preventDefault())
+  // (window-all-closed ohne Handler → App beendet sich automatisch; Handler = bewusst leer lassen)
+  app.on('window-all-closed', () => { /* absichtlich leer — Tray-App bleibt aktiv */ })
 
   // macOS: Klick auf Dock-Icon → Fenster zeigen
   app.on('activate', () => startupWindow.show())
