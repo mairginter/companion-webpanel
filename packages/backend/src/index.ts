@@ -21,6 +21,45 @@ import { StateStore } from './state/StateStore'
 import { ClientServer } from './server/ClientServer'
 import { HostManager } from './HostManager'
 
+// ─── createBackend() Factory ───────────────────────────────────────────────
+
+/**
+ * createBackend — Factory für Electron und Tests.
+ * Startet Backend ohne process.exit() und ohne SIGINT/SIGTERM-Handler.
+ * Gibt ein Objekt zurück mit stop() für graceful shutdown.
+ */
+export async function createBackend(
+  settings: Settings,
+  port: number,
+  settingsPath: string,
+  onStatusChange?: (hostId: string, status: string) => void,
+  staticDir?: string,
+): Promise<{ stop: () => Promise<void> }> {
+  const store = new StateStore()
+  let manager: HostManager
+
+  const clientServer = new ClientServer(
+    port,
+    settings,
+    settingsPath,
+    (hostId, page, row, col, pressed) => manager.handlePress(hostId, page, row, col, pressed),
+    (updatedSettings) => manager.syncSubscriptions(updatedSettings),
+    (hostId, page, keysPerRow, rows) => manager.addPickerSubscriptions(hostId, page, keysPerRow, rows),
+    (hostId, page) => manager.removePickerSubscriptions(hostId, page),
+    staticDir,
+  )
+
+  manager = new HostManager(store, clientServer, onStatusChange)
+  manager.start(settings)
+
+  return {
+    stop: async () => {
+      await manager.stop()
+      await clientServer.close()
+    },
+  }
+}
+
 // ─── Config ────────────────────────────────────────────────────────────────
 
 const SETTINGS_PATH =

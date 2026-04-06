@@ -29,6 +29,7 @@ export class HostManager {
   private clients = new Map<string, SatelliteClient>()
   private store: StateStore
   private clientServer: ClientServer
+  private onStatusChange?: (hostId: string, status: ClientStatus) => void
 
   // Echte Subscriptions (von Panel-Elementen): hostId → Set<"page/row/col">
   private realSubKeys = new Map<string, Set<string>>()
@@ -36,9 +37,14 @@ export class HostManager {
   // Picker-Subscriptions (temporär für den Picker-Dialog): hostId → Set<"page/row/col">
   private pickerSubKeys = new Map<string, Set<string>>()
 
-  constructor(store: StateStore, clientServer: ClientServer) {
+  constructor(
+    store: StateStore,
+    clientServer: ClientServer,
+    onStatusChange?: (hostId: string, status: ClientStatus) => void,
+  ) {
     this.store = store
     this.clientServer = clientServer
+    this.onStatusChange = onStatusChange
 
     // Snapshot an jeden neuen Frontend-Client senden
     clientServer.onNewClient((ws) => this.sendAllSnapshotsToClient(ws))
@@ -189,9 +195,7 @@ export class HostManager {
 
     client.on('status', (status: ClientStatus) => {
       this.clientServer.broadcast({ t: 'sessionStatus', hostId, status })
-
-      // Bei Verbindungsabbruch: Frontend informieren, StateStore leer lassen
-      // (stale-Status reicht als visueller Hinweis, Daten bleiben im Store)
+      this.onStatusChange?.(hostId, status)
     })
 
     this.clients.set(hostId, client)
