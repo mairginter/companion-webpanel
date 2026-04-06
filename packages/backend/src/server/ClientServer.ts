@@ -17,6 +17,7 @@
  */
 import * as http from 'http'
 import * as fs from 'fs'
+import * as path from 'path'
 import { WebSocketServer, WebSocket } from 'ws'
 import {
   BackendToFrontend,
@@ -50,6 +51,7 @@ export class ClientServer {
   private onPreviewPageRemove?: PreviewPageRemoveHandler
   private settings: Settings
   private settingsPath: string
+  private staticDir?: string
 
   constructor(
     port: number,
@@ -59,6 +61,7 @@ export class ClientServer {
     onSettingsUpdate?: (s: Settings) => void,
     onPreviewPageAdd?: PreviewPageHandler,
     onPreviewPageRemove?: PreviewPageRemoveHandler,
+    staticDir?: string,
   ) {
     this.settings = settings
     this.settingsPath = settingsPath
@@ -66,6 +69,7 @@ export class ClientServer {
     this.onSettingsUpdate = onSettingsUpdate
     this.onPreviewPageAdd = onPreviewPageAdd
     this.onPreviewPageRemove = onPreviewPageRemove
+    this.staticDir = staticDir
 
     // ─── HTTP Server ────────────────────────────────────────────────────────
     this.httpServer = http.createServer((req, res) => {
@@ -153,8 +157,13 @@ export class ClientServer {
         res.end(JSON.stringify({ ok: true }))
 
       } else {
-        res.writeHead(404)
-        res.end()
+        // Static file serving (für pakettierten Electron-Build)
+        if (this.staticDir && req.method === 'GET') {
+          this.serveStatic(req.url ?? '/', res)
+        } else {
+          res.writeHead(404)
+          res.end()
+        }
       }
     })
 
@@ -262,6 +271,49 @@ export class ClientServer {
   private emit(event: 'newClient', ws: WebSocket): void {
     if (event === 'newClient') {
       for (const l of this.newClientListeners) l(ws)
+    }
+  }
+
+  /**
+   * Serviert statische Dateien aus this.staticDir.
+   * Fallback: index.html für SPA-Routing (alle nicht-gefundenen Pfade → index.html).
+   */
+  private serveStatic(urlPath: string, res: http.ServerResponse): void {
+    const staticDir = this.staticDir!
+    // URL-Pfad normalisieren (query-string entfernen, path-traversal verhindern)
+    const safePath = urlPath.split('?')[0].replace(/\.\./g, '')
+    const filePath = safePath === '/' || safePath === ''
+      ? path.join(staticDir, 'index.html')
+      : path.join(staticDir, safePath)
+
+    const mimeTypes: Record<string, string> = {
+      '.html':  'text/html',
+      '.js':    'application/javascript',
+      '.css':   'text/css',
+      '.png':   'image/png',
+      '.svg':   'image/svg+xml',
+      '.ico':   'image/x-icon',
+      '.json':  'application/json',
+      '.woff2': 'font/woff2',
+      '.woff':  'font/woff',
+    }
+
+    const ext = path.extname(filePath)
+    const mime = mimeTypes[ext] ?? 'application/octet-stream'
+
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      res.writeHead(200, { 'Content-Type': mime })
+      fs.createReadStream(filePath).pipe(res)
+    } else {
+      // SPA-Fallback: index.html für alle unbekannten Pfade
+      const indexPath = path.join(staticDir, 'index.html')
+      if (fs.existsSync(indexPath)) {
+        res.writeHead(200, { 'Content-Type': 'text/html' })
+        fs.createReadStream(indexPath).pipe(res)
+      } else {
+        res.writeHead(404)
+        res.end()
+      }
     }
   }
 }
