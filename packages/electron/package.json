@@ -1,5 +1,5 @@
 {
-  "name": "@cwp/electron",
+  "name": "CompanionWebpanel",
   "version": "1.0.0",
   "private": true,
   "main": "dist/main.js",
