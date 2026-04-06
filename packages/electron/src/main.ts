@@ -13,6 +13,7 @@
  */
 import { app, ipcMain, shell } from 'electron'
 import * as path from 'path'
+import * as fs from 'fs'
 import { createBackend } from '@cwp/backend'
 import { loadSettings, saveSettings, getSettingsPath } from './settingsHelper'
 import { findFreePort } from './portCheck'
@@ -61,11 +62,10 @@ async function main(): Promise<void> {
 
   let backendInstance: { stop: () => Promise<void> } | null = null
 
-  // Frontend-Static-Dir: im pakettierten Build liegt es neben dist/
-  // In dev (npm run dev) ist staticDir undefined → Vite serviert auf :5173
-  const staticDir = app.isPackaged
-    ? path.join(app.getAppPath(), 'frontend')
-    : undefined
+  // Frontend-Static-Dir: gebautes Frontend in packages/electron/frontend/
+  // Wird sowohl im packaged Build als auch nach electron:dev (build:electron) genutzt.
+  const frontendDir = path.join(app.getAppPath(), 'frontend')
+  const staticDir = fs.existsSync(frontendDir) ? frontendDir : undefined
 
   if (actualPort !== null) {
     backendInstance = await createBackend(
