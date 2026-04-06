@@ -20,17 +20,19 @@ const SETTINGS_PATH =
 const CLIENT_WS_PORT = parseInt(process.env.CLIENT_WS_PORT ?? '8080', 10)
 
 function loadSettings(): Settings {
-  if (!fs.existsSync(SETTINGS_PATH)) {
+  let raw: string
+  try {
+    raw = fs.readFileSync(SETTINGS_PATH, 'utf8')
+  } catch {
     console.error(`[Boot] Settings-Datei nicht gefunden: ${SETTINGS_PATH}`)
     console.error('[Boot] Erstelle CompanionWebpannelSettings.json im Projekt-Root.')
     process.exit(1)
   }
 
-  const raw = fs.readFileSync(SETTINGS_PATH, 'utf8')
-  const settings = JSON.parse(raw) as Settings
-
-  if (settings.version !== '1.3.0') {
-    console.warn(`[Boot] Unbekannte Settings-Version: ${settings.version} (erwartet: 1.3.0)`)
+  const settings = JSON.parse(raw!) as Settings
+  const expectedVersion: Settings['version'] = '1.3.0'
+  if (settings.version !== expectedVersion) {
+    console.warn(`[Boot] Unbekannte Settings-Version: ${settings.version} (erwartet: ${expectedVersion})`)
   }
 
   console.log(`[Boot] Settings geladen: ${settings.hosts.length} Host(s), ${settings.panels.length} Panel(s)`)
