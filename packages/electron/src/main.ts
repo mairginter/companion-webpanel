@@ -67,22 +67,18 @@ async function main(): Promise<void> {
   const frontendDir = path.join(app.getAppPath(), 'frontend')
   const staticDir = fs.existsSync(frontendDir) ? frontendDir : undefined
 
+  // Status-Callback: wird bei createBackend (Boot + Port-Wechsel) verwendet
+  const onHostStatus = (hostId: string, status: string) => {
+    const host = appStatus.hosts.find((h) => h.id === hostId)
+    if (host) {
+      host.status = status as AppStatus['hosts'][0]['status']
+      startupWindow.sendStatusUpdate(appStatus)
+      tray.updateStatus(appStatus)
+    }
+  }
+
   if (actualPort !== null) {
-    backendInstance = await createBackend(
-      settings,
-      actualPort,
-      settingsPath,
-      (hostId, status) => {
-        // Host-Status im appStatus aktualisieren
-        const host = appStatus.hosts.find((h) => h.id === hostId)
-        if (host) {
-          host.status = status as AppStatus['hosts'][0]['status']
-          startupWindow.sendStatusUpdate({ ...appStatus })
-          tray.updateStatus({ ...appStatus })
-        }
-      },
-      staticDir,
-    )
+    backendInstance = await createBackend(settings, actualPort, settingsPath, onHostStatus, staticDir)
   }
 
   // ─── Tray ──────────────────────────────────────────────────────────────────
@@ -111,23 +107,11 @@ async function main(): Promise<void> {
 
     // Backend neu starten mit neuem Port
     if (backendInstance) await backendInstance.stop()
-    backendInstance = await createBackend(
-      settings,
-      newPort,
-      settingsPath,
-      (hostId, status) => {
-        const host = appStatus.hosts.find((h) => h.id === hostId)
-        if (host) {
-          host.status = status as AppStatus['hosts'][0]['status']
-          startupWindow.sendStatusUpdate({ ...appStatus })
-          tray.updateStatus({ ...appStatus })
-        }
-      },
-    )
+    backendInstance = await createBackend(settings, newPort, settingsPath, onHostStatus)
     appStatus.port = newPort
     appStatus.portAuto = false
-    startupWindow.sendStatusUpdate({ ...appStatus })
-    tray.updateStatus({ ...appStatus })
+    startupWindow.sendStatusUpdate(appStatus)
+    tray.updateStatus(appStatus)
   })
 
   ipcMain.on('quit', () => shutdown())
