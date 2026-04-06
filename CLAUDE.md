@@ -520,6 +520,17 @@ Nächste offene Tasks: 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 (Task 1 ✅ erledi
 - Visuell: vertikal oder horizontal? Peak-Hold als Linie? → noch nicht entschieden
 - Quelle = TEXT-Feld eines Companion-Buttons, Parser: "db"
 
+### Panel Export/Import (geplant, ~2–3h)
+- Export: einzelnes Panel als `.cwp`-Datei (JSON) herunterladen
+- Import: `.cwp` einlesen → neue Element-IDs vergeben → Panel hinzufügen
+- Beim Import: `hostId`-Mapping-Dialog falls importierter Host nicht in Settings → "Host X aus Datei → welcher Host hier?"
+
+### Host-ID Remapping (geplant, ~3–5h)
+- Funktion: alle Button-Referenzen eines Panels von `hostId A` auf `hostId B` umschreiben
+- Use Case: Companion-Server-Wechsel, neues Backend, Import aus anderer Installation
+- UX: Button im `HostManagerModal` "Ersetze Host in allen Buttons" → Dropdown alt→neu
+- Kann mit Panel-Import kombiniert werden (Auto-Mapping wenn `hostId` nicht matcht)
+
 ---
 
 ## Dev-Gotchas
