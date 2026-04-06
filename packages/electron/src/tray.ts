@@ -115,10 +115,11 @@ export class AppTray {
 
   private statusIcon(status: HostStatus['status']): string {
     switch (status) {
-      case 'connected':  return '●'
-      case 'connecting': return '◌'
-      case 'stale':      return '◑'
-      case 'error':      return '○'
+      case 'connected':      return '●'
+      case 'connecting':     return '◌'
+      case 'stale':          return '◑'
+      case 'error':          return '○'
+      case 'caps-disabled':  return '⊘'
     }
   }
 }

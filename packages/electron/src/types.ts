@@ -9,7 +9,7 @@
 export interface HostStatus {
   id: string
   name: string
-  status: 'connecting' | 'connected' | 'stale' | 'error'
+  status: 'connecting' | 'connected' | 'stale' | 'error' | 'caps-disabled'
 }
 
 export interface AppStatus {

@@ -4,7 +4,7 @@
  * Exportiert createBackend() für Electron und Tests.
  * Standalone-Boot (npm start) ist in standalone.ts.
  */
-import { Settings } from '@cwp/shared'
+import { Settings, SessionStatusMessage } from '@cwp/shared'
 import { StateStore } from './state/StateStore'
 import { ClientServer } from './server/ClientServer'
 import { HostManager } from './HostManager'
@@ -20,7 +20,7 @@ export async function createBackend(
   settings: Settings,
   port: number,
   settingsPath: string,
-  onStatusChange?: (hostId: string, status: string) => void,
+  onStatusChange?: (hostId: string, status: SessionStatusMessage['status']) => void,
   staticDir?: string,
 ): Promise<{ stop: () => Promise<void> }> {
   const store = new StateStore()
