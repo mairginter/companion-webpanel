@@ -12,13 +12,25 @@
       "satellite": {
         "wsPort": 16623
       },
-      "notes": "Haupt-Companion-Instanz im Studio"
+      "notes": "Haupt-Companion-Instanz im Studio",
+      "autoConnect": true
+    },
+    {
+      "id": "e4a143b5-4cdf-4ef9-a6ea-ba335677dc8e",
+      "name": "LiveAW18-LAP",
+      "host": "192.168.144.101",
+      "satellite": {
+        "wsPort": 16623
+      },
+      "notes": "Primärer Host noch kein Companion 4.3",
+      "autoConnect": false,
+      "showInToolbar": true
     }
   ],
   "panels": [
     {
       "id": "panel-main",
-      "name": "Main Panel",
+      "name": "ELAS_LIVE_Default",
       "zoom": 1,
       "defaultMode": "view",
       "grid": {
@@ -29,7 +41,7 @@
       "canvas": {
         "width": 1280,
         "height": 720,
-        "background": "#101214"
+        "background": "#322f30"
       },
       "elements": [
         {
@@ -59,8 +71,8 @@
         {
           "id": "btn-scene2",
           "type": "companionButton",
-          "x": 408,
-          "y": 133,
+          "x": 267,
+          "y": 89,
           "w": 100,
           "h": 100,
           "z": 0,
@@ -99,23 +111,24 @@
         {
           "id": "7c184884-a42c-4cdd-b3cc-963cd348021f",
           "type": "label",
-          "x": 544,
-          "y": 160,
+          "x": 403,
+          "y": 116,
           "w": 63,
           "h": 40,
           "z": 1,
           "text": "Alex",
           "style": {
-            "color": "#dae2ec"
+            "color": "#dae2ec",
+            "fontSize": 13
           }
         },
         {
           "id": "8ad76e3d-7516-4277-b5a7-f5d03e1a85fd",
           "type": "shape",
-          "x": 381,
-          "y": 113,
+          "x": 240,
+          "y": 69,
           "w": 253,
-          "h": 143.5,
+          "h": 144,
           "z": 0,
           "style": {
             "fill": "#4e6ec6",
@@ -125,6 +138,40 @@
           }
         }
       ]
+    },
+    {
+      "id": "fce4c27d-57dd-4468-9f50-43334ff7a390",
+      "name": "test2",
+      "zoom": 1,
+      "defaultMode": "view",
+      "grid": {
+        "enabled": true,
+        "size": 40,
+        "snap": true
+      },
+      "canvas": {
+        "width": 1440,
+        "height": 900,
+        "background": "#0f141a"
+      },
+      "elements": []
+    },
+    {
+      "id": "9be9247d-0688-4a85-a883-228f9aedc243",
+      "name": "test3",
+      "zoom": 1,
+      "defaultMode": "view",
+      "grid": {
+        "enabled": true,
+        "size": 40,
+        "snap": true
+      },
+      "canvas": {
+        "width": 1920,
+        "height": 1080,
+        "background": "#0f141a"
+      },
+      "elements": []
     }
   ]
 }
