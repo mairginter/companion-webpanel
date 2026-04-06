@@ -21,6 +21,9 @@ import { StartupWindow } from './startupWindow'
 import { AppTray } from './tray'
 import type { AppStatus } from './types'
 
+// App-Name setzen bevor getPath('userData') aufgerufen wird
+app.setName('CompanionWebpanel')
+
 // Verhindert mehrere App-Instanzen
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
