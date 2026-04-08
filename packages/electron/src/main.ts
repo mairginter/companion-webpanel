@@ -19,6 +19,7 @@ import { loadSettings, saveSettings, getSettingsPath } from './settingsHelper'
 import { findFreePort } from './portCheck'
 import { StartupWindow } from './startupWindow'
 import { AppTray } from './tray'
+import { PanelWindow } from './panelWindow'
 import type { AppStatus } from './types'
 
 // App-Name setzen bevor getPath('userData') aufgerufen wird
@@ -64,6 +65,8 @@ async function main(): Promise<void> {
   const startupWindow = new StartupWindow()
   startupWindow.create()
 
+  const panelWindow = new PanelWindow()
+
   // ─── Backend starten ───────────────────────────────────────────────────────
 
   let backendInstance: { stop: () => Promise<void> } | null = null
@@ -90,6 +93,8 @@ async function main(): Promise<void> {
   // ─── Tray ──────────────────────────────────────────────────────────────────
 
   const tray = new AppTray(
+    () => panelWindow.open(`http://localhost:${appStatus.port}`),
+    () => shell.openExternal(`http://localhost:${appStatus.port}`),
     () => startupWindow.show(),
     () => shutdown(),
   )
@@ -104,6 +109,10 @@ async function main(): Promise<void> {
   // Fix #4: Fenster beim Open Panel nicht schließen
   ipcMain.handle('open-panel', () => {
     shell.openExternal(`http://localhost:${appStatus.port}`)
+  })
+
+  ipcMain.handle('open-panel-app', () => {
+    panelWindow.open(`http://localhost:${appStatus.port}`)
   })
 
   ipcMain.on('hide-window', () => startupWindow.hide())
@@ -145,6 +154,7 @@ async function main(): Promise<void> {
     shuttingDown = true
 
     startupWindow.destroy()
+    panelWindow.destroy()
     tray.destroy()
 
     try {
