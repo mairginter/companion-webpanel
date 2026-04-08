@@ -11,7 +11,7 @@
  *  7. IPC-Handler registrieren
  *  8. app.on('window-all-closed') → nicht beenden (Tray-App)
  */
-import { app, ipcMain, shell } from 'electron'
+import { app, ipcMain, shell, dialog } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import { createBackend } from '@cwp/backend'
@@ -92,11 +92,25 @@ async function main(): Promise<void> {
 
   // ─── Tray ──────────────────────────────────────────────────────────────────
 
+  // Quit mit Bestätigungs-Dialog
+  async function askQuit(): Promise<void> {
+    const { response } = await dialog.showMessageBox({
+      type: 'question',
+      buttons: ['Beenden', 'Abbrechen'],
+      defaultId: 0,
+      cancelId: 1,
+      title: 'Companion Webpanel',
+      message: 'Companion Webpanel beenden?',
+      detail: 'Das Panel ist dann nicht mehr erreichbar.',
+    })
+    if (response === 0) shutdown()
+  }
+
   const tray = new AppTray(
     () => panelWindow.open(`http://localhost:${appStatus.port}`),
     () => shell.openExternal(`http://localhost:${appStatus.port}`),
     () => startupWindow.show(),
-    () => shutdown(),
+    () => askQuit(),
   )
   tray.create()
   tray.updateStatus(appStatus)
@@ -131,7 +145,7 @@ async function main(): Promise<void> {
     tray.updateStatus(appStatus)
   })
 
-  ipcMain.on('quit', () => shutdown())
+  ipcMain.on('quit', () => askQuit())
 
   // ─── App-Lifecycle ─────────────────────────────────────────────────────────
 

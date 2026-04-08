@@ -90,6 +90,10 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | setSettings Bug-Fix | `setSettings()` preserviert `activePanelId` wenn Panel noch existiert | War: immer auf `panels[0]` zurückgesprungen → Canvas-Settings-Änderung sprang auf erstes Panel |
 | ELECTRON_RUN_AS_NODE Fix | `scripts/launch-electron.mjs` löscht `ELECTRON_RUN_AS_NODE` vor Spawn | Claude Code / VS Code setzen diese Variable → Electron läuft im reinen Node-Modus statt GUI |
 | App-Name (userData-Pfad) | `app.setName('CompanionWebpanel')` in main.ts vor Single-Instance-Lock | npm workspace `name` muss `@cwp/electron` bleiben — `app.setName()` steuert userData-Verzeichnis unabhängig |
+| Panel APP-Modus | `PanelWindow` (BrowserWindow 1280×720) für "Open in App"; `shell.openExternal` für "Open in Browser" | Beide Optionen in Startup-Fenster + Tray; bereits offen → fokussieren statt neu öffnen |
+| Quit-Dialog | `dialog.showMessageBox()` vor shutdown — "Beenden" / "Abbrechen" | Verhindert versehentliches Beenden im Live-Betrieb |
+| Electron Tray Host-Filter | `appStatus.hosts` nur Hosts mit `showInToolbar !== false && autoConnect !== false` | Hosts ohne Toolbar-Anzeige oder ohne Auto-Connect nicht im Tray/Startup-Fenster anzeigen |
+| Startup-Fenster Hide | Hide-Button statt automatischem Schließen bei "Open in App/Browser" | Fenster bleibt zugänglich für Port-Änderung und Status-Check |
 
 ---
 
@@ -143,14 +147,15 @@ CompanionWebpannel/
     │           └── LabelElement.tsx              ← ✅ Statischer Text mit Style-Optionen
     └── electron/                                 ← ✅ Electron Wrapper (Phase 6 FERTIG)
         ├── src/
-        │   ├── main.ts                           ← Entry Point + IPC-Handler (get-status, open-panel, change-port, quit)
-        │   ├── preload.ts                        ← contextBridge (cwpApi)
-        │   ├── startupWindow.ts                  ← BrowserWindow Lifecycle (400×240, frameless, hide-on-close)
-        │   ├── tray.ts                           ← Tray-Icon + Kontextmenü (connected/partial/error Icon)
+        │   ├── main.ts                           ← Entry Point + IPC-Handler (get-status, open-panel, open-panel-app, change-port, quit+dialog)
+        │   ├── preload.ts                        ← contextBridge (cwpApi: openPanel, openPanelApp, hideWindow, changePort, quit)
+        │   ├── startupWindow.ts                  ← BrowserWindow Lifecycle (400×240, frameless, hide-on-close, icon-256.png)
+        │   ├── panelWindow.ts                    ← ✅ APP-Modus Panel (1280×720, loadURL, focus-if-open)
+        │   ├── tray.ts                           ← Tray-Icon + Kontextmenü (Open in App / Open in Browser, connected/partial/error Icon)
         │   ├── portCheck.ts                      ← isPortFree() + findFreePort()
         │   ├── settingsHelper.ts                 ← load/save/migrate aus userData-Dir
         │   └── types.ts                          ← AppStatus, HostStatus (IPC-Payload)
-        ├── renderer/startup.html                 ← Startup-Fenster UI (Port-Edit, Host-Status, Open/Quit)
+        ├── renderer/startup.html                 ← Startup-Fenster UI (Port-Edit+Apply, Host-Status, Open in App/Browser, Hide, Quit)
         ├── tests/
         │   ├── portCheck.test.ts                 ← 5 Tests ✅
         │   └── settingsHelper.test.ts            ← 6 Tests ✅
@@ -440,6 +445,21 @@ Alle 13 Tasks erledigt:
 - npm Scripts: `generate:icons` + `generate:app-icon`
 - Für macOS .icns: icon-512.png → cloudconvert.com
 
+### Phase 6.2 — Electron UX-Fixes + Panel APP-Modus ✅ FERTIG (Session 2026-04-08)
+- ✅ Smoke-Test Electron vollständig bestanden (Tray, Port-Änderung, Quit)
+- ✅ Startup-Fenster: App-Icon (icon-256.png) in Titlebar + Taskbar
+- ✅ Startup-Fenster: Hide-Button (kein Auto-Close bei Open Panel)
+- ✅ Startup-Fenster: Apply-Button für Port-Änderung (+ Enter)
+- ✅ Tray: "Open in App" + "Open in Browser" (statt "Open Panel" + "Open Settings")
+- ✅ Tray + Startup: Hosts mit `showInToolbar=false` oder `autoConnect=false` ausgeblendet
+- ✅ Quit-Dialog: native `dialog.showMessageBox()` vor Shutdown ("Beenden" / "Abbrechen")
+- ✅ Panel APP-Modus: `PanelWindow` — natives Electron-Fenster ohne Browser-Chrome
+  - Design-Spec: `docs/superpowers/specs/2026-04-08-panel-app-mode-design.md`
+  - Implementierungsplan: `docs/superpowers/plans/2026-04-08-panel-app-mode.md`
+  - 1280×720, resizable, focus-if-open, URL-Update bei Port-Wechsel
+- ✅ Toolbar: "Companion Panel" → "Companion Webpanel"
+- ✅ start-panel.bat — Start-Skript für einfachen Launch
+
 ---
 
 ## UI Design System (festgelegt in Session 2)
@@ -532,27 +552,21 @@ npm run build -w @cwp/shared   # WICHTIG: shared neu bauen bevor Backend compili
 
 ## Nächste Session — Aufgaben (Priorität)
 
-### Smoke-Test Electron App ✅ BESTANDEN (Session 2026-04-06)
-- ✅ Startup-Fenster erscheint
-- ✅ Panel erreichbar auf localhost:8080
-- ✅ Settings in `%APPDATA%\CompanionWebpanel\settings.json` persistiert
-- ⬜ Tray-Icon + Menü (noch nicht getestet)
-- ⬜ Port-Änderung im Startup-Fenster
-- ⬜ Quit / Graceful Shutdown
-
-### Electron Startup-Fenster — offene UX-Features
-- ⬜ App-Icon im Startup-Fenster anzeigen (BrowserWindow `icon`-Option)
-- ⬜ "Minimize to Tray"-Button im Startup-Fenster
-- ⬜ Panel APP Modus - Panel ohne Browserleiste APPmodus starten
-
 ### macOS .icns Icon (wenn Mac-Release nötig)
 `packages/electron/assets/icon-512.png` → cloudconvert.com → ICNS → `packages/electron/assets/icon.icns`
 Dann `electron-builder.yml` Mac-Target testen.
 
+### Electron — noch offene UX-Features
+- ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
+
 ### Edit-Mode — offene Features
+- ⬜ Delete-Button im Properties Panel (Touch-Modus: kein `Del` auf Touchscreen)
 - ⬜ Ctrl+C → Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
 - ⬜ Canvas Grid Snap für alle Elemente (Shape, Label, nicht nur CompanionButton)
 - ⬜ Rubber-Band Selektion: Kreis-Geste um mehrere Elemente zu markieren
+
+### Zu klären
+- ⬜ Bitmap-Skalierung: Companion immer 72px anfordern (Upscaling im Frontend) oder `BITMAP=<render-size>` dynamisch?
 
 ### Noch offen: MeterElement (separater Schritt)
 - Visuell: vertikal oder horizontal? Peak-Hold als Linie? → noch nicht entschieden
