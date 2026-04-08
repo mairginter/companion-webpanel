@@ -243,7 +243,8 @@
 
     <!-- Aktions-Buttons -->
     <div class="actions">
-      <button class="btn-primary" id="btnOpen">Open Panel</button>
+      <button class="btn-secondary" id="btnOpenApp">Open in App</button>
+      <button class="btn-secondary" id="btnOpen">Open in Browser</button>
       <button class="btn-secondary" id="btnHide">Hide</button>
       <button class="btn-secondary" id="btnQuit">Quit</button>
     </div>
@@ -304,6 +305,7 @@
 
     // ─── Buttons ─────────────────────────────────────────────────────────────
 
+    document.getElementById('btnOpenApp').addEventListener('click', () => api.openPanelApp())
     document.getElementById('btnOpen').addEventListener('click', () => api.openPanel())
     document.getElementById('btnHide').addEventListener('click', () => api.hideWindow())
     document.getElementById('btnQuit').addEventListener('click', () => api.quit())

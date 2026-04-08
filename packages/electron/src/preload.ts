@@ -28,6 +28,9 @@ contextBridge.exposeInMainWorld('cwpApi', {
   openPanel: (): Promise<void> =>
     ipcRenderer.invoke('open-panel'),
 
+  openPanelApp: (): Promise<void> =>
+    ipcRenderer.invoke('open-panel-app'),
+
   quit: (): void => {
     ipcRenderer.send('quit')
   },
