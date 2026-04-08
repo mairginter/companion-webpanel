@@ -16,11 +16,20 @@ import type { AppStatus, HostStatus } from './types'
 export class AppTray {
   private tray: Tray | null = null
   private currentStatus: AppStatus = { port: 8080, portAuto: false, hosts: [] }
+  private onOpenApp: () => void
+  private onOpenBrowser: () => void
   private onShowWindow: () => void
   private onQuit: () => void
   private assetsPath: string
 
-  constructor(onShowWindow: () => void, onQuit: () => void) {
+  constructor(
+    onOpenApp: () => void,
+    onOpenBrowser: () => void,
+    onShowWindow: () => void,
+    onQuit: () => void,
+  ) {
+    this.onOpenApp = onOpenApp
+    this.onOpenBrowser = onOpenBrowser
     this.onShowWindow = onShowWindow
     this.onQuit = onQuit
     this.assetsPath = path.join(__dirname, '..', 'assets')
@@ -66,8 +75,12 @@ export class AppTray {
 
     const menu = Menu.buildFromTemplate([
       {
-        label: 'Open Panel',
-        click: () => shell.openExternal(`http://localhost:${port}`),
+        label: 'Open in App',
+        click: () => this.onOpenApp(),
+      },
+      {
+        label: 'Open in Browser',
+        click: () => this.onOpenBrowser(),
       },
       { type: 'separator' },
       ...hostItems,
