@@ -18,6 +18,9 @@ export class PanelWindow {
   /** Öffnet das Panel-Fenster oder fokussiert es wenn bereits offen. */
   open(url: string): void {
     if (this.win && !this.win.isDestroyed()) {
+      this.win.loadURL(url).catch((err) => {
+        console.error('[PanelWindow] loadURL fehlgeschlagen:', err)
+      })
       this.win.show()
       this.win.focus()
       return
@@ -39,7 +42,9 @@ export class PanelWindow {
     })
 
     this.win.setMenuBarVisibility(false)
-    this.win.loadURL(url)
+    this.win.loadURL(url).catch((err) => {
+      console.error('[PanelWindow] loadURL fehlgeschlagen:', err)
+    })
 
     this.win.on('closed', () => {
       this.win = null
@@ -49,6 +54,7 @@ export class PanelWindow {
   /** Zerstört das Fenster (nur beim echten App-Quit). */
   destroy(): void {
     if (this.win && !this.win.isDestroyed()) {
+      this.win.removeAllListeners()
       this.win.destroy()
       this.win = null
     }
