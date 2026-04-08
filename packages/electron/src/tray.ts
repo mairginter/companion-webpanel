@@ -69,10 +69,6 @@ export class AppTray {
         label: 'Open Panel',
         click: () => shell.openExternal(`http://localhost:${port}`),
       },
-      {
-        label: 'Open Settings',
-        click: () => shell.openExternal(`http://localhost:${port}/#settings`),
-      },
       { type: 'separator' },
       ...hostItems,
       { type: 'separator' },

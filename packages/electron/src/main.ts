@@ -46,14 +46,17 @@ async function main(): Promise<void> {
 
   // ─── Status-State ──────────────────────────────────────────────────────────
 
+  // Fix #5: nur Hosts anzeigen die showInToolbar !== false UND autoConnect !== false haben
   const appStatus: AppStatus = {
     port: actualPort ?? 0,
     portAuto,
-    hosts: settings.hosts.map((h) => ({
-      id: h.id,
-      name: h.name,
-      status: 'connecting',
-    })),
+    hosts: settings.hosts
+      .filter((h) => h.showInToolbar !== false && h.autoConnect !== false)
+      .map((h) => ({
+        id: h.id,
+        name: h.name,
+        status: 'connecting',
+      })),
   }
 
   // ─── Startup-Fenster ───────────────────────────────────────────────────────
@@ -98,19 +101,21 @@ async function main(): Promise<void> {
 
   ipcMain.handle('get-status', () => appStatus)
 
+  // Fix #4: Fenster beim Open Panel nicht schließen
   ipcMain.handle('open-panel', () => {
     shell.openExternal(`http://localhost:${appStatus.port}`)
-    startupWindow.hide()
   })
+
+  ipcMain.on('hide-window', () => startupWindow.hide())
 
   ipcMain.handle('change-port', async (_event, newPort: number) => {
     // Settings updaten
     settings.server = { port: newPort }
     saveSettings(userDataPath, settings)
 
-    // Backend neu starten mit neuem Port
+    // Backend neu starten mit neuem Port (staticDir beibehalten)
     if (backendInstance) await backendInstance.stop()
-    backendInstance = await createBackend(settings, newPort, settingsPath, onHostStatus)
+    backendInstance = await createBackend(settings, newPort, settingsPath, onHostStatus, staticDir)
     appStatus.port = newPort
     appStatus.portAuto = false
     startupWindow.sendStatusUpdate(appStatus)

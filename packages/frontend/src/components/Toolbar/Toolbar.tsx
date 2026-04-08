@@ -127,7 +127,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
   return (
     <div style={s}>
       <span style={{ fontSize: 15, fontWeight: 600, color: '#e9edf2', letterSpacing: '0.02em', marginRight: 8 }}>
-        Companion Panel
+        Companion Webpanel
       </span>
       <div style={dividerStyle} />
 

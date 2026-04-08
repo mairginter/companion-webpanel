@@ -31,4 +31,8 @@ contextBridge.exposeInMainWorld('cwpApi', {
   quit: (): void => {
     ipcRenderer.send('quit')
   },
+
+  hideWindow: (): void => {
+    ipcRenderer.send('hide-window')
+  },
 })

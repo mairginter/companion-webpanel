@@ -13,11 +13,13 @@ export class StartupWindow {
   private win: BrowserWindow | null = null
   private preloadPath: string
   private htmlPath: string
+  private iconPath: string
 
   constructor() {
     // Pfade relativ zur kompilierten dist/main.js
     this.preloadPath = path.join(__dirname, 'preload.js')
     this.htmlPath = path.join(__dirname, '..', 'renderer', 'startup.html')
+    this.iconPath = path.join(__dirname, '..', 'assets', 'icon-256.png')
   }
 
   /** Erstellt und zeigt das Startup-Fenster. */
@@ -37,6 +39,7 @@ export class StartupWindow {
       frame: false,
       titleBarStyle: 'hidden',
       backgroundColor: '#0f141a',
+      icon: this.iconPath,
       webPreferences: {
         preload: this.preloadPath,
         contextIsolation: true,
