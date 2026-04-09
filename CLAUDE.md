@@ -96,6 +96,15 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Quit-Dialog | `dialog.showMessageBox()` vor shutdown — "Beenden" / "Abbrechen" | Verhindert versehentliches Beenden im Live-Betrieb |
 | Electron Tray Host-Filter | `appStatus.hosts` nur Hosts mit `showInToolbar !== false && autoConnect !== false` | Hosts ohne Toolbar-Anzeige oder ohne Auto-Connect nicht im Tray/Startup-Fenster anzeigen |
 | Startup-Fenster Hide | Hide-Button statt automatischem Schließen bei "Open in App/Browser" | Fenster bleibt zugänglich für Port-Änderung und Status-Check |
+| ChannelStrip Struktur | Monolithisches Element (nicht separate Elemente) mit Setup-Wizard | Ein Block = Meter+Fader+Mute+Solo; Wizard führt durch Refs beim Erstellen |
+| ChannelStrip Fader-Control | `SUB-ROTATE SUBID=buttonRef DIRECTION=±1` (Satellite API v1.10) | Kein separater faderUpRef/faderDownRef nötig — ein Button für alles |
+| ChannelStrip buttonRef | 1 Companion-Button für: Mute (SUB-PRESS+bgColor) + Fader (SUB-ROTATE) + Daten (TEXT multi-value) | TEXT-Feld mit Separator (z.B. `\|`) enthält Meter L/R, Level, Name als indizierte Werte |
+| ChannelStrip Fine/Coarse | Shift+Scroll = `coarseMultiplier` × SUB-ROTATE (Default: 10) | Kein separater Companion-Button — Multiplikator client-seitig |
+| ChannelStrip Unity Reset | Doppelklick auf Wheel → SUB-PRESS auf buttonRef | Companion-Button "Press action" = Set Fader 0dB konfigurieren |
+| ChannelStrip Color Stripe | 20px Höhe, Channel-Name integriert, konfigurierbare Farbe | Wie SSL/dLive — schnelle visuelle Orientierung im Live-Betrieb |
+| ChannelStrip Clip LED | Blinkt (CSS step-start 0.5s) wenn Meter ≥ clipThreshold (default: 0 dBFS), kein Reset | Latching-Verhalten entfällt bewusst — blinkt nur bei aktivem Clipping |
+| ChannelStrip Pan | Ausgegraut wenn `style.mono=true` oder `refs.pan` nicht konfiguriert | Pan-Wert aus Companion TEXT-Variable (Wing: `ch1_pan`, vMix: `input_X_pan`) |
+| ChannelStrip Solo | Ausgegraut wenn `refs.solo` nicht konfiguriert | Separater optionaler Button (SUB-PRESS + bgColor-State) |
 
 ---
 
@@ -112,10 +121,11 @@ CompanionWebpannel/
 ├── bitfocus-companion-module-sources.md          ← API-Quellen / Docs-Links
 ├── docs/satellite-api-protocol.md                ← Satellite API Protokoll-Referenz (v1.10 / Companion 4.3+)
 ├── docs/superpowers/
-│   ├── specs/2026-04-01-edit-mode-design.md      ← ✅ Edit-Mode Design-Spec
-│   ├── specs/2026-04-05-electron-tray-design.md  ← ✅ Electron Wrapper Design-Spec (Phase 6)
-│   ├── plans/2026-04-01-edit-mode.md             ← ✅ Edit-Mode Implementierungsplan
-│   └── plans/2026-04-05-electron-tray.md         ← ✅ Electron Wrapper Implementierungsplan (13 Tasks)
+│   ├── specs/2026-04-01-edit-mode-design.md        ← ✅ Edit-Mode Design-Spec
+│   ├── specs/2026-04-05-electron-tray-design.md   ← ✅ Electron Wrapper Design-Spec (Phase 6)
+│   ├── specs/2026-04-09-channelstrip-design.md    ← ✅ ChannelStrip Element Design-Spec (Phase 7)
+│   ├── plans/2026-04-01-edit-mode.md              ← ✅ Edit-Mode Implementierungsplan
+│   └── plans/2026-04-05-electron-tray.md          ← ✅ Electron Wrapper Implementierungsplan (13 Tasks)
 ├── package.json                                  ← npm workspaces root (inkl. @cwp/electron ✅)
 ├── scripts/
 │   └── launch-electron.mjs                       ← ✅ Electron-Launcher (löscht ELECTRON_RUN_AS_NODE)
@@ -565,9 +575,17 @@ Dann `electron-builder.yml` Mac-Target testen.
 - ⬜ Ctrl+C → Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
 - ⬜ Canvas Grid Snap für alle Elemente (Shape, Label, nicht nur CompanionButton)
 
-### Noch offen: MeterElement (separater Schritt)
-- Visuell: vertikal oder horizontal? Peak-Hold als Linie? → noch nicht entschieden
-- Quelle = TEXT-Feld eines Companion-Buttons, Parser: "db"
+### Phase 7 — ChannelStrip Element ⬜ NÄCHSTE PRIORITÄT (Design-Spec fertig: 2026-04-09)
+Design-Spec: `docs/superpowers/specs/2026-04-09-channelstrip-design.md`
+Implementierungsplan: **noch zu schreiben** (nächste Session: Plan zuerst, dann implementieren)
+
+Kernpunkte für Implementierung:
+- Neues Element `channelStrip` in `shared/src/types.ts` (`ChannelStripElement` Interface)
+- `SUB-ROTATE` als neuer Message-Type in `FrontendToBackend` + `SatelliteClient.ts`
+- `ChannelStripElement.tsx` + `ChannelStripProps.tsx` (PropertiesPanel)
+- Setup-Wizard (5 Schritte) beim Hinzufügen aus `+`-Menü
+- Multi-Value TEXT-Parser (Separator + Feldindizes)
+- Offener Punkt: Mute-State-Erkennung aus `bgColor` (Schwellenwert-Logik vs. explizite Konfiguration)
 
 ### Panel Export/Import (geplant, ~2–3h)
 - Export: einzelnes Panel als `.cwp`-Datei (JSON) herunterladen
