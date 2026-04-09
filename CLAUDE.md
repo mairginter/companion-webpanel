@@ -560,13 +560,9 @@ Dann `electron-builder.yml` Mac-Target testen.
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
 
 ### Edit-Mode — offene Features
-- ⬜ Delete-Button im Properties Panel (Touch-Modus: kein `Del` auf Touchscreen)
 - ⬜ Ctrl+C → Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
 - ⬜ Canvas Grid Snap für alle Elemente (Shape, Label, nicht nur CompanionButton)
 - ⬜ Rubber-Band Selektion: Kreis-Geste um mehrere Elemente zu markieren
-
-### Zu klären
-- ⬜ Bitmap-Skalierung: Companion immer 72px anfordern (Upscaling im Frontend) oder `BITMAP=<render-size>` dynamisch?
 
 ### Noch offen: MeterElement (separater Schritt)
 - Visuell: vertikal oder horizontal? Peak-Hold als Linie? → noch nicht entschieden
