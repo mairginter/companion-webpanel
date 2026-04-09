@@ -49,6 +49,7 @@ export function Canvas({ sendPress }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [dragDelta, setDragDelta] = useState<{ dx: number; dy: number } | null>(null)
   const [lassoPoints, setLassoPoints] = useState<Point[]>([])
+  const lassoPointsRef = useRef<Point[]>([])  // Ref für seiteneffektfreien Zugriff in PointerUp
   const isLassoing = useRef(false)
   const shiftLasso = useRef(false)
   const lassoDidMove = useRef(false)
@@ -121,7 +122,9 @@ export function Canvas({ sendPress }: CanvasProps) {
     isLassoing.current = true
     lassoDidMove.current = false
     shiftLasso.current = e.shiftKey
-    setLassoPoints([getCanvasPos(e)])
+    const initial = [getCanvasPos(e)]
+    lassoPointsRef.current = initial
+    setLassoPoints(initial)
   }, [mode, getCanvasPos])
 
   const handleLassoPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -132,7 +135,9 @@ export function Canvas({ sendPress }: CanvasProps) {
       const last = prev[prev.length - 1]
       if (Math.hypot(pos.x - last.x, pos.y - last.y) < 4) return prev
       lassoDidMove.current = true
-      return [...prev, pos]
+      const next = [...prev, pos]
+      lassoPointsRef.current = next
+      return next
     })
   }, [getCanvasPos])
 
@@ -140,22 +145,22 @@ export function Canvas({ sendPress }: CanvasProps) {
     if (!isLassoing.current) return
     isLassoing.current = false
     lassoDidMove.current = false
-    setLassoPoints((points) => {
-      if (points.length >= 3) {
-        const currentPanel = useAppStore.getState().getActivePanel()
-        if (currentPanel) {
-          const hit = currentPanel.elements
-            .filter((el) => !el.locked && lassoHitsElement(points, el))
-            .map((el) => el.id)
-          if (shiftLasso.current) {
-            selectElements([...useAppStore.getState().selectedIds, ...hit])
-          } else {
-            selectElements(hit)
-          }
+    const points = lassoPointsRef.current
+    lassoPointsRef.current = []
+    setLassoPoints([])
+    if (points.length >= 3) {
+      const currentPanel = useAppStore.getState().getActivePanel()
+      if (currentPanel) {
+        const hit = currentPanel.elements
+          .filter((el) => !el.locked && lassoHitsElement(points, el))
+          .map((el) => el.id)
+        if (shiftLasso.current) {
+          selectElements([...useAppStore.getState().selectedIds, ...hit])
+        } else {
+          selectElements(hit)
         }
       }
-      return []
-    })
+    }
   }, [selectElements])
 
   const canvasBackground = panel?.canvas?.background ?? '#0f141a'
@@ -201,6 +206,7 @@ export function Canvas({ sendPress }: CanvasProps) {
           onPointerCancel={mode === 'edit' ? () => {
             isLassoing.current = false
             lassoDidMove.current = false
+            lassoPointsRef.current = []
             setLassoPoints([])
           } : undefined}
         >
