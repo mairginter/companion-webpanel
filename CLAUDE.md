@@ -68,11 +68,13 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Properties Panel Multi-Select | Nur Geometrie-Block sichtbar; unterschiedliche Werte → `—` (editierbar: setzt alle auf diesen Wert) | Konsistente Multi-Edit-Erfahrung |
 | Rubber-Band Style | fill `rgba(74,158,255,0.08)`, stroke `#4a9eff` 1px | Konsistent mit `accent.blue` aus Design-System |
 | Rubber-Band Shift | Shift+Rubber-Band fügt zur bestehenden Selektion hinzu | Einheitlich mit Shift+Klick |
+| Lasso-Selektion | Freihand-Polygon (LassoSelect.tsx), Ray-Casting Hit-Test, ersetzt RubberBand | Default: Ecken-Check (mindestens 1 Ecke im Polygon), locked=true Elemente ausgeschlossen |
 | Edit-Mode Nicht-MVP | Kein proportionales Resize (Multi-Select), kein voller Undo-Stack, kein Z-Index manuell, kein `+`-Button, kein MeterElement | MVP-Fokus — Phase 4 |
 | Multi-Agent Implementierung | NEIN — kein paralleles Arbeiten mehrerer Agenten | Datei-Konflikte möglich bei parallelen Schreibzugriffen. Sequenziell nach Plan-Reihenfolge. |
 | Sidebar | Entfernt — Panel-Auswahl als Dropdown in Toolbar | Mehr Canvas-Platz, einfachere Navigation |
 | Properties Panel Schriftgrössen | Labels 12px, Inputs/Selects 14px mit 8×10px Padding, Checkboxen 20×20px | Touch-freundlich (min 44px Hit-Area für Buttons) |
 | CompanionButton Font-Size | `render.fontSize` konfigurierbar (default 11px, min 6px) | User kann Textgrösse pro Button anpassen |
+| Bitmap Scaling | `render.scaleBitmap` (default: true) — `objectFit: contain`, `imageRendering: auto` | Bitmap füllt Button-Container; false = feste 72px pixelscharf |
 | Companion Mindestversion | 4.3.0+ (Satellite API 1.10.0) | Button Subscriptions API erst ab 4.3 — getestet mit 4.3.0+9146 |
 | Companion Setting | `satellite_subscriptions_enabled = true` | Muss in Companion Einstellungen aktiviert sein — `CAPS SUBSCRIPTIONS=1` prüfen |
 | Surface löschen | Nur wenn kein Button in der Konfig mehr auf diese Page zeigt | Subscription wird entfernt sobald letzter Ref weg ist |
@@ -562,7 +564,6 @@ Dann `electron-builder.yml` Mac-Target testen.
 ### Edit-Mode — offene Features
 - ⬜ Ctrl+C → Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
 - ⬜ Canvas Grid Snap für alle Elemente (Shape, Label, nicht nur CompanionButton)
-- ⬜ Rubber-Band Selektion: Kreis-Geste um mehrere Elemente zu markieren
 
 ### Noch offen: MeterElement (separater Schritt)
 - Visuell: vertikal oder horizontal? Peak-Hold als Linie? → noch nicht entschieden
