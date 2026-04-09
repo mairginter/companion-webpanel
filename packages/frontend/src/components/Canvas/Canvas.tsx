@@ -51,6 +51,7 @@ export function Canvas({ sendPress }: CanvasProps) {
   const [lassoPoints, setLassoPoints] = useState<Point[]>([])
   const isLassoing = useRef(false)
   const shiftLasso = useRef(false)
+  const lassoDidMove = useRef(false)
   const [contextMenu, setContextMenu] = useState<{
     screenPos: { x: number; y: number }
     canvasPos: { x: number; y: number }
@@ -118,6 +119,7 @@ export function Canvas({ sendPress }: CanvasProps) {
     if (e.button !== 0) return
     e.currentTarget.setPointerCapture(e.pointerId)
     isLassoing.current = true
+    lassoDidMove.current = false
     shiftLasso.current = e.shiftKey
     setLassoPoints([getCanvasPos(e)])
   }, [mode, getCanvasPos])
@@ -129,6 +131,7 @@ export function Canvas({ sendPress }: CanvasProps) {
       if (prev.length === 0) return [pos]
       const last = prev[prev.length - 1]
       if (Math.hypot(pos.x - last.x, pos.y - last.y) < 4) return prev
+      lassoDidMove.current = true
       return [...prev, pos]
     })
   }, [getCanvasPos])
@@ -141,7 +144,7 @@ export function Canvas({ sendPress }: CanvasProps) {
         const currentPanel = useAppStore.getState().getActivePanel()
         if (currentPanel) {
           const hit = currentPanel.elements
-            .filter((el) => lassoHitsElement(points, el))
+            .filter((el) => !el.locked && lassoHitsElement(points, el))
             .map((el) => el.id)
           if (shiftLasso.current) {
             selectElements([...useAppStore.getState().selectedIds, ...hit])
@@ -189,11 +192,15 @@ export function Canvas({ sendPress }: CanvasProps) {
             backgroundImage: backgroundImageLayers,
             ...(backgroundSizeLayers ? { backgroundSize: backgroundSizeLayers } : {}),
           }}
-          onClick={mode === 'edit' ? () => clearSelection() : undefined}
+          onClick={mode === 'edit' ? () => { if (!lassoDidMove.current) clearSelection() } : undefined}
           onContextMenu={handleContextMenu}
           onPointerDown={handleLassoPointerDown}
           onPointerMove={handleLassoPointerMove}
           onPointerUp={handleLassoPointerUp}
+          onPointerCancel={mode === 'edit' ? () => {
+            isLassoing.current = false
+            setLassoPoints([])
+          } : undefined}
         >
           {!panel ? (
             <div style={{
