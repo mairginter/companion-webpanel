@@ -34,6 +34,7 @@ export function PropertiesPanel() {
 
   const panel = useAppStore((s) => s.getActivePanel())
   const selectedIds = useAppStore((s) => s.selectedIds)
+  const deleteElements = useAppStore((s) => s.deleteElements)
 
   const flipSide = () => {
     const next = side === 'right' ? 'left' : 'right'
@@ -181,6 +182,8 @@ export function PropertiesPanel() {
     }
   }
 
+  const canDelete = selectedElements.length > 0 && selectedElements.every((el) => !el.locked)
+
   return (
     <div style={panelStyle}>
       <div style={headerStyle}>
@@ -193,6 +196,30 @@ export function PropertiesPanel() {
       <div style={contentStyle}>
         {specificContent}
       </div>
+      {selectedElements.length > 0 && (
+        <div style={{ padding: '10px 12px', borderTop: '1px solid #2a3344', flexShrink: 0 }}>
+          <button
+            onClick={() => canDelete && deleteElements(panel!.id, [...selectedIds])}
+            disabled={!canDelete}
+            title={canDelete ? 'Element(e) löschen' : 'Gesperrte Elemente können nicht gelöscht werden'}
+            style={{
+              width: '100%',
+              padding: '10px',
+              borderRadius: 6,
+              border: '1px solid',
+              borderColor: canDelete ? '#ff5a5f44' : '#2a3344',
+              background: canDelete ? 'rgba(255,90,95,0.1)' : 'transparent',
+              color: canDelete ? '#ff5a5f' : '#4a5568',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: canDelete ? 'pointer' : 'not-allowed',
+              fontFamily: 'inherit',
+            }}
+          >
+            {selectedElements.length > 1 ? `${selectedElements.length} Elemente löschen` : 'Element löschen'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
