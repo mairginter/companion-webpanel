@@ -357,13 +357,15 @@ Alle Elemente erben `BaseElement`: `id, type, x, y, w, h, z, locked`.
 | Option | Default | Beschreibung |
 |---|---|---|
 | `showBitmap` | `false` | Companion-Bitmap anzeigen. Default false — Text ist bereits in Bitmap eingebettet |
+| `scaleBitmap` | `true` | Bitmap auf Container skalieren (`objectFit: contain`). `false` = feste 72px pixelscharf. Nur sichtbar wenn `showBitmap=true` |
 | `showText` | `true` | Text-Overlay anzeigen |
 | `showBgColor` | `true` | Companion `bgColor` als Button-Hintergrund anwenden |
-| `textAlign` | `'center'` | Textposition: `top` / `center` / `bottom` — gilt immer (auch ohne Bitmap) |
+| `textAlign` | `'bottom'` | Textposition: `top` / `center` / `bottom` — gilt immer (auch ohne Bitmap) |
 | `bitmapSize` | `72` | Pixelgröße der angezeigten Bitmap |
 | `borderRadius` | `6` | Border-Radius des Button-Containers |
 
-**Fix (Session 5):** `textAlign` gilt jetzt immer — unabhängig von `showBitmap`. Default geändert auf `'center'`.
+**Fix (Session 5):** `textAlign` gilt jetzt immer — unabhängig von `showBitmap`.
+**Session 2026-04-09:** `scaleBitmap` hinzugefügt; `textAlign`-Default auf `'bottom'` geändert.
 
 ---
 
@@ -577,7 +579,7 @@ Dann `electron-builder.yml` Mac-Target testen.
 
 ### Phase 7 — ChannelStrip Element ⬜ NÄCHSTE PRIORITÄT (Design-Spec fertig: 2026-04-09)
 Design-Spec: `docs/superpowers/specs/2026-04-09-channelstrip-design.md`
-Implementierungsplan: **noch zu schreiben** (nächste Session: Plan zuerst, dann implementieren)
+Implementierungsplan: `docs/superpowers/plans/2026-04-09-channelstrip.md` ✅
 
 Kernpunkte für Implementierung:
 - Neues Element `channelStrip` in `shared/src/types.ts` (`ChannelStripElement` Interface)

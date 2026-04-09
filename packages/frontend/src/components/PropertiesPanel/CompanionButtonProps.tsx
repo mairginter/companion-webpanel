@@ -87,6 +87,12 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
         <span style={lbl}>Show Bitmap</span>
         <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showBitmap, false)} onChange={(e) => updateRender({ showBitmap: e.target.checked })} />
       </div>
+      {tog(r.showBitmap, false) && (
+        <div style={row}>
+          <span style={lbl}>Scale Bitmap</span>
+          <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.scaleBitmap, true)} onChange={(e) => updateRender({ scaleBitmap: e.target.checked })} />
+        </div>
+      )}
       <div style={row}>
         <span style={lbl}>Show Text</span>
         <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showText, true)} onChange={(e) => updateRender({ showText: e.target.checked })} />
@@ -102,8 +108,10 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
       </div>
       <NumericInput label="Border-Radius" value={r.borderRadius ?? 6} min={0}
         onChange={(v) => updateRender({ borderRadius: v })} />
-      <NumericInput label="Font-Size" value={r.fontSize ?? 11} min={6} unit="px"
-        onChange={(v) => updateRender({ fontSize: v })} />
+      {tog(r.showText, true) && (
+        <NumericInput label="Font-Size" value={r.fontSize ?? 11} min={6} unit="px"
+          onChange={(v) => updateRender({ fontSize: v })} />
+      )}
 
       {pickerOpen && (
         <CompanionButtonPickerDialog

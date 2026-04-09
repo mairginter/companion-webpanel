@@ -21,6 +21,7 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   const bitmapSize = render?.bitmapSize ?? 72
   const borderRadius = render?.borderRadius ?? 6
   const showBitmap = render?.showBitmap === true      // default: false
+  const scaleBitmap = render?.scaleBitmap !== false   // default: true
   const showText = render?.showText !== false          // default: true
   const showBgColor = render?.showBgColor !== false    // default: true
   const textAlign = render?.textAlign ?? 'bottom'
@@ -123,9 +124,10 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
       {bitmapSrc && (
         <img
           src={bitmapSrc}
-          width={bitmapSize}
-          height={bitmapSize}
-          style={{ display: 'block', imageRendering: 'pixelated', pointerEvents: 'none', flexShrink: 0 }}
+          {...(scaleBitmap
+            ? { style: { display: 'block', width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'auto', pointerEvents: 'none' } }
+            : { width: bitmapSize, height: bitmapSize, style: { display: 'block', imageRendering: 'pixelated', pointerEvents: 'none', flexShrink: 0 } }
+          )}
           alt=""
           draggable={false}
         />

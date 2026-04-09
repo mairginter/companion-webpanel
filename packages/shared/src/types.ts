@@ -50,6 +50,8 @@ export interface CompanionButtonElement extends BaseElement {
     enforceMinSize?: boolean
     /** Bitmap anzeigen (Companion-Grafik). Default: false — Text ist bereits in Bitmap eingebettet */
     showBitmap?: boolean
+    /** Bitmap auf Container skalieren (objectFit: contain). Default: true */
+    scaleBitmap?: boolean
     /** Text-Overlay anzeigen. Default: true */
     showText?: boolean
     /** Companion bgColor als Hintergrund anwenden. Default: true */
