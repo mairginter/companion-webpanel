@@ -591,6 +591,8 @@ Dann `electron-builder.yml` Mac-Target testen.
 - **Test-Fixture-Version** → `makeSettings()` in `useAppStore.test.ts` verwendet `version: '1.3.0'` (bei nächster Version-Bump anpassen)
 - **caps-disabled Status** → muss konsistent in 3 Stellen sein: `SessionStatusMessage['status']` (shared/types.ts) + `HostStatus.status` (electron/types.ts) + `tray.ts` switch-Statement. Fehlt eine → TypeScript-Fehler oder fehlende Tray-Icon-Variante.
 - **Alte Electron-Instanz blockiert Single-Instance-Lock** → beim Neustart: `Get-Process electron | Stop-Process -Force` (PowerShell) — sonst startet neue Instanz sofort wieder.
+- **Lasso: lassoPointsRef synchron setzen** → `lassoPointsRef.current` muss im Event-Handler direkt gesetzt werden, NICHT innerhalb von `setLassoPoints(updater)` — React verarbeitet State-Updater asynchron, Ref wäre bei `pointerUp` noch leer.
+- **Lasso: lassoDidMove nicht in pointerUp zurücksetzen** → `onClick` feuert nach `pointerUp` auf demselben Element. `lassoDidMove` darf erst in `pointerDown` auf `false` gesetzt werden — sonst löscht `onClick` die Lasso-Selektion sofort wieder.
 
 ---
 
