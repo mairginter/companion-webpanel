@@ -144,7 +144,8 @@ export function Canvas({ sendPress }: CanvasProps) {
   const handleLassoPointerUp = useCallback((_e: React.PointerEvent<HTMLDivElement>) => {
     if (!isLassoing.current) return
     isLassoing.current = false
-    lassoDidMove.current = false
+    // lassoDidMove bleibt true bis zum nächsten pointerDown —
+    // verhindert dass onClick danach clearSelection() aufruft
     const points = lassoPointsRef.current
     lassoPointsRef.current = []
     setLassoPoints([])
