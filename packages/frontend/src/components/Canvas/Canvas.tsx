@@ -130,15 +130,15 @@ export function Canvas({ sendPress }: CanvasProps) {
   const handleLassoPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!isLassoing.current) return
     const pos = getCanvasPos(e)
-    setLassoPoints((prev) => {
-      if (prev.length === 0) return [pos]
+    const prev = lassoPointsRef.current
+    if (prev.length > 0) {
       const last = prev[prev.length - 1]
-      if (Math.hypot(pos.x - last.x, pos.y - last.y) < 4) return prev
-      lassoDidMove.current = true
-      const next = [...prev, pos]
-      lassoPointsRef.current = next
-      return next
-    })
+      if (Math.hypot(pos.x - last.x, pos.y - last.y) < 4) return
+    }
+    lassoDidMove.current = true
+    const next = [...prev, pos]
+    lassoPointsRef.current = next   // synchron — vor pointerUp lesbar
+    setLassoPoints(next)            // nur für SVG-Rendering
   }, [getCanvasPos])
 
   const handleLassoPointerUp = useCallback((_e: React.PointerEvent<HTMLDivElement>) => {
