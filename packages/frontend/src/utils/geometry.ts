@@ -59,3 +59,37 @@ export function rectsOverlap(a: Rect, b: Rect): boolean {
     a.y + a.h > b.y
   )
 }
+
+export interface Point { x: number; y: number }
+
+/**
+ * Ray-Casting Algorithmus: prüft ob ein Punkt innerhalb eines Polygons liegt.
+ * Gibt false zurück bei weniger als 3 Punkten.
+ */
+export function pointInPolygon(point: Point, polygon: Point[]): boolean {
+  if (polygon.length < 3) return false
+  let inside = false
+  const { x, y } = point
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y
+    const xj = polygon[j].x, yj = polygon[j].y
+    const intersect = ((yi > y) !== (yj > y)) &&
+      (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
+    if (intersect) inside = !inside
+  }
+  return inside
+}
+
+/**
+ * Prüft ob ein Element vom Lasso-Polygon getroffen wird.
+ * Hit wenn mindestens eine der 4 Bounding-Box-Ecken im Polygon liegt.
+ */
+export function lassoHitsElement(polygon: Point[], el: Rect): boolean {
+  const corners: Point[] = [
+    { x: el.x,          y: el.y          },
+    { x: el.x + el.w,   y: el.y          },
+    { x: el.x,          y: el.y + el.h   },
+    { x: el.x + el.w,   y: el.y + el.h   },
+  ]
+  return corners.some((c) => pointInPolygon(c, polygon))
+}
