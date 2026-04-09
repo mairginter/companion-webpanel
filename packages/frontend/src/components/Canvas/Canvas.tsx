@@ -6,7 +6,7 @@
  * Edit-Mode: Elemente werden in EditableElement gewrapped.
  *   - DndContext mit magnetischem Snap-Modifier
  *   - DragDeltaContext für Gruppen-Drag
- *   - RubberBand für Mehrfach-Selektion
+ *   - LassoSelect für Freihand-Mehrfach-Selektion (ersetzt RubberBand)
  */
 import { useRef, useState, useCallback, useMemo } from 'react'
 import {
@@ -26,7 +26,8 @@ import { CompanionButtonElement } from '../Elements/CompanionButtonElement'
 import { ShapeElement } from '../Elements/ShapeElement'
 import { LabelElement } from '../Elements/LabelElement'
 import { EditableElement } from './EditableElement'
-import { RubberBand } from './RubberBand'
+import { LassoSelect } from './LassoSelect'
+import { Point, lassoHitsElement } from '../../utils/geometry'
 import { PropertiesPanel } from '../PropertiesPanel/PropertiesPanel'
 import { AddElementMenu } from '../AddElement/AddElementMenu'
 
@@ -41,11 +42,15 @@ export function Canvas({ sendPress }: CanvasProps) {
   const panel = useAppStore((s) => s.getActivePanel())
   const clearSelection = useAppStore((s) => s.clearSelection)
   const selectedIds = useAppStore((s) => s.selectedIds)
+  const selectElements = useAppStore((s) => s.selectElements)
   const updateElementGeometry = useAppStore((s) => s.updateElementGeometry)
   const saveUndoSnapshot = useAppStore((s) => s.saveUndoSnapshot)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [dragDelta, setDragDelta] = useState<{ dx: number; dy: number } | null>(null)
+  const [lassoPoints, setLassoPoints] = useState<Point[]>([])
+  const isLassoing = useRef(false)
+  const shiftLasso = useRef(false)
   const [contextMenu, setContextMenu] = useState<{
     screenPos: { x: number; y: number }
     canvasPos: { x: number; y: number }
@@ -62,6 +67,13 @@ export function Canvas({ sendPress }: CanvasProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   )
+
+  const getCanvasPos = useCallback((e: React.PointerEvent): Point => {
+    const container = containerRef.current
+    if (!container) return { x: 0, y: 0 }
+    const bounds = container.getBoundingClientRect()
+    return { x: e.clientX - bounds.left, y: e.clientY - bounds.top }
+  }, [])
 
   const handleDragStart = useCallback(() => {
     saveUndoSnapshot([...selectedIds])
@@ -100,6 +112,48 @@ export function Canvas({ sendPress }: CanvasProps) {
     setContextMenu({ screenPos: { x: e.clientX, y: e.clientY }, canvasPos })
   }, [mode])
 
+  const handleLassoPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (mode !== 'edit') return
+    if (e.target !== e.currentTarget) return  // nur auf leerem Canvas
+    if (e.button !== 0) return
+    e.currentTarget.setPointerCapture(e.pointerId)
+    isLassoing.current = true
+    shiftLasso.current = e.shiftKey
+    setLassoPoints([getCanvasPos(e)])
+  }, [mode, getCanvasPos])
+
+  const handleLassoPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isLassoing.current) return
+    const pos = getCanvasPos(e)
+    setLassoPoints((prev) => {
+      if (prev.length === 0) return [pos]
+      const last = prev[prev.length - 1]
+      if (Math.hypot(pos.x - last.x, pos.y - last.y) < 4) return prev
+      return [...prev, pos]
+    })
+  }, [getCanvasPos])
+
+  const handleLassoPointerUp = useCallback((_e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isLassoing.current) return
+    isLassoing.current = false
+    setLassoPoints((points) => {
+      if (points.length >= 3) {
+        const currentPanel = useAppStore.getState().getActivePanel()
+        if (currentPanel) {
+          const hit = currentPanel.elements
+            .filter((el) => lassoHitsElement(points, el))
+            .map((el) => el.id)
+          if (shiftLasso.current) {
+            selectElements([...useAppStore.getState().selectedIds, ...hit])
+          } else {
+            selectElements(hit)
+          }
+        }
+      }
+      return []
+    })
+  }, [selectElements])
+
   const canvasBackground = panel?.canvas?.background ?? '#0f141a'
   const canvasWidth = panel?.canvas?.width
   const canvasHeight = panel?.canvas?.height
@@ -137,6 +191,9 @@ export function Canvas({ sendPress }: CanvasProps) {
           }}
           onClick={mode === 'edit' ? () => clearSelection() : undefined}
           onContextMenu={handleContextMenu}
+          onPointerDown={handleLassoPointerDown}
+          onPointerMove={handleLassoPointerMove}
+          onPointerUp={handleLassoPointerUp}
         >
           {!panel ? (
             <div style={{
@@ -152,8 +209,8 @@ export function Canvas({ sendPress }: CanvasProps) {
             renderElements(panel.elements, panel.id, mode, sendPress)
           )}
 
-          {mode === 'edit' && panel && (
-            <RubberBand elements={panel.elements} panelId={panel.id} containerRef={containerRef} />
+          {mode === 'edit' && lassoPoints.length >= 2 && (
+            <LassoSelect points={lassoPoints} />
           )}
         </div>
       </div>
