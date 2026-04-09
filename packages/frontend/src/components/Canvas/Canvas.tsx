@@ -139,6 +139,7 @@ export function Canvas({ sendPress }: CanvasProps) {
   const handleLassoPointerUp = useCallback((_e: React.PointerEvent<HTMLDivElement>) => {
     if (!isLassoing.current) return
     isLassoing.current = false
+    lassoDidMove.current = false
     setLassoPoints((points) => {
       if (points.length >= 3) {
         const currentPanel = useAppStore.getState().getActivePanel()
@@ -199,6 +200,7 @@ export function Canvas({ sendPress }: CanvasProps) {
           onPointerUp={handleLassoPointerUp}
           onPointerCancel={mode === 'edit' ? () => {
             isLassoing.current = false
+            lassoDidMove.current = false
             setLassoPoints([])
           } : undefined}
         >
