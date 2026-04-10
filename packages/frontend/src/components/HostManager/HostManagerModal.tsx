@@ -142,6 +142,8 @@ function emptyHost(): Omit<HostProfile, 'id'> {
     notes: '',
     autoConnect: true,
     showInToolbar: true,
+    gridCols: 8,
+    gridRows: 4,
   }
 }
 
@@ -224,6 +226,34 @@ function HostForm({ value, onChange }: HostFormProps) {
             (Status-Dot in der Toolbar einblenden)
           </span>
         </label>
+      </div>
+      {/* Button-Grid Standardgröße */}
+      <div>
+        <label style={{ ...labelStyle, marginBottom: 8 }}>Button-Grid (Picker-Standard)</label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Buttons pro Zeile</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min={1}
+              max={32}
+              value={value.gridCols ?? 8}
+              onChange={(e) => set({ gridCols: Math.max(1, Math.min(32, parseInt(e.target.value, 10) || 8)) })}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Zeilen</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min={1}
+              max={16}
+              value={value.gridRows ?? 4}
+              onChange={(e) => set({ gridRows: Math.max(1, Math.min(16, parseInt(e.target.value, 10) || 4)) })}
+            />
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -314,7 +344,7 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
   }
 
   function startEdit(host: HostProfile) {
-    setFormValue({ name: host.name, host: host.host, satellite: host.satellite, notes: host.notes ?? '', autoConnect: host.autoConnect, showInToolbar: host.showInToolbar })
+    setFormValue({ name: host.name, host: host.host, satellite: host.satellite, notes: host.notes ?? '', autoConnect: host.autoConnect, showInToolbar: host.showInToolbar, gridCols: host.gridCols, gridRows: host.gridRows })
     setEditing(host.id)
   }
 
