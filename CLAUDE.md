@@ -118,6 +118,10 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | AddElementMenu useEffect | `[pickerOpen, wizardOpen, onClose]` — wizardOpen in Deps | War fehlend → mousedown-Handler schloss Wizard beim Klick in Wizard-Buttons |
 | ChannelStrip Pan | Ausgegraut wenn `style.mono=true` oder `refs.pan` nicht konfiguriert | Pan-Wert aus Companion TEXT-Variable (Wing: `ch1_pan`, vMix: `input_X_pan`) |
 | ChannelStrip Solo | Ausgegraut wenn `refs.solo` nicht konfiguriert | Separater optionaler Button (SUB-PRESS + bgColor-State) |
+| Panel Zoom | `transform: scale(zoom)` auf Canvas, 3-Ebenen-Layout (scroll-wrapper → size-reserve → scale-root) | `transform` ändert document flow nicht — size-reserve div setzt korrekte Scroll-Dimensionen; Zoom 0.2–2.0 |
+| Zoom Koordinaten-Fix | Drag/Resize/Pointer-Deltas durch `zoom` dividieren in `getCanvasPos`, `handleDragEnd`, `ResizeHandles`, `EditableElement` | @dnd-kit liefert screen-space Pixel — innerhalb `scale(zoom)` sonst falsch skaliert |
+| Zoom Ctrl+Scroll | Nativer `wheel`-Event mit `{ passive: false }` auf `scrollWrapperRef`; `useAppStore.getState()` statt React-Closure | React onWheel ist passiv → `preventDefault()` schlägt fehl; Closure hätte veralteten zoom-Wert |
+| HostProfile Grid | `gridCols?: number`, `gridRows?: number` in `HostProfile` | Picker + ChannelStrip-Wizard lesen Host-Default; kein Schema-Bump — Fallback 8/4 beim Consumer |
 
 ---
 
@@ -134,11 +138,13 @@ CompanionWebpannel/
 ├── bitfocus-companion-module-sources.md          ← API-Quellen / Docs-Links
 ├── docs/satellite-api-protocol.md                ← Satellite API Protokoll-Referenz (v1.10 / Companion 4.3+)
 ├── docs/superpowers/
-│   ├── specs/2026-04-01-edit-mode-design.md        ← ✅ Edit-Mode Design-Spec
-│   ├── specs/2026-04-05-electron-tray-design.md   ← ✅ Electron Wrapper Design-Spec (Phase 6)
-│   ├── specs/2026-04-09-channelstrip-design.md    ← ✅ ChannelStrip Element Design-Spec (Phase 7)
-│   ├── plans/2026-04-01-edit-mode.md              ← ✅ Edit-Mode Implementierungsplan
-│   └── plans/2026-04-05-electron-tray.md          ← ✅ Electron Wrapper Implementierungsplan (13 Tasks)
+│   ├── specs/2026-04-01-edit-mode-design.md           ← ✅ Edit-Mode Design-Spec
+│   ├── specs/2026-04-05-electron-tray-design.md      ← ✅ Electron Wrapper Design-Spec (Phase 6)
+│   ├── specs/2026-04-09-channelstrip-design.md       ← ✅ ChannelStrip Element Design-Spec (Phase 7)
+│   ├── specs/2026-04-10-zoom-and-host-grid-design.md ← ✅ Panel Zoom + Host Grid Design-Spec
+│   ├── plans/2026-04-01-edit-mode.md                 ← ✅ Edit-Mode Implementierungsplan
+│   ├── plans/2026-04-05-electron-tray.md             ← ✅ Electron Wrapper Implementierungsplan (13 Tasks)
+│   └── plans/2026-04-10-zoom-and-host-grid.md        ← ✅ Panel Zoom + Host Grid Implementierungsplan (8 Tasks)
 ├── package.json                                  ← npm workspaces root (inkl. @cwp/electron ✅)
 ├── scripts/
 │   └── launch-electron.mjs                       ← ✅ Electron-Launcher (löscht ELECTRON_RUN_AS_NODE)
@@ -163,7 +169,8 @@ CompanionWebpannel/
     │   ├── utils/textures.ts                     ← ✅ Canvas-Texturen (8 Optionen, SVG+CSS-Gradienten, backgroundSize)
     │   ├── App.tsx + main.tsx                    ← App-Shell mit Keyboard-Shortcuts + HostManagerModal
     │   └── components/
-    │       ├── Toolbar/Toolbar.tsx               ← ✅ Toolbar: Mode-Toggle, Panel-Dropdown (CRUD), Speichern, Status-Dots, ?-Button
+    │       ├── Toolbar/Toolbar.tsx               ← ✅ Toolbar: Mode-Toggle, Panel-Dropdown (CRUD), Speichern, ZoomControl, Status-Dots, ?-Button
+    │       ├── Toolbar/ZoomControl.tsx           ← ✅ Icon-Button (zoom_in) + Popover-Slider (20–200%, Step 5%)
     │       ├── HostManager/HostManagerModal.tsx  ← ✅ Host Add/Edit/Delete/Connect, inline Form, Delete-Dialog
     │       ├── Canvas/Canvas.tsx                 ← Canvas mit Element-Rendering + Textur-Layering
     │       └── Elements/
@@ -586,12 +593,15 @@ Dann `electron-builder.yml` Mac-Target testen.
 ### Electron — noch offene UX-Features
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
 
-### Panel Zoom (geplant, ~2–3h)
-- ⬜ Zoom-Funktion für das gesamte Panel (View-Mode + Edit-Mode)
-- Bereich: −100% bis +200% (d.h. 0× bis 3× Skalierung, Default 100%)
-- UX: Zoom-Slider oder ±-Buttons in der Toolbar, Ctrl+Scroll als Shortcut
-- Implementierung: CSS `transform: scale(X)` auf den Canvas-Container mit `transform-origin: top left`; Scroll-Koordinaten beim Element-Platzieren müssen durch Zoom-Faktor dividiert werden
-- Persistenz: `panel.zoom` in Settings (pro Panel), Default `1.0`
+### Panel Zoom ✅ FERTIG (Session 2026-04-10c)
+Design-Spec: `docs/superpowers/specs/2026-04-10-zoom-and-host-grid-design.md`
+Implementierungsplan: `docs/superpowers/plans/2026-04-10-zoom-and-host-grid.md`
+- ✅ `setZoom(panelId, zoom)` Store-Action mit Clamp [0.2, 2.0]
+- ✅ `ZoomControl.tsx` — Icon-Button (`zoom_in`) + Popover-Slider (20–200%, Step 5%)
+- ✅ Canvas: Drei-Ebenen-Layout (scroll-wrapper → size-reserve → scale(zoom) → canvas)
+- ✅ Koordinaten durch Zoom dividiert: `getCanvasPos`, `handleContextMenu`, `handleDragEnd`, `ResizeHandles`, `EditableElement` group-drag
+- ✅ Ctrl+Scroll mit `{ passive: false }` → ±5% pro Tick
+- ✅ Zoom wird in `panel.zoom` gespeichert (Ctrl+S)
 
 ### Edit-Mode — offene Features
 - ⬜ Ctrl+C → Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
@@ -626,7 +636,7 @@ Implementiert:
 - ✅ **Default-Größe** — `w: 80, h: 240` → `w: 130, h: 500` im Wizard
 
 ### CompanionButton-Picker — Verbesserungen (Session 2026-04-10)
-- ⬜ **Grid-Größe aus Host-Konfiguration** — `HostProfile` um `gridCols?: number` und `gridRows?: number` erweitern. `CompanionButtonPickerDialog` liest diese beim Öffnen als Defaultwerte (überschreibbar). Wizard Step 1 ebenfalls.
+- ✅ **Grid-Größe aus Host-Konfiguration** — `HostProfile` um `gridCols?: number` und `gridRows?: number` erweitert. `CompanionButtonPickerDialog` + `ChannelStripWizard` lesen diese beim Öffnen als Defaultwerte (überschreibbar); Resync bei Host-Wechsel.
 - ⬜ **Page-Name anzeigen** — Companion sendet Page-Namen via Satellite API (falls vorhanden). Im Picker neben der Page-Nummer anzeigen. API prüfen ob `PAGE-NAME` oder ähnliches verfügbar.
 
 ### Virtual StreamDeck Element (Zukunfts-Idee)
@@ -661,6 +671,8 @@ Implementiert:
 - **Lasso: lassoPointsRef synchron setzen** → `lassoPointsRef.current` muss im Event-Handler direkt gesetzt werden, NICHT innerhalb von `setLassoPoints(updater)` — React verarbeitet State-Updater asynchron, Ref wäre bei `pointerUp` noch leer.
 - **Electron frontend veraltet nach Frontend-Build** → `npm run build -w @cwp/frontend` kopiert NICHT automatisch nach `packages/electron/frontend/`. Danach immer: `cd packages/electron && node build.mjs` ausführen. Ohne diesen Schritt läuft Electron mit altem Code (anderer JS-Bundle-Hash).
 - **Lasso: lassoDidMove nicht in pointerUp zurücksetzen** → `onClick` feuert nach `pointerUp` auf demselben Element. `lassoDidMove` darf erst in `pointerDown` auf `false` gesetzt werden — sonst löscht `onClick` die Lasso-Selektion sofort wieder.
+- **Zoom: @dnd-kit Transform ist screen-space** → `transform.x/y` von `useDraggable` sind Browser-Pixel, kein Canvas-Space. Innerhalb von `scale(zoom)` muss durch `zoom` dividiert werden — sonst bewegen sich Elemente zu schnell oder zu langsam beim Drag.
+- **Zoom: Ctrl+Scroll braucht nativen Listener** → React `onWheel` ist per Design passiv — `e.preventDefault()` funktioniert nicht. Nativen Listener mit `{ passive: false }` auf dem scroll-wrapper registrieren. `useAppStore.getState()` statt Closure verwenden, um stale-zoom zu vermeiden.
 
 ---
 
