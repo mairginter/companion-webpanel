@@ -25,6 +25,7 @@ import { createMagneticSnapModifier } from '../../canvas/snapModifier'
 import { CompanionButtonElement } from '../Elements/CompanionButtonElement'
 import { ShapeElement } from '../Elements/ShapeElement'
 import { LabelElement } from '../Elements/LabelElement'
+import { ChannelStripElement } from '../Elements/ChannelStripElement'
 import { EditableElement } from './EditableElement'
 import { LassoSelect } from './LassoSelect'
 import { Point, lassoHitsElement } from '../../utils/geometry'
@@ -33,11 +34,12 @@ import { AddElementMenu } from '../AddElement/AddElementMenu'
 
 interface CanvasProps {
   sendPress: (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
+  sendRotate: (hostId: string, page: number, row: number, col: number, direction: 1 | -1) => void
 }
 
 const DOT_GRID = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='0' cy='0' r='1.2' fill='rgba(255,255,255,0.06)'/%3E%3C/svg%3E")`
 
-export function Canvas({ sendPress }: CanvasProps) {
+export function Canvas({ sendPress, sendRotate }: CanvasProps) {
   const mode = useAppStore((s) => s.mode)
   const panel = useAppStore((s) => s.getActivePanel())
   const clearSelection = useAppStore((s) => s.clearSelection)
@@ -222,7 +224,7 @@ export function Canvas({ sendPress }: CanvasProps) {
               <div style={{ fontSize: 12 }}>Backend verbinden und Settings konfigurieren</div>
             </div>
           ) : (
-            renderElements(panel.elements, panel.id, mode, sendPress)
+            renderElements(panel.elements, panel.id, mode, sendPress, sendRotate)
           )}
 
           {mode === 'edit' && lassoPoints.length >= 2 && (
@@ -267,6 +269,7 @@ function renderElements(
   panelId: string,
   mode: 'view' | 'edit',
   sendPress: CanvasProps['sendPress'],
+  sendRotate: CanvasProps['sendRotate'],
 ) {
   const sorted = [...elements].sort((a, b) => {
     if (a.type === 'shape' && b.type !== 'shape') return -1
@@ -274,7 +277,7 @@ function renderElements(
     return (a.z ?? 0) - (b.z ?? 0)
   })
   return sorted.map((el) => {
-    const inner = renderInner(el, mode, sendPress)
+    const inner = renderInner(el, mode, sendPress, sendRotate)
     if (!inner) return null
     if (mode === 'edit') {
       return (
@@ -287,7 +290,12 @@ function renderElements(
   })
 }
 
-function renderInner(el: AnyElement, mode: 'view' | 'edit', sendPress: CanvasProps['sendPress']) {
+function renderInner(
+  el: AnyElement,
+  mode: 'view' | 'edit',
+  sendPress: CanvasProps['sendPress'],
+  sendRotate: CanvasProps['sendRotate'],
+) {
   const isContained = mode === 'edit'
   switch (el.type) {
     case 'companionButton':
@@ -296,6 +304,8 @@ function renderInner(el: AnyElement, mode: 'view' | 'edit', sendPress: CanvasPro
       return <ShapeElement element={el} isContained={isContained} />
     case 'label':
       return <LabelElement element={el} isContained={isContained} />
+    case 'channelStrip':
+      return <ChannelStripElement element={el} mode={mode} sendPress={sendPress} sendRotate={sendRotate} isContained={isContained} />
     case 'meter':
       return null // TODO Phase 3.4
     default:

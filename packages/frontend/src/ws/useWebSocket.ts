@@ -94,5 +94,14 @@ export function useWebSocket(): {
     [],
   )
 
-  return { sendPress }
+  const sendRotate = useCallback(
+    (hostId: string, page: number, row: number, col: number, direction: 1 | -1) => {
+      if (ws.current?.readyState !== WebSocket.OPEN) return
+      const msg: FrontendToBackend = { t: 'rotate', hostId, page, row, col, direction }
+      ws.current.send(JSON.stringify(msg))
+    },
+    [],
+  )
+
+  return { sendPress, sendRotate }
 }

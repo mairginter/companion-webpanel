@@ -25,7 +25,7 @@ const styles: Record<string, React.CSSProperties> = {
 }
 
 export function App() {
-  const { sendPress } = useWebSocket()
+  const { sendPress, sendRotate } = useWebSocket()
   const { saveSettings } = useSettings()
   const mode = useAppStore((s) => s.mode)
   const toggleMode = useAppStore((s) => s.toggleMode)
@@ -165,7 +165,7 @@ export function App() {
     <div style={styles.app}>
       <Toolbar mode={mode} onToggleMode={toggleMode} onOpenHostManager={() => setHostManagerOpen(true)} onSave={handleSave} />
       <div style={styles.body}>
-        <Canvas sendPress={sendPress} />
+        <Canvas sendPress={sendPress} sendRotate={sendRotate} />
       </div>
       {hostManagerOpen && (
         <HostManagerModal
