@@ -22,8 +22,9 @@ import { AppTray } from './tray'
 import { PanelWindow } from './panelWindow'
 import type { AppStatus } from './types'
 
-// App-Name setzen bevor getPath('userData') aufgerufen wird
+// App-Name + userData-Pfad explizit setzen — auch bei Portable-Build bleibt %APPDATA%\CompanionWebpanel
 app.setName('CompanionWebpanel')
+app.setPath('userData', path.join(app.getPath('appData'), 'CompanionWebpanel'))
 
 // Verhindert mehrere App-Instanzen
 const gotLock = app.requestSingleInstanceLock()

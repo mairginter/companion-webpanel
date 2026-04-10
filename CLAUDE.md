@@ -43,6 +43,8 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | Duplicate DEVICEID | Idempotent (selber Socket) | Companion entfernt altes Device automatisch bei Reconnect |
 | Page via API setzen | **Entfällt** — keine Pages/Surfaces mehr nötig | Subscriptions arbeiten direkt mit PAGE/ROW/COL — kein Startup-Page-Setup |
 | Desktop-Packaging | Electron 33 + electron-builder 25 | Startup-Fenster + Tray = Electron-Stärke; pkg wäre 40MB kleiner aber kein natives Fenster |
+| Windows Release-Format | `portable` (einzelne .exe, kein Installer) | Einfachster Start: doppelklicken, fertig — kein Admin-Recht, kein Installer-Wizard |
+| Portable userData-Pfad | `app.setPath('userData', appData/CompanionWebpanel)` explizit | Portable-Builds würden sonst in temporären Ordnern landen — Settings bleiben zwischen Starts erhalten |
 | Electron-Prozessmodell | Backend läuft direkt im Electron Main Process | Kein Child-Process — einfacher, kein IPC für Backend-Daten nötig |
 | Electron-Build | esbuild bundelt main.ts + backend in dist/main.js | Löst Monorepo-Modul-Auflösung elegant — kein webpack nötig |
 | Frontend im Electron-Build | build.mjs kopiert frontend/dist → electron/frontend/ | electron-builder inkludiert es via `files: [frontend/**]` |

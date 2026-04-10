@@ -19,16 +19,12 @@ files:
 # Windows
 win:
   target:
-    - target: nsis
+    - target: portable
       arch: [x64]
   icon: packages/electron/assets/icon.ico
 
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
-  installerIcon: packages/electron/assets/icon.ico
-  createDesktopShortcut: true
-  createStartMenuShortcut: true
+portable:
+  artifactName: "CompanionWebpanel-${version}.exe"
 
 # macOS
 mac:
