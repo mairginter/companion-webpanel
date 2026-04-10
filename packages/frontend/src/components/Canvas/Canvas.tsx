@@ -8,7 +8,7 @@
  *   - DragDeltaContext für Gruppen-Drag
  *   - LassoSelect für Freihand-Mehrfach-Selektion (ersetzt RubberBand)
  */
-import { useRef, useState, useCallback, useMemo } from 'react'
+import { useRef, useState, useCallback, useMemo, useEffect } from 'react'
 import {
   DndContext,
   DragMoveEvent,
@@ -48,6 +48,10 @@ export function Canvas({ sendPress, sendRotate }: CanvasProps) {
   const updateElementGeometry = useAppStore((s) => s.updateElementGeometry)
   const saveUndoSnapshot = useAppStore((s) => s.saveUndoSnapshot)
 
+  const setZoom = useAppStore((s) => s.setZoom)
+  const zoom = panel?.zoom ?? 1
+  const scrollWrapperRef = useRef<HTMLDivElement>(null)
+
   const containerRef = useRef<HTMLDivElement>(null)
   const [dragDelta, setDragDelta] = useState<{ dx: number; dy: number } | null>(null)
   const [lassoPoints, setLassoPoints] = useState<Point[]>([])
@@ -72,12 +76,36 @@ export function Canvas({ sendPress, sendRotate }: CanvasProps) {
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   )
 
-  const getCanvasPos = useCallback((e: React.PointerEvent): Point => {
-    const container = containerRef.current
-    if (!container) return { x: 0, y: 0 }
-    const bounds = container.getBoundingClientRect()
-    return { x: e.clientX - bounds.left, y: e.clientY - bounds.top }
-  }, [])
+  // Ctrl+Scroll → Zoom ±5%; passive:false nötig für preventDefault()
+  useEffect(() => {
+    const el = scrollWrapperRef.current
+    if (!el) return
+    const handler = (e: WheelEvent) => {
+      if (!e.ctrlKey) return
+      e.preventDefault()
+      const delta = e.deltaY < 0 ? 0.05 : -0.05
+      const currentPanel = useAppStore.getState().getActivePanel()
+      if (!currentPanel) return
+      const newZoom = Math.max(0.2, Math.min(2.0, (currentPanel.zoom ?? 1) + delta))
+      setZoom(currentPanel.id, newZoom)
+    }
+    el.addEventListener('wheel', handler, { passive: false })
+    return () => el.removeEventListener('wheel', handler)
+  }, [setZoom])
+
+  // NEW — divides by zoom so Lasso/ContextMenu coords map back to canvas-space
+  const getCanvasPos = useCallback(
+    (e: React.PointerEvent): Point => {
+      const container = containerRef.current
+      if (!container) return { x: 0, y: 0 }
+      const bounds = container.getBoundingClientRect()
+      return {
+        x: (e.clientX - bounds.left) / zoom,
+        y: (e.clientY - bounds.top) / zoom,
+      }
+    },
+    [zoom],
+  )
 
   const handleDragStart = useCallback(() => {
     saveUndoSnapshot([...selectedIds])
@@ -111,10 +139,10 @@ export function Canvas({ sendPress, sendRotate }: CanvasProps) {
     e.preventDefault()
     const rect = containerRef.current?.getBoundingClientRect()
     const canvasPos = rect
-      ? { x: e.clientX - rect.left, y: e.clientY - rect.top }
+      ? { x: (e.clientX - rect.left) / zoom, y: (e.clientY - rect.top) / zoom }
       : { x: e.clientX, y: e.clientY }
     setContextMenu({ screenPos: { x: e.clientX, y: e.clientY }, canvasPos })
-  }, [mode])
+  }, [mode, zoom])
 
   const handleLassoPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (mode !== 'edit') return
@@ -188,48 +216,62 @@ export function Canvas({ sendPress, sendRotate }: CanvasProps) {
   const content = (
     <div style={{ flex: 1, overflow: 'hidden', background: '#0a0e14', position: 'relative' }}>
       {/* Scrollbarer Canvas-Bereich */}
-      <div style={{ position: 'absolute', inset: 0, overflow: 'auto' }}>
+      <div ref={scrollWrapperRef} style={{ position: 'absolute', inset: 0, overflow: 'auto' }}>
+        {/* Größen-Reserve: reserviert scroll-Platz entsprechend dem skalierten Canvas */}
         <div
-          ref={containerRef}
           style={{
-            position: 'relative',
-            width: canvasWidth ?? '100%',
-            height: canvasHeight ?? '100%',
+            width: canvasWidth ? canvasWidth * zoom : '100%',
+            height: canvasHeight ? canvasHeight * zoom : '100%',
             minWidth: '100%',
             minHeight: '100%',
-            background: canvasBackground,
-            backgroundImage: backgroundImageLayers,
-            ...(backgroundSizeLayers ? { backgroundSize: backgroundSizeLayers } : {}),
+            flexShrink: 0,
           }}
-          onClick={mode === 'edit' ? () => { if (!lassoDidMove.current) clearSelection() } : undefined}
-          onContextMenu={handleContextMenu}
-          onPointerDown={handleLassoPointerDown}
-          onPointerMove={handleLassoPointerMove}
-          onPointerUp={handleLassoPointerUp}
-          onPointerCancel={mode === 'edit' ? () => {
-            isLassoing.current = false
-            lassoDidMove.current = false
-            lassoPointsRef.current = []
-            setLassoPoints([])
-          } : undefined}
         >
-          {!panel ? (
-            <div style={{
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              textAlign: 'center', color: '#4a5568', fontSize: 13, pointerEvents: 'none',
-            }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>⚡</div>
-              <div style={{ fontWeight: 600, color: '#8896aa', marginBottom: 4 }}>Kein Panel geladen</div>
-              <div style={{ fontSize: 12 }}>Backend verbinden und Settings konfigurieren</div>
-            </div>
-          ) : (
-            renderElements(panel.elements, panel.id, mode, sendPress, sendRotate)
-          )}
+          {/* Scale-Root: CSS-Transform auf Canvas-Inhalt */}
+          <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
+            <div
+              ref={containerRef}
+              style={{
+                position: 'relative',
+                width: canvasWidth ?? '100%',
+                height: canvasHeight ?? '100%',
+                minWidth: canvasWidth ? undefined : '100%',
+                minHeight: canvasHeight ? undefined : '100%',
+                background: canvasBackground,
+                backgroundImage: backgroundImageLayers,
+                ...(backgroundSizeLayers ? { backgroundSize: backgroundSizeLayers } : {}),
+              }}
+              onClick={mode === 'edit' ? () => { if (!lassoDidMove.current) clearSelection() } : undefined}
+              onContextMenu={handleContextMenu}
+              onPointerDown={handleLassoPointerDown}
+              onPointerMove={handleLassoPointerMove}
+              onPointerUp={handleLassoPointerUp}
+              onPointerCancel={mode === 'edit' ? () => {
+                isLassoing.current = false
+                lassoDidMove.current = false
+                lassoPointsRef.current = []
+                setLassoPoints([])
+              } : undefined}
+            >
+              {!panel ? (
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center', color: '#4a5568', fontSize: 13, pointerEvents: 'none',
+                }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>⚡</div>
+                  <div style={{ fontWeight: 600, color: '#8896aa', marginBottom: 4 }}>Kein Panel geladen</div>
+                  <div style={{ fontSize: 12 }}>Backend verbinden und Settings konfigurieren</div>
+                </div>
+              ) : (
+                renderElements(panel.elements, panel.id, mode, sendPress, sendRotate)
+              )}
 
-          {mode === 'edit' && lassoPoints.length >= 2 && (
-            <LassoSelect points={lassoPoints} />
-          )}
+              {mode === 'edit' && lassoPoints.length >= 2 && (
+                <LassoSelect points={lassoPoints} />
+              )}
+            </div>
+          </div>
         </div>
       </div>
       {/* AddElementMenu als Overlay im Edit-Mode (Rechtsklick) */}
