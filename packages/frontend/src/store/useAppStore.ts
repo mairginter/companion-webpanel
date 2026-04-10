@@ -57,6 +57,8 @@ interface AppStore {
   renamePanel: (panelId: string, name: string) => void
   /** Panel löschen. Falls aktiv, wird das nächste Panel aktiviert. Gibt false zurück wenn es das letzte Panel ist. */
   deletePanel: (panelId: string) => boolean
+  /** Setzt den Zoom-Faktor eines Panels. Klemmt auf [0.2, 2.0]. */
+  setZoom: (panelId: string, zoom: number) => void
 
   // ─── Edit Mode ────────────────────────────────────────────────────────────
   selectedIds: Set<string>
@@ -251,6 +253,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ settings: { ...settings, panels: remaining }, activePanelId: nextActive })
     return true
   },
+
+  setZoom: (panelId, zoom) =>
+    set((s) => {
+      if (!s.settings) return s
+      const clamped = Math.max(0.2, Math.min(2.0, zoom))
+      return {
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) =>
+            p.id !== panelId ? p : { ...p, zoom: clamped },
+          ),
+        },
+      }
+    }),
 
   // ─── Edit Mode ────────────────────────────────────────────────────────────
   selectedIds: new Set<string>(),

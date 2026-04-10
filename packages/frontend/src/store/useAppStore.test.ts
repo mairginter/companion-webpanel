@@ -304,3 +304,28 @@ describe('hostExists', () => {
     expect(useAppStore.getState().hostExists('h1')).toBe(false)
   })
 })
+
+describe('setZoom', () => {
+  it('setzt Zoom für ein Panel', () => {
+    useAppStore.getState().setZoom('panel-1', 1.5)
+    const panel = useAppStore.getState().settings?.panels.find((p) => p.id === 'panel-1')
+    expect(panel?.zoom).toBe(1.5)
+  })
+
+  it('klemmt Zoom auf Minimum 0.2', () => {
+    useAppStore.getState().setZoom('panel-1', 0.05)
+    const panel = useAppStore.getState().settings?.panels.find((p) => p.id === 'panel-1')
+    expect(panel?.zoom).toBe(0.2)
+  })
+
+  it('klemmt Zoom auf Maximum 2.0', () => {
+    useAppStore.getState().setZoom('panel-1', 5.0)
+    const panel = useAppStore.getState().settings?.panels.find((p) => p.id === 'panel-1')
+    expect(panel?.zoom).toBe(2.0)
+  })
+
+  it('ignoriert unbekannte Panel-ID (kein Crash)', () => {
+    expect(() => useAppStore.getState().setZoom('no-such-panel', 1.5)).not.toThrow()
+    expect(useAppStore.getState().settings?.panels.length).toBe(1)
+  })
+})
