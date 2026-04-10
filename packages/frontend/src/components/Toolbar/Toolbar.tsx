@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { AddElementMenu } from '../AddElement/AddElementMenu'
+import { ZoomControl } from './ZoomControl'
 
 interface ToolbarProps {
   mode: 'view' | 'edit'
@@ -104,6 +105,8 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
   }, [])
 
   const activePanel = panels.find((p) => p.id === activePanelId)
+  const setZoom = useAppStore((s) => s.setZoom)
+  const zoom = activePanel?.zoom ?? 1
   const [saveFlash, setSaveFlash] = useState(false)
 
   const handleSaveClick = useCallback(() => {
@@ -357,6 +360,14 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
           </button>
         </>
       )}
+
+      <div style={dividerStyle} />
+      <ZoomControl
+        zoom={zoom}
+        onZoomChange={(z) => {
+          if (activePanel) setZoom(activePanel.id, z)
+        }}
+      />
 
       <div style={{ flex: 1 }} />
 

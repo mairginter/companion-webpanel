@@ -64,7 +64,7 @@ export function ZoomControl({ zoom, onZoomChange }: ZoomControlProps) {
           transition: 'all 0.15s',
         }}
       >
-        <span className="material-icons" style={{ fontSize: 16 }}>search</span>
+        <span className="material-icons" style={{ fontSize: 16 }}>zoom_in</span>
         <span style={{ minWidth: 36, textAlign: 'right', fontFamily: 'JetBrains Mono, monospace' }}>
           {pct}%
         </span>
