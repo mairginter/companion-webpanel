@@ -27,6 +27,7 @@ import {
 } from '@cwp/shared'
 
 export type PressHandler = (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
+export type RotateHandler = (hostId: string, page: number, row: number, col: number, direction: 1 | -1) => void
 export type PreviewPageHandler = (hostId: string, page: number, keysPerRow: number, rows: number) => void
 export type PreviewPageRemoveHandler = (hostId: string, page: number) => void
 
@@ -46,6 +47,7 @@ export class ClientServer {
   private clients = new Set<WebSocket>()
   private clientPresses = new Map<WebSocket, Set<PressKey>>()
   private onPress: PressHandler
+  private onRotate?: RotateHandler
   private onSettingsUpdate?: (settings: Settings) => void
   private onPreviewPageAdd?: PreviewPageHandler
   private onPreviewPageRemove?: PreviewPageRemoveHandler
@@ -61,11 +63,13 @@ export class ClientServer {
     onSettingsUpdate?: (s: Settings) => void,
     onPreviewPageAdd?: PreviewPageHandler,
     onPreviewPageRemove?: PreviewPageRemoveHandler,
+    onRotate?: RotateHandler,
     staticDir?: string,
   ) {
     this.settings = settings
     this.settingsPath = settingsPath
     this.onPress = onPress
+    this.onRotate = onRotate
     this.onSettingsUpdate = onSettingsUpdate
     this.onPreviewPageAdd = onPreviewPageAdd
     this.onPreviewPageRemove = onPreviewPageRemove
@@ -189,6 +193,8 @@ export class ClientServer {
               else presses.delete(key)
             }
             this.onPress(msg.hostId, msg.page, msg.row, msg.col, msg.pressed)
+          } else if (msg.t === 'rotate') {
+            this.onRotate?.(msg.hostId, msg.page, msg.row, msg.col, msg.direction)
           }
         } catch {
           console.warn('[ClientServer] Ungültige Nachricht vom Client')

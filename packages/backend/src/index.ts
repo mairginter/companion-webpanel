@@ -34,6 +34,7 @@ export async function createBackend(
     (updatedSettings) => manager.syncSubscriptions(updatedSettings),
     (hostId, page, keysPerRow, rows) => manager.addPickerSubscriptions(hostId, page, keysPerRow, rows),
     (hostId, page) => manager.removePickerSubscriptions(hostId, page),
+    (hostId, page, row, col, direction) => manager.handleRotate(hostId, page, row, col, direction),
     staticDir,
   )
 

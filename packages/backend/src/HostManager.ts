@@ -169,6 +169,18 @@ export class HostManager {
   }
 
   /**
+   * Leitet einen Fader-Rotate ans richtige SatelliteClient weiter.
+   */
+  handleRotate(hostId: string, page: number, row: number, col: number, direction: 1 | -1): void {
+    const client = this.clients.get(hostId)
+    if (!client) {
+      console.warn(`[HostManager] Kein Client für Host "${hostId}" (rotate)`)
+      return
+    }
+    client.rotate(page, row, col, direction)
+  }
+
+  /**
    * Graceful Shutdown: alle Subscriptions entfernen und Verbindungen schließen.
    */
   async stop(): Promise<void> {
@@ -209,12 +221,22 @@ export class HostManager {
   private buildDesiredSubs(settings: Settings): Map<string, Set<string>> {
     const desired = new Map<string, Set<string>>()
 
+    const addRef = (ref: import('@cwp/shared').CompanionRef | undefined) => {
+      if (!ref) return
+      const { hostId, page, row, col } = ref
+      if (!desired.has(hostId)) desired.set(hostId, new Set())
+      desired.get(hostId)!.add(`${page}/${row}/${col}`)
+    }
+
     for (const panel of settings.panels) {
       for (const el of panel.elements) {
-        if (!isCompanionButton(el)) continue
-        const { hostId, page, row, col } = el.ref
-        if (!desired.has(hostId)) desired.set(hostId, new Set())
-        desired.get(hostId)!.add(`${page}/${row}/${col}`)
+        if (el.type === 'companionButton') {
+          addRef(el.ref)
+        } else if (el.type === 'channelStrip') {
+          addRef(el.refs.button.ref)
+          addRef(el.refs.solo)
+          addRef(el.refs.pan)
+        }
       }
     }
 
@@ -252,8 +274,4 @@ export class HostManager {
       }
     }
   }
-}
-
-function isCompanionButton(el: AnyElement): el is import('@cwp/shared').CompanionButtonElement {
-  return el.type === 'companionButton'
 }

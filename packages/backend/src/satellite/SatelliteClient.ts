@@ -132,6 +132,16 @@ export class SatelliteClient extends EventEmitter {
     this.sendLine(`SUB-PRESS SUBID=${subId} PRESSED=${pressedStr}`)
   }
 
+  /**
+   * Sendet einen SUB-ROTATE an Companion.
+   * direction: 1 = CW (up/right), -1 = CCW (down/left)
+   */
+  rotate(page: number, row: number, col: number, direction: 1 | -1): void {
+    if (this.status !== 'connected') return
+    const subId = `cwp/${page}/${row}/${col}`
+    this.sendLine(`SUB-ROTATE SUBID=${subId} DIRECTION=${direction}`)
+  }
+
   getStatus(): ClientStatus {
     return this.status
   }
@@ -216,6 +226,8 @@ export class SatelliteClient extends EventEmitter {
     } else if (line.startsWith('REMOVE-SUB OK')) {
       // Bestätigung ignorieren
     } else if (line.startsWith('SUB-PRESS OK')) {
+      // Bestätigung ignorieren
+    } else if (line.startsWith('SUB-ROTATE OK')) {
       // Bestätigung ignorieren
     }
     // Alte ADD-DEVICE / KEY-STATE Zeilen ignorieren (sollten nicht kommen)
