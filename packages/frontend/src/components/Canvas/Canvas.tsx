@@ -93,7 +93,7 @@ export function Canvas({ sendPress, sendRotate }: CanvasProps) {
     return () => el.removeEventListener('wheel', handler)
   }, [setZoom])
 
-  // NEW — divides by zoom so Lasso/ContextMenu coords map back to canvas-space
+  // divides by zoom so Lasso/ContextMenu coords map back to canvas-space
   const getCanvasPos = useCallback(
     (e: React.PointerEvent): Point => {
       const container = containerRef.current
@@ -121,12 +121,13 @@ export function Canvas({ sendPress, sendRotate }: CanvasProps) {
       const panelId = (event.active.data.current as { panelId: string }).panelId
       const currentPanel = useAppStore.getState().getActivePanel()
       if (!currentPanel) return
+      const currentZoom = currentPanel.zoom ?? 1
       for (const id of useAppStore.getState().selectedIds) {
         const el = currentPanel.elements.find((e) => e.id === id)
         if (!el) continue
         updateElementGeometry(panelId, id, {
-          x: Math.round(el.x + delta.x),
-          y: Math.round(el.y + delta.y),
+          x: Math.round(el.x + delta.x / currentZoom),
+          y: Math.round(el.y + delta.y / currentZoom),
         })
       }
       setDragDelta(null)
@@ -224,7 +225,6 @@ export function Canvas({ sendPress, sendRotate }: CanvasProps) {
             height: canvasHeight ? canvasHeight * zoom : '100%',
             minWidth: '100%',
             minHeight: '100%',
-            flexShrink: 0,
           }}
         >
           {/* Scale-Root: CSS-Transform auf Canvas-Inhalt */}

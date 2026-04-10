@@ -78,8 +78,9 @@ export function ResizeHandles({ element, panelId }: Props) {
       saveUndoSnapshot([element.id])
       state.snapshotSaved = true
     }
-    const dx = e.clientX - state.startX
-    const dy = e.clientY - state.startY
+    const currentZoom = useAppStore.getState().getActivePanel()?.zoom ?? 1
+    const dx = (e.clientX - state.startX) / currentZoom
+    const dy = (e.clientY - state.startY) / currentZoom
     const minSize = MIN_SIZE[element.type] ?? 8
     const newGeo = applyResizeDelta(state.startGeometry, state.handleId, dx, dy, minSize)
     applyVisual(newGeo)
@@ -88,8 +89,9 @@ export function ResizeHandles({ element, panelId }: Props) {
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     const state = resizeState.current
     if (!state) return
-    const dx = e.clientX - state.startX
-    const dy = e.clientY - state.startY
+    const currentZoom = useAppStore.getState().getActivePanel()?.zoom ?? 1
+    const dx = (e.clientX - state.startX) / currentZoom
+    const dy = (e.clientY - state.startY) / currentZoom
     const minSize = MIN_SIZE[element.type] ?? 8
     const newGeo = applyResizeDelta(state.startGeometry, state.handleId, dx, dy, minSize)
     updateElementGeometry(panelId, element.id, newGeo)

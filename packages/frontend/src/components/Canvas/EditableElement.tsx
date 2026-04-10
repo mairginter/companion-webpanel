@@ -27,6 +27,7 @@ export function EditableElement({ element, panelId, children }: Props) {
   const isOnlySelected = isSelected && selectedIds.size === 1
 
   const dragDelta = useDragDelta()
+  const zoom = useAppStore((s) => s.getActivePanel()?.zoom ?? 1)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: element.id,
@@ -36,10 +37,11 @@ export function EditableElement({ element, panelId, children }: Props) {
 
   // Dragged element nutzt @dnd-kit transform.
   // Andere selektierte folgen via DragDeltaContext (Gruppen-Drag).
+  // Deltas sind screen-space → durch zoom dividieren für canvas-space Preview.
   const activeTransform = isDragging
     ? transform
     : isSelected && dragDelta
-    ? { x: dragDelta.dx, y: dragDelta.dy, scaleX: 1, scaleY: 1 }
+    ? { x: dragDelta.dx / zoom, y: dragDelta.dy / zoom, scaleX: 1, scaleY: 1 }
     : null
 
   const handleClick = useCallback(
