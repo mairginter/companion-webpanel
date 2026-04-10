@@ -19,6 +19,10 @@ export interface HostProfile {
   autoConnect?: boolean
   /** In der Toolbar als Status-Dot anzeigen. Default: true */
   showInToolbar?: boolean
+  /** Buttons pro Zeile im Picker-Grid. Default: 8 */
+  gridCols?: number
+  /** Zeilen im Picker-Grid. Default: 4 */
+  gridRows?: number
 }
 
 // ─── Canvas / Element Types ───────────────────────────────────────────────────
