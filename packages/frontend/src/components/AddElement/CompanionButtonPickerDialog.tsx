@@ -25,6 +25,9 @@ interface Props {
   /** Positionierung neben dem PropertiesPanel */
   alignSide?: 'left' | 'right'
   panelWidth?: number
+  /** Standard-Grid-Größe beim Öffnen (aus HostProfile) */
+  initialGridCols?: number
+  initialGridRows?: number
 }
 
 function overlayStyle(alignSide?: 'left' | 'right', panelWidth = 320): React.CSSProperties {
@@ -74,6 +77,7 @@ const SELECT_STYLE: React.CSSProperties = {
 
 export function CompanionButtonPickerDialog({
   onConfirm, onClose, confirmLabel = 'Hinzufügen', initialRef, alignSide, panelWidth = 320,
+  initialGridCols, initialGridRows,
 }: Props) {
   const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
@@ -87,8 +91,8 @@ export function CompanionButtonPickerDialog({
 
   const [hostId, setHostId] = useState<string>(initialRef?.hostId ?? connectedHosts[0]?.id ?? '')
   const [pageNum, setPageNum] = useState<number>(initialRef?.page ?? 1)
-  const [keysPerRow, setKeysPerRow] = useState(8)
-  const [rows, setRows] = useState(4)
+  const [keysPerRow, setKeysPerRow] = useState(initialGridCols ?? 8)
+  const [rows, setRows] = useState(initialGridRows ?? 4)
   const [selectedRow, setSelectedRow] = useState<number | null>(null)
   const [selectedCol, setSelectedCol] = useState<number | null>(null)
   const [loadingPreview, setLoadingPreview] = useState(false)
@@ -156,6 +160,10 @@ export function CompanionButtonPickerDialog({
     setHostId(id)
     setSelectedRow(null)
     setSelectedCol(null)
+    // Grid-Größe des neuen Hosts als Default setzen
+    const host = settings?.hosts.find((h) => h.id === id)
+    if (host?.gridCols !== undefined) setKeysPerRow(host.gridCols)
+    if (host?.gridRows !== undefined) setRows(host.gridRows)
   }
 
   const handleConfirm = () => {
