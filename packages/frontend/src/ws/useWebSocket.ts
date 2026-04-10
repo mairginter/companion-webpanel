@@ -14,6 +14,7 @@ const RECONNECT_DELAY_MS = 2000
  */
 export function useWebSocket(): {
   sendPress: (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
+  sendRotate: (hostId: string, page: number, row: number, col: number, direction: 1 | -1) => void
 } {
   const ws = useRef<WebSocket | null>(null)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
