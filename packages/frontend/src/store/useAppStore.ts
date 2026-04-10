@@ -70,6 +70,8 @@ interface AppStore {
     patch: Partial<{ x: number; y: number; w: number; h: number }>,
   ) => void
 
+  updateElement: (panelId: string, elementId: string, patch: Partial<AnyElement>) => void
+
   _undoSnapshot: Record<string, { x: number; y: number; w: number; h: number; panelId: string }> | null
   _redoSnapshot: Record<string, { x: number; y: number; w: number; h: number; panelId: string }> | null
   saveUndoSnapshot: (elementIds: string[]) => void
@@ -281,6 +283,26 @@ export const useAppStore = create<AppStore>((set, get) => ({
                   ...p,
                   elements: p.elements.map((el) =>
                     el.id !== elementId ? el : { ...el, ...patch },
+                  ),
+                },
+          ),
+        },
+      }
+    }),
+
+  updateElement: (panelId, elementId, patch) =>
+    set((s) => {
+      if (!s.settings) return s
+      return {
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) =>
+            p.id !== panelId
+              ? p
+              : {
+                  ...p,
+                  elements: p.elements.map((el) =>
+                    el.id !== elementId ? el : { ...el, ...patch } as AnyElement,
                   ),
                 },
           ),

@@ -16,6 +16,7 @@ import { CanvasSettings } from './CanvasSettings'
 import { CompanionButtonProps } from './CompanionButtonProps'
 import { ShapeProps } from './ShapeProps'
 import { LabelProps } from './LabelProps'
+import { ChannelStripProps } from './ChannelStripProps'
 
 const LS_SIDE = 'cwp:propsPanelSide'
 const LS_OPEN = 'cwp:propsPanelOpen'
@@ -175,6 +176,15 @@ export function PropertiesPanel() {
             {specificContent}
             <div style={{ borderTop: '1px solid #2a3344', paddingTop: 12 }}>
               <LabelProps element={singleEl} panelId={panel!.id} />
+            </div>
+          </>
+        )
+      } else if (singleEl.type === 'channelStrip') {
+        specificContent = (
+          <>
+            {specificContent}
+            <div style={{ borderTop: '1px solid #2a3344', paddingTop: 12 }}>
+              <ChannelStripProps element={singleEl} panelId={panel!.id} />
             </div>
           </>
         )
