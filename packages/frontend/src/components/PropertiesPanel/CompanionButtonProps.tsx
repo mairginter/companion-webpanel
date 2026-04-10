@@ -46,6 +46,7 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
   }
 
   const hostName = settings?.hosts.find((h) => h.id === element.ref.hostId)?.name ?? element.ref.hostId
+  const host = settings?.hosts.find((h) => h.id === element.ref.hostId)
 
   const lbl: React.CSSProperties = { fontSize: 12, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px' }
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }
@@ -121,6 +122,8 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
           onClose={() => setPickerOpen(false)}
           alignSide={side}
           panelWidth={panelWidth}
+          initialGridCols={host?.gridCols}
+          initialGridRows={host?.gridRows}
         />
       )}
     </div>

@@ -68,6 +68,7 @@ const fieldInput: React.CSSProperties = {
 }
 
 export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
+  const settings = useAppStore((s) => s.settings)
   const [step, setStep] = useState(1)
   const [pickerTarget, setPickerTarget] = useState<'button' | 'solo' | 'pan' | null>(null)
 
@@ -413,6 +414,12 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
             setPickerTarget(null)
           }}
           onClose={() => setPickerTarget(null)}
+          initialGridCols={
+            settings?.hosts.find((h) => h.id === (buttonRef?.hostId ?? settings?.hosts[0]?.id))?.gridCols
+          }
+          initialGridRows={
+            settings?.hosts.find((h) => h.id === (buttonRef?.hostId ?? settings?.hosts[0]?.id))?.gridRows
+          }
         />,
         document.body,
       )}

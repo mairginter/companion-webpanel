@@ -45,6 +45,7 @@ function refLabel(ref: CompanionRef | undefined): string {
 
 export function ChannelStripProps({ element, panelId, side = 'right', panelWidth = 320 }: Props) {
   const updateElement = useAppStore((s) => s.updateElement)
+  const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
   const [pickerTarget, setPickerTarget] = useState<'button' | 'solo' | 'pan' | null>(null)
 
@@ -267,6 +268,12 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
           onClose={() => setPickerTarget(null)}
           alignSide={side}
           panelWidth={panelWidth}
+          initialGridCols={
+            settings?.hosts.find((h) => h.id === refs.button.ref.hostId)?.gridCols
+          }
+          initialGridRows={
+            settings?.hosts.find((h) => h.id === refs.button.ref.hostId)?.gridRows
+          }
         />,
         document.body,
       )}

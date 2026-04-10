@@ -50,6 +50,7 @@ function makeDefault(
 
 export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddElementMenuProps) {
   const addElement = useAppStore((s) => s.addElement)
+  const settings = useAppStore((s) => s.settings)
   const menuRef = useRef<HTMLDivElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -130,6 +131,8 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
         <CompanionButtonPickerDialog
           onConfirm={handlePickerConfirm}
           onClose={() => { setPickerOpen(false); onClose() }}
+          initialGridCols={settings?.hosts[0]?.gridCols}
+          initialGridRows={settings?.hosts[0]?.gridRows}
         />
       )}
 
