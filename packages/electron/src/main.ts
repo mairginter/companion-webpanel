@@ -11,7 +11,7 @@
  *  7. IPC-Handler registrieren
  *  8. app.on('window-all-closed') → nicht beenden (Tray-App)
  */
-import { app, ipcMain, shell, dialog } from 'electron'
+import { app, ipcMain, shell, dialog, session } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import { createBackend } from '@cwp/backend'
@@ -34,6 +34,12 @@ if (!gotLock) {
 
 async function main(): Promise<void> {
   await app.whenReady()
+
+  // Cache + Service Worker beim Start löschen → immer aktueller Frontend-Stand
+  await session.defaultSession.clearCache()
+  await session.defaultSession.clearStorageData({
+    storages: ['cachestorage', 'serviceworkers'],
+  })
 
   const userDataPath = app.getPath('userData')
   const settings = loadSettings(userDataPath)

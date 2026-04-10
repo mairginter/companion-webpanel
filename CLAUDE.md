@@ -106,6 +106,13 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | ChannelStrip invertMute | `style.invertMute?: boolean` — kehrt isMuted-Logik um | Manche Module setzen Feedback-Farbe wenn UNMUTED (z.B. vMix-Varianten) |
 | ChannelStrip Index-Defaults | meterLIndex=0, meterRIndex=1, levelIndex=2, nameIndex=3 | Passend zu Beispiel-Format: `MeterL\|MeterR\|Level\|Name` |
 | ChannelStrip Picker Portal | `createPortal(..., document.body)` in Wizard + ChannelStripProps | Verhindert Stacking-Context-Probleme wenn Picker innerhalb von Modals geöffnet wird |
+| ChannelStrip Mute-Farbe | `buttonState.bgColor` direkt (kein `isMuted`-Kalkül) + `textColor` von Companion | Exakt wie CompanionButtonElement — kein berechneter Zustand, echtes Companion-Feedback |
+| ChannelStrip Meter-Gradient | `backgroundSize: 100% Xpx` + `backgroundPosition: bottom` auf Fill-Div | Gradient muss auf volle Meter-Höhe gespannt sein, nicht auf Fill-Div-Höhe — sonst immer Rot oben |
+| ChannelStrip Meter-Zonen | Grün −60→−18 (60%), Gelb −18→−9 (73%), Orange −9→−3 (81%), Rot >−3 (100%) | Broadcast-Standard; Peak Hold violett `#b060ff` |
+| ChannelStrip Fader-Position | `bottom: X%` (0=unten, 100=oben); Level ist 0–100 Prozent (Wing-Format) | `top` hatte Klemm-Bug bei negativen Werten; `bottom` direktes Mapping |
+| ChannelStrip Default-Größe | `w: 130, h: 500` | Sinnvolle Startgröße für typische Mixer-Channel-Strips |
+| ChannelStrip Wheel | `flex: 1, maxHeight: 100px`, Wrapper mit `justifyContent: center` | Zentriert zwischen Meter und Mute/Solo; wächst mit Element, klemmt bei 100px |
+| Electron Cache | `session.defaultSession.clearCache()` + `clearStorageData(cachestorage+serviceworkers)` beim Start | PWA Service Worker cachte veralteten Frontend-Stand — automatisch gelöscht |
 | AddElementMenu useEffect | `[pickerOpen, wizardOpen, onClose]` — wizardOpen in Deps | War fehlend → mousedown-Handler schloss Wizard beim Klick in Wizard-Buttons |
 | ChannelStrip Pan | Ausgegraut wenn `style.mono=true` oder `refs.pan` nicht konfiguriert | Pan-Wert aus Companion TEXT-Variable (Wing: `ch1_pan`, vMix: `input_X_pan`) |
 | ChannelStrip Solo | Ausgegraut wenn `refs.solo` nicht konfiguriert | Separater optionaler Button (SUB-PRESS + bgColor-State) |
@@ -577,6 +584,13 @@ Dann `electron-builder.yml` Mac-Target testen.
 ### Electron — noch offene UX-Features
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
 
+### Panel Zoom (geplant, ~2–3h)
+- ⬜ Zoom-Funktion für das gesamte Panel (View-Mode + Edit-Mode)
+- Bereich: −100% bis +200% (d.h. 0× bis 3× Skalierung, Default 100%)
+- UX: Zoom-Slider oder ±-Buttons in der Toolbar, Ctrl+Scroll als Shortcut
+- Implementierung: CSS `transform: scale(X)` auf den Canvas-Container mit `transform-origin: top left`; Scroll-Koordinaten beim Element-Platzieren müssen durch Zoom-Faktor dividiert werden
+- Persistenz: `panel.zoom` in Settings (pro Panel), Default `1.0`
+
 ### Edit-Mode — offene Features
 - ⬜ Ctrl+C → Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
 - ⬜ Canvas Grid Snap für alle Elemente (Shape, Label, nicht nur CompanionButton)
@@ -599,10 +613,15 @@ Implementiert:
 - ✅ `AddElementMenu` — channelStrip Eintrag + Wizard-Integration
 - ✅ 82/82 Tests grün
 
-### ChannelStrip — offene Verbesserungen (Session 2026-04-10)
-- ⬜ **Fader reagiert nicht** — SUB-ROTATE wird gesendet aber Companion-Action muss korrekt konfiguriert sein (Rotate-Action auf Fader). Prüfen ob SUB-ROTATE OK zurückkommt und Companion-Debug-Log.
-- ⬜ **Fader Level Schriftgröße** — `fontSize: 10` in ChannelStripElement.tsx erhöhen (mind. 12px), ggf. mit dBFS-Label.
-- ⬜ **Wheel visuelles Feedback** — aktuell: `backgroundPositionX` animiert. Verbesserung: Wheel als breiteres Element (mind. 40px Höhe), stärkere Kontraststufen, ggf. Schatten-Pulse beim Klick; oder echtes Canvas-drawn Wheel.
+### ChannelStrip — Fixes (Session 2026-04-10b) ✅
+- ✅ **Fader Level Schriftgröße** — `fontSize: 10` → `12px`, numerischer Wert jetzt über dem Fader-Track
+- ✅ **Wheel visuelles Feedback** — Höhe 28→38px, Rippen-Gradient mit starkem Kontrast, Drag-Glow (isDragging), `flex: 1` + `maxHeight: 100px` + vertikal zentriert zwischen Meter und Mute/Solo
+- ✅ **Meter Farbzonen** Broadcast-Standard: Grün (−60→−18), Gelb (−18→−9), Orange (−9→−3), Rot (>−3); `backgroundSize + backgroundPosition: bottom` Fix (Gradient war relativ zum Fill-Div, nicht zur Meter-Höhe)
+- ✅ **Peak Hold** — violett (`#b060ff`)
+- ✅ **Fader-Knob** — `bottom: X%` statt `top`, `transition: bottom 0.05s linear`; Level-Wert (0–100) direkt als Prozent gemappt
+- ✅ **Solo/Mute vertikal** — Solo oben, Mute unten, `flexDirection: column`
+- ✅ **Mute-Button** — zeigt `buttonState.bgColor` direkt (kein `isMuted`-Kalkül), `textColor` von Companion — exakt wie CompanionButtonElement
+- ✅ **Default-Größe** — `w: 80, h: 240` → `w: 130, h: 500` im Wizard
 
 ### CompanionButton-Picker — Verbesserungen (Session 2026-04-10)
 - ⬜ **Grid-Größe aus Host-Konfiguration** — `HostProfile` um `gridCols?: number` und `gridRows?: number` erweitern. `CompanionButtonPickerDialog` liest diese beim Öffnen als Defaultwerte (überschreibbar). Wizard Step 1 ebenfalls.

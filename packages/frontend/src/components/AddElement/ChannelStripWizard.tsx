@@ -98,7 +98,7 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
     if (!buttonRef) return
     const draft: Omit<ChannelStripElement, 'id'> = {
       type: 'channelStrip',
-      x: canvasPos.x, y: canvasPos.y, w: 80, h: 240, z: 0,
+      x: canvasPos.x, y: canvasPos.y, w: 130, h: 500, z: 0,
       style: { color, name: name || undefined, mono: mono || undefined, clipThreshold, coarseMultiplier, invertMute: invertMute || undefined },
       refs: {
         button: { ref: buttonRef, textSeparator: separator, meterLIndex, meterRIndex, levelIndex, nameIndex },
