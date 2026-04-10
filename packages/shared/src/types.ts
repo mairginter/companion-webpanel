@@ -101,11 +101,52 @@ export interface MeterElement extends BaseElement {
   }
 }
 
+export interface ChannelStripElement extends BaseElement {
+  type: 'channelStrip'
+
+  style: {
+    /** Accent-Farbe für 20px Color Stripe (hex). Default: '#4a9eff' */
+    color: string
+    /** Statischer Channel-Name (Fallback wenn kein nameIndex konfiguriert) */
+    name?: string
+    /** Mono-Modus: nur ein Meter-Bar, Pan-Indicator ausgegraut */
+    mono?: boolean
+    /** dBFS ab dem Clip-LED blinkt. Default: 0 */
+    clipThreshold?: number
+    /** Anzahl SUB-ROTATE-Events bei Shift+Scroll. Default: 10 */
+    coarseMultiplier?: number
+  }
+
+  refs: {
+    /**
+     * Haupt-Button: Mute (SUB-PRESS + bgColor) + Fader (SUB-ROTATE) + Daten (TEXT)
+     */
+    button: {
+      ref: CompanionRef
+      /** Trennzeichen für Multi-Wert TEXT-Feld. Default: '|' */
+      textSeparator?: string
+      /** TEXT-Index für Meter L dB-Wert. Default: 0 */
+      meterLIndex?: number
+      /** TEXT-Index für Meter R dB-Wert. Optional */
+      meterRIndex?: number
+      /** TEXT-Index für Fader Level (Fader-Bar + dB-Anzeige). Optional */
+      levelIndex?: number
+      /** TEXT-Index für Channel Name. Optional — Fallback: style.name */
+      nameIndex?: number
+    }
+    /** Solo-Button (optional). Ausgegraut wenn nicht konfiguriert. */
+    solo?: CompanionRef
+    /** Pan-Indicator Datenquelle (optional). TEXT = Pan-Wert. */
+    pan?: CompanionRef
+  }
+}
+
 export type AnyElement =
   | CompanionButtonElement
   | ShapeElement
   | LabelElement
   | MeterElement
+  | ChannelStripElement
 
 export interface Panel {
   id: string
@@ -181,8 +222,18 @@ export interface PressMessage {
   pressed: boolean
 }
 
+/** Frontend → Backend: fader rotate via drum wheel */
+export interface RotateMessage {
+  t: 'rotate'
+  hostId: string
+  page: number
+  row: number
+  col: number
+  direction: 1 | -1
+}
+
 export type BackendToFrontend = DeltaMessage | SnapshotMessage | SessionStatusMessage | HostInfoMessage
-export type FrontendToBackend = PressMessage
+export type FrontendToBackend = PressMessage | RotateMessage
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
