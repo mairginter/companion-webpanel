@@ -115,6 +115,8 @@ export interface ChannelStripElement extends BaseElement {
     clipThreshold?: number
     /** Anzahl SUB-ROTATE-Events bei Shift+Scroll. Default: 10 */
     coarseMultiplier?: number
+    /** Mute-Logik umkehren: true wenn aktive Feedback-Farbe = unmuted (z.B. vMix invertiert) */
+    invertMute?: boolean
   }
 
   refs: {

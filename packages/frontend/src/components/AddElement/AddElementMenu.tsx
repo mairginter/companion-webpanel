@@ -62,7 +62,7 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [pickerOpen, onClose])
+  }, [pickerOpen, wizardOpen, onClose])
 
   const handleSelect = (type: 'companionButton' | 'channelStrip' | 'label' | 'shape') => {
     if (type === 'companionButton') {

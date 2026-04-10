@@ -88,9 +88,11 @@ export const ChannelStripElement = React.memo(function ChannelStripElement({
   const levelDb = parsed.level
   const channelName = parsed.name ?? style.name ?? ''
 
-  // Mute / Solo state
-  const muted = isMuted(buttonState?.bgColor)
-  const soloed = isMuted(soloState?.bgColor)
+  // Mute / Solo state (invertMute für Companion-Module die Farbe bei UNMUTED setzen)
+  const rawMuted = isMuted(buttonState?.bgColor)
+  const muted = style.invertMute ? !rawMuted : rawMuted
+  const rawSoloed = isMuted(soloState?.bgColor)
+  const soloed = style.invertMute ? !rawSoloed : rawSoloed
 
   // Pan value
   const panValue = refs.pan ? parsePanValue(panState?.text ?? '') : 0
@@ -125,12 +127,14 @@ export const ChannelStripElement = React.memo(function ChannelStripElement({
     }
   }, [meterRDb])
 
-  // Drum wheel interaction
+  // Drum wheel interaction + animation offset
+  const [wheelSpin, setWheelSpin] = useState(0)
   const dragStartX = useRef<number | null>(null)
   const dragAccum = useRef(0)
 
   const doRotate = useCallback((direction: 1 | -1, times = 1) => {
     if (mode !== 'view') return
+    setWheelSpin((prev) => (prev + direction * 8 * times + 10000) % 100)
     for (let i = 0; i < times; i++) {
       sendRotate(buttonRef.hostId, buttonRef.page, buttonRef.row, buttonRef.col, direction)
     }
@@ -306,6 +310,7 @@ export const ChannelStripElement = React.memo(function ChannelStripElement({
           userSelect: 'none',
           touchAction: 'none',
           background: 'repeating-linear-gradient(90deg, #1a2030 0px, #1a2030 6px, #243040 6px, #243040 8px)',
+          backgroundPositionX: `${wheelSpin}px`,
           boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5), inset 0 -1px 3px rgba(0,0,0,0.5)',
           position: 'relative',
           overflow: 'hidden',

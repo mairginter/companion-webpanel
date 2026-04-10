@@ -184,7 +184,7 @@ export function PropertiesPanel() {
           <>
             {specificContent}
             <div style={{ borderTop: '1px solid #2a3344', paddingTop: 12 }}>
-              <ChannelStripProps element={singleEl} panelId={panel!.id} />
+              <ChannelStripProps element={singleEl} panelId={panel!.id} side={side} panelWidth={PANEL_W} />
             </div>
           </>
         )

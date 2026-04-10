@@ -103,6 +103,10 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | ChannelStrip Unity Reset | Doppelklick auf Wheel → SUB-PRESS auf buttonRef | Companion-Button "Press action" = Set Fader 0dB konfigurieren |
 | ChannelStrip Color Stripe | 20px Höhe, Channel-Name integriert, konfigurierbare Farbe | Wie SSL/dLive — schnelle visuelle Orientierung im Live-Betrieb |
 | ChannelStrip Clip LED | Blinkt (CSS step-start 0.5s) wenn Meter ≥ clipThreshold (default: 0 dBFS), kein Reset | Latching-Verhalten entfällt bewusst — blinkt nur bei aktivem Clipping |
+| ChannelStrip invertMute | `style.invertMute?: boolean` — kehrt isMuted-Logik um | Manche Module setzen Feedback-Farbe wenn UNMUTED (z.B. vMix-Varianten) |
+| ChannelStrip Index-Defaults | meterLIndex=0, meterRIndex=1, levelIndex=2, nameIndex=3 | Passend zu Beispiel-Format: `MeterL\|MeterR\|Level\|Name` |
+| ChannelStrip Picker Portal | `createPortal(..., document.body)` in Wizard + ChannelStripProps | Verhindert Stacking-Context-Probleme wenn Picker innerhalb von Modals geöffnet wird |
+| AddElementMenu useEffect | `[pickerOpen, wizardOpen, onClose]` — wizardOpen in Deps | War fehlend → mousedown-Handler schloss Wizard beim Klick in Wizard-Buttons |
 | ChannelStrip Pan | Ausgegraut wenn `style.mono=true` oder `refs.pan` nicht konfiguriert | Pan-Wert aus Companion TEXT-Variable (Wing: `ch1_pan`, vMix: `input_X_pan`) |
 | ChannelStrip Solo | Ausgegraut wenn `refs.solo` nicht konfiguriert | Separater optionaler Button (SUB-PRESS + bgColor-State) |
 
@@ -577,17 +581,39 @@ Dann `electron-builder.yml` Mac-Target testen.
 - ⬜ Ctrl+C → Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
 - ⬜ Canvas Grid Snap für alle Elemente (Shape, Label, nicht nur CompanionButton)
 
-### Phase 7 — ChannelStrip Element ⬜ NÄCHSTE PRIORITÄT (Design-Spec fertig: 2026-04-09)
+### Phase 7 — ChannelStrip Element ✅ FERTIG (Session 2026-04-10)
 Design-Spec: `docs/superpowers/specs/2026-04-09-channelstrip-design.md`
 Implementierungsplan: `docs/superpowers/plans/2026-04-09-channelstrip.md` ✅
 
-Kernpunkte für Implementierung:
-- Neues Element `channelStrip` in `shared/src/types.ts` (`ChannelStripElement` Interface)
-- `SUB-ROTATE` als neuer Message-Type in `FrontendToBackend` + `SatelliteClient.ts`
-- `ChannelStripElement.tsx` + `ChannelStripProps.tsx` (PropertiesPanel)
-- Setup-Wizard (5 Schritte) beim Hinzufügen aus `+`-Menü
-- Multi-Value TEXT-Parser (Separator + Feldindizes)
-- Offener Punkt: Mute-State-Erkennung aus `bgColor` (Schwellenwert-Logik vs. explizite Konfiguration)
+Implementiert:
+- ✅ `ChannelStripElement` Interface in `shared/src/types.ts` + `AnyElement` Union
+- ✅ `RotateMessage` + `FrontendToBackend` union erweitert
+- ✅ `SatelliteClient.rotate()` → `SUB-ROTATE SUBID=... DIRECTION=±1`
+- ✅ `HostManager.handleRotate()` + `buildDesiredSubs()` für channelStrip refs
+- ✅ `ClientServer.onRotate` Handler (8. Param vor staticDir)
+- ✅ `useWebSocket.sendRotate()` im Frontend-Hook
+- ✅ `utils/channelStrip.ts` — `parseChannelStripText()`, `parsePanValue()`, `isMuted()` (luminance > 0.15)
+- ✅ `ChannelStripElement.tsx` — MeterBar, Drum-Wheel, PeakHold, Pan-Indicator, Mute/Solo
+- ✅ `ChannelStripProps.tsx` — Refs + Text-Parsing + Style im PropertiesPanel
+- ✅ `ChannelStripWizard.tsx` — 5-Schritt Setup-Wizard, z-Index 1050 (Picker bei 1100)
+- ✅ `AddElementMenu` — channelStrip Eintrag + Wizard-Integration
+- ✅ 82/82 Tests grün
+
+### ChannelStrip — offene Verbesserungen (Session 2026-04-10)
+- ⬜ **Fader reagiert nicht** — SUB-ROTATE wird gesendet aber Companion-Action muss korrekt konfiguriert sein (Rotate-Action auf Fader). Prüfen ob SUB-ROTATE OK zurückkommt und Companion-Debug-Log.
+- ⬜ **Fader Level Schriftgröße** — `fontSize: 10` in ChannelStripElement.tsx erhöhen (mind. 12px), ggf. mit dBFS-Label.
+- ⬜ **Wheel visuelles Feedback** — aktuell: `backgroundPositionX` animiert. Verbesserung: Wheel als breiteres Element (mind. 40px Höhe), stärkere Kontraststufen, ggf. Schatten-Pulse beim Klick; oder echtes Canvas-drawn Wheel.
+
+### CompanionButton-Picker — Verbesserungen (Session 2026-04-10)
+- ⬜ **Grid-Größe aus Host-Konfiguration** — `HostProfile` um `gridCols?: number` und `gridRows?: number` erweitern. `CompanionButtonPickerDialog` liest diese beim Öffnen als Defaultwerte (überschreibbar). Wizard Step 1 ebenfalls.
+- ⬜ **Page-Name anzeigen** — Companion sendet Page-Namen via Satellite API (falls vorhanden). Im Picker neben der Page-Nummer anzeigen. API prüfen ob `PAGE-NAME` oder ähnliches verfügbar.
+
+### Virtual StreamDeck Element (Zukunfts-Idee)
+- Neues Element `virtualDeck` — registriert sich als echtes Companion Surface (via ADD-DEVICE oder Subscription-Surface-Mode)
+- Konfigurierbar: Spalten × Zeilen, Button-Größe, Page-Binding
+- Verhält sich wie ein physisches StreamDeck: KEY-PRESS wird direkt von Companion gerendert, kein manuelles Mapping nötig
+- Ablegbar auf Canvas wie jedes andere Element, skalierbar
+- Aufwand: ~1 Tag (Backend: Surface-Session, Frontend: Grid-Element + Binding-Wizard)
 
 ### Panel Export/Import (geplant, ~2–3h)
 - Export: einzelnes Panel als `.cwp`-Datei (JSON) herunterladen
@@ -612,6 +638,7 @@ Kernpunkte für Implementierung:
 - **caps-disabled Status** → muss konsistent in 3 Stellen sein: `SessionStatusMessage['status']` (shared/types.ts) + `HostStatus.status` (electron/types.ts) + `tray.ts` switch-Statement. Fehlt eine → TypeScript-Fehler oder fehlende Tray-Icon-Variante.
 - **Alte Electron-Instanz blockiert Single-Instance-Lock** → beim Neustart: `Get-Process electron | Stop-Process -Force` (PowerShell) — sonst startet neue Instanz sofort wieder.
 - **Lasso: lassoPointsRef synchron setzen** → `lassoPointsRef.current` muss im Event-Handler direkt gesetzt werden, NICHT innerhalb von `setLassoPoints(updater)` — React verarbeitet State-Updater asynchron, Ref wäre bei `pointerUp` noch leer.
+- **Electron frontend veraltet nach Frontend-Build** → `npm run build -w @cwp/frontend` kopiert NICHT automatisch nach `packages/electron/frontend/`. Danach immer: `cd packages/electron && node build.mjs` ausführen. Ohne diesen Schritt läuft Electron mit altem Code (anderer JS-Bundle-Hash).
 - **Lasso: lassoDidMove nicht in pointerUp zurücksetzen** → `onClick` feuert nach `pointerUp` auf demselben Element. `lassoDidMove` darf erst in `pointerDown` auf `false` gesetzt werden — sonst löscht `onClick` die Lasso-Selektion sofort wieder.
 
 ---

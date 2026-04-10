@@ -2,18 +2,20 @@
  * ChannelStripProps.tsx
  *
  * Properties Panel Section für das ChannelStrip-Element.
- * Sections: Refs, Text-Parsing, Style
- * Alle Wizard-Felder sind hier auch im Edit-Mode zugänglich.
+ * Sections: Refs (mit Button-Picker), Text-Parsing, Style
  */
-import React from 'react'
+import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ChannelStripElement, CompanionRef } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
-import { NumericInput } from './NumericInput'
 import { ColorPicker } from './ColorPicker'
+import { CompanionButtonPickerDialog } from '../AddElement/CompanionButtonPickerDialog'
 
 interface Props {
   element: ChannelStripElement
   panelId: string
+  side?: 'left' | 'right'
+  panelWidth?: number
 }
 
 const sectionTitle: React.CSSProperties = {
@@ -26,14 +28,25 @@ const inputStyle: React.CSSProperties = {
   flex: 1, background: '#121821', border: '1px solid #2a3344', borderRadius: 4,
   color: '#e9edf2', fontSize: 13, padding: '4px 8px', minWidth: 0,
 }
+const inputNum: React.CSSProperties = {
+  background: '#121821', border: '1px solid #2a3344', borderRadius: 4,
+  color: '#e9edf2', fontSize: 13, padding: '4px 8px', maxWidth: 60,
+}
+const pickerBtn = (connected: boolean): React.CSSProperties => ({
+  padding: '6px 12px', borderRadius: 6, border: '1px solid #2a3344',
+  background: '#1a2030', color: connected ? '#4a9eff' : '#4a5568', fontSize: 12,
+  cursor: connected ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0,
+})
 
 function refLabel(ref: CompanionRef | undefined): string {
   if (!ref) return '—'
-  return `${ref.page}/${ref.row}/${ref.col} @ ${ref.hostId.slice(0, 8)}`
+  return `P${ref.page} · R${ref.row + 1}/C${ref.col + 1}`
 }
 
-export function ChannelStripProps({ element, panelId }: Props) {
+export function ChannelStripProps({ element, panelId, side = 'right', panelWidth = 320 }: Props) {
   const updateElement = useAppStore((s) => s.updateElement)
+  const sessionStatus = useAppStore((s) => s.sessionStatus)
+  const [pickerTarget, setPickerTarget] = useState<'button' | 'solo' | 'pan' | null>(null)
 
   function patch(partial: Partial<ChannelStripElement>) {
     updateElement(panelId, element.id, partial)
@@ -47,36 +60,84 @@ export function ChannelStripProps({ element, panelId }: Props) {
     patch({ refs: { ...element.refs, button: { ...element.refs.button, ...partial } } })
   }
 
+  const handlePickerConfirm = (ref: CompanionRef) => {
+    if (pickerTarget === 'button') patchButton({ ref })
+    else if (pickerTarget === 'solo') patch({ refs: { ...element.refs, solo: ref } })
+    else if (pickerTarget === 'pan') patch({ refs: { ...element.refs, pan: ref } })
+    setPickerTarget(null)
+  }
+
   const { style, refs } = element
+  const buttonConnected = sessionStatus[refs.button.ref.hostId] === 'connected'
 
   return (
     <>
       {/* ── Refs ───────────────────────────────────────────── */}
       <div style={sectionTitle}>Refs</div>
 
-      <div style={row}>
-        <span style={lbl}>Button (Main)</span>
-        <span style={{ fontSize: 11, color: '#4a9eff', fontFamily: "'JetBrains Mono', monospace" }}>
-          {refLabel(refs.button.ref)}
-        </span>
+      {/* Button (Main) */}
+      <div style={{ ...row, flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+        <span style={lbl}>Button (Main) — {refLabel(refs.button.ref)}</span>
+        <button
+          style={pickerBtn(buttonConnected)}
+          disabled={!buttonConnected}
+          onClick={() => buttonConnected && setPickerTarget('button')}
+        >
+          {buttonConnected ? 'Ändern…' : 'Host offline'}
+        </button>
       </div>
 
-      <div style={row}>
-        <span style={lbl}>Solo (optional)</span>
-        <span style={{ fontSize: 11, color: refs.solo ? '#4a9eff' : '#4a5568', fontFamily: "'JetBrains Mono', monospace" }}>
-          {refLabel(refs.solo)}
-        </span>
+      {/* Solo */}
+      <div style={{ ...row, flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+        <span style={lbl}>Solo (optional) — {refLabel(refs.solo)}</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            style={pickerBtn(buttonConnected)}
+            disabled={!buttonConnected}
+            onClick={() => buttonConnected && setPickerTarget('solo')}
+          >
+            {buttonConnected ? (refs.solo ? 'Ändern…' : 'Wählen…') : 'Host offline'}
+          </button>
+          {refs.solo && (
+            <button
+              style={{ ...pickerBtn(true), color: '#ff5a5f' }}
+              onClick={() => patch({ refs: { ...element.refs, solo: undefined } })}
+            >
+              Entfernen
+            </button>
+          )}
+        </div>
       </div>
 
-      <div style={row}>
-        <span style={lbl}>Pan (optional)</span>
-        <span style={{ fontSize: 11, color: refs.pan ? '#4a9eff' : '#4a5568', fontFamily: "'JetBrains Mono', monospace" }}>
-          {refLabel(refs.pan)}
-        </span>
+      {/* Pan */}
+      <div style={{ ...row, flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+        <span style={lbl}>Pan (optional) — {refLabel(refs.pan)}</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            style={pickerBtn(buttonConnected)}
+            disabled={!buttonConnected}
+            onClick={() => buttonConnected && setPickerTarget('pan')}
+          >
+            {buttonConnected ? (refs.pan ? 'Ändern…' : 'Wählen…') : 'Host offline'}
+          </button>
+          {refs.pan && (
+            <button
+              style={{ ...pickerBtn(true), color: '#ff5a5f' }}
+              onClick={() => patch({ refs: { ...element.refs, pan: undefined } })}
+            >
+              Entfernen
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Text-Parsing ────────────────────────────────────── */}
       <div style={sectionTitle}>Text-Parsing</div>
+
+      {/* Index explanation */}
+      <div style={{ padding: '2px 14px 6px', fontSize: 11, color: '#4a9eff', fontFamily: "'JetBrains Mono', monospace" }}>
+        Index 0-basiert: Feld<span style={{ color: '#6a7a8a' }}>0</span>|Feld<span style={{ color: '#6a7a8a' }}>1</span>|Feld<span style={{ color: '#6a7a8a' }}>2</span>|Feld<span style={{ color: '#6a7a8a' }}>3</span>
+      </div>
 
       <div style={row}>
         <span style={lbl}>Separator</span>
@@ -87,46 +148,53 @@ export function ChannelStripProps({ element, panelId }: Props) {
         />
       </div>
 
-      <NumericInput label="Meter L Index" value={refs.button.meterLIndex ?? 0} min={0}
-        onChange={(v) => patchButton({ meterLIndex: v })} />
-
       <div style={row}>
-        <span style={lbl}>Meter R Index</span>
+        <span style={lbl}>Meter L — Index</span>
         <input
           type="number" min={0}
-          style={{ ...inputStyle, maxWidth: 60 }}
+          style={inputNum}
+          value={refs.button.meterLIndex ?? 0}
+          onChange={(e) => patchButton({ meterLIndex: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+        />
+      </div>
+
+      <div style={row}>
+        <span style={lbl}>Meter R — Index (leer = Mono)</span>
+        <input
+          type="number" min={0}
+          style={inputNum}
           value={refs.button.meterRIndex ?? ''}
-          placeholder="—"
+          placeholder="leer"
           onChange={(e) => {
-            const v = e.target.value === '' ? undefined : parseInt(e.target.value, 10)
+            const v = e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10))
             patchButton({ meterRIndex: v })
           }}
         />
       </div>
 
       <div style={row}>
-        <span style={lbl}>Level Index</span>
+        <span style={lbl}>Fader Level — Index</span>
         <input
           type="number" min={0}
-          style={{ ...inputStyle, maxWidth: 60 }}
+          style={inputNum}
           value={refs.button.levelIndex ?? ''}
-          placeholder="—"
+          placeholder="leer"
           onChange={(e) => {
-            const v = e.target.value === '' ? undefined : parseInt(e.target.value, 10)
+            const v = e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10))
             patchButton({ levelIndex: v })
           }}
         />
       </div>
 
       <div style={row}>
-        <span style={lbl}>Name Index</span>
+        <span style={lbl}>Channel Name — Index</span>
         <input
           type="number" min={0}
-          style={{ ...inputStyle, maxWidth: 60 }}
+          style={inputNum}
           value={refs.button.nameIndex ?? ''}
-          placeholder="—"
+          placeholder="leer"
           onChange={(e) => {
-            const v = e.target.value === '' ? undefined : parseInt(e.target.value, 10)
+            const v = e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10))
             patchButton({ nameIndex: v })
           }}
         />
@@ -159,11 +227,49 @@ export function ChannelStripProps({ element, panelId }: Props) {
         />
       </div>
 
-      <NumericInput label="Clip Threshold (dBFS)" value={style.clipThreshold ?? 0} min={-60}
-        onChange={(v) => patchStyle({ clipThreshold: Math.min(0, v) })} />
+      <div style={row}>
+        <span style={lbl}>Mute invertieren</span>
+        <input
+          type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }}
+          checked={style.invertMute === true}
+          onChange={(e) => patchStyle({ invertMute: e.target.checked || undefined })}
+        />
+      </div>
 
-      <NumericInput label="Coarse Multiplier" value={style.coarseMultiplier ?? 10} min={1}
-        onChange={(v) => patchStyle({ coarseMultiplier: Math.min(100, v) })} />
+      <div style={row}>
+        <span style={lbl}>Clip Threshold (dBFS)</span>
+        <input
+          key={`clip-${element.id}`}
+          type="number"
+          style={inputNum}
+          defaultValue={style.clipThreshold ?? 0}
+          onBlur={(e) => {
+            const v = parseFloat(e.target.value)
+            if (!isNaN(v)) patchStyle({ clipThreshold: v })
+          }}
+        />
+      </div>
+
+      <div style={row}>
+        <span style={lbl}>Coarse Multiplier</span>
+        <input
+          type="number" min={1} max={100}
+          style={inputNum}
+          value={style.coarseMultiplier ?? 10}
+          onChange={(e) => patchStyle({ coarseMultiplier: Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1)) })}
+        />
+      </div>
+
+      {/* Button Picker — per Portal direkt in document.body */}
+      {pickerTarget && createPortal(
+        <CompanionButtonPickerDialog
+          onConfirm={handlePickerConfirm}
+          onClose={() => setPickerTarget(null)}
+          alignSide={side}
+          panelWidth={panelWidth}
+        />,
+        document.body,
+      )}
     </>
   )
 }
