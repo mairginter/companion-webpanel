@@ -38,8 +38,11 @@ export function EditableElement({ element, panelId, children }: Props) {
   // Dragged element nutzt @dnd-kit transform.
   // Andere selektierte folgen via DragDeltaContext (Gruppen-Drag).
   // Deltas sind screen-space → durch zoom dividieren für canvas-space Preview.
+  // @dnd-kit transform ist ebenfalls screen-space → durch zoom dividieren.
   const activeTransform = isDragging
     ? transform
+      ? { x: transform.x / zoom, y: transform.y / zoom, scaleX: transform.scaleX, scaleY: transform.scaleY }
+      : null
     : isSelected && dragDelta
     ? { x: dragDelta.dx / zoom, y: dragDelta.dy / zoom, scaleX: 1, scaleY: 1 }
     : null
