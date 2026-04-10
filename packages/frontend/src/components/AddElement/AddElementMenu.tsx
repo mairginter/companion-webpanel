@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import type { AnyElement } from '@cwp/shared'
 import { CompanionButtonPickerDialog } from './CompanionButtonPickerDialog'
+import { ChannelStripWizard } from './ChannelStripWizard'
 
 export interface AddElementMenuProps {
   /** Bildschirm-Position des Popups (clientX/clientY oder Button-Anker) */
@@ -21,6 +22,7 @@ export interface AddElementMenuProps {
 
 const MENU_ITEMS = [
   { type: 'companionButton', label: 'Companion Button', icon: '⊞' },
+  { type: 'channelStrip',    label: 'Channel Strip',    icon: '🎚' },
   { type: 'label',           label: 'Label',            icon: 'T' },
   { type: 'shape',           label: 'Shape',            icon: '▭' },
 ] as const
@@ -50,10 +52,11 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
   const addElement = useAppStore((s) => s.addElement)
   const menuRef = useRef<HTMLDivElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [wizardOpen, setWizardOpen] = useState(false)
 
-  // Schließen bei Klick außerhalb (nur wenn Picker nicht offen)
+  // Schließen bei Klick außerhalb (nur wenn Picker/Wizard nicht offen)
   useEffect(() => {
-    if (pickerOpen) return
+    if (pickerOpen || wizardOpen) return
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose()
     }
@@ -61,9 +64,13 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
     return () => document.removeEventListener('mousedown', handler)
   }, [pickerOpen, onClose])
 
-  const handleSelect = (type: 'companionButton' | 'label' | 'shape') => {
+  const handleSelect = (type: 'companionButton' | 'channelStrip' | 'label' | 'shape') => {
     if (type === 'companionButton') {
       setPickerOpen(true)
+      return
+    }
+    if (type === 'channelStrip') {
+      setWizardOpen(true)
       return
     }
     addElement(panelId, makeDefault(type, canvasPos))
@@ -72,6 +79,12 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
 
   const handlePickerConfirm = (ref: { hostId: string; page: number; row: number; col: number }) => {
     addElement(panelId, makeDefault('companionButton', canvasPos, ref))
+    onClose()
+  }
+
+  const handleWizardConfirm = (draft: Omit<import('@cwp/shared').ChannelStripElement, 'id'>) => {
+    const id = crypto.randomUUID()
+    addElement(panelId, { id, ...draft } as import('@cwp/shared').AnyElement)
     onClose()
   }
 
@@ -117,6 +130,14 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
         <CompanionButtonPickerDialog
           onConfirm={handlePickerConfirm}
           onClose={() => { setPickerOpen(false); onClose() }}
+        />
+      )}
+
+      {wizardOpen && (
+        <ChannelStripWizard
+          canvasPos={canvasPos}
+          onConfirm={handleWizardConfirm}
+          onClose={() => { setWizardOpen(false); onClose() }}
         />
       )}
     </>
