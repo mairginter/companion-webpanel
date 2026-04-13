@@ -135,11 +135,14 @@ CompanionWebpannel/
 
 ### Electron
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
-- ⬜ macOS .icns Icon: `packages/electron/assets/icon-512.png` → cloudconvert.com → ICNS
+- ✅ macOS .icns Icon: `generate-app-icon.mjs` erzeugt `icon.icns` direkt (6 Größen, pure Node.js)
 
 ### Edit-Mode
 - ⬜ Ctrl+C / Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
-- ⬜ Canvas Grid Snap für alle Elemente (Shape, Label — nicht nur CompanionButton)
+- ✅ Canvas-Größe manuell: Preset-Dropdown + custom W/H-Inputs + letzte 5 Größen in localStorage; DPI-Warnung + "Verfügbaren Bereich übernehmen"-Button
+- ✅ Canvas Grid Snap für alle Elemente: Drag + Resize snappen auf `gridSize/4` (feines Raster)
+- ✅ Resize Snap: `snapResizeGeo()` in `geometry.ts`, angewandt in `ResizeHandles.tsx` (nur gezogene Kante snappt)
+- ✅ Edit-Mode Grid: Dual-Grid im `backgroundImage` des Canvas — Major-Linien bei `gridSize` (14% opacity), Minor bei `gridSize/4` (5% opacity); `minHeight: 100%` am Scale-Root-Div fixes dynamische Canvas-Größe
 
 ### CompanionButton-Picker
 - ⬜ Page-Name anzeigen — Companion sendet Page-Namen via Satellite API (prüfen ob `PAGE-NAME` verfügbar)
@@ -165,6 +168,11 @@ CompanionWebpannel/
 - **Lasso: lassoDidMove** → erst in `pointerDown` zurücksetzen, nicht in `pointerUp` — sonst löscht `onClick` die Selektion sofort
 - **Zoom: @dnd-kit Transform ist screen-space** → `transform.x/y` durch `zoom` dividieren — sonst falsch skaliert
 - **Zoom: Ctrl+Scroll** → nativen Listener mit `{ passive: false }`, `useAppStore.getState()` statt React-Closure
+- **Canvas-Select rubber-band** → `CanvasSettings` select-Wert als lokaler `useState`, NICHT von `detectPreset()` ableiten. Sonst: 'custom' setzen → 1920×1080 default → `detectPreset` erkennt Fixed-Preset → Select springt zurück → Inputs nie sichtbar.
+- **NumericInput in 2-Spalten-Grid** → immer `compact` prop übergeben — sonst quetschen ±-Buttons (je 44px) das Input-Feld auf ~30px.
+- **Scrollbar-Feedback-Loop** → `overflow:auto` + `minWidth:'100%'` + fixer Canvas-Breite: 1px Overflow → Scrollbar (17px) → `100%` schrumpft → Canvas > `100%` → beide Scrollbars locked. Fix: bei fixem Canvas kein `min*:'100%'`; ResizeObserver auf äußerem Container → `overflow:hidden` wenn Canvas passt, `overflow:auto` wenn nicht.
+- **Windows-DPI-Skalierung** → User sieht "1920px" (physisch), Canvas braucht CSS-px = physisch/scaleFactor. Toolbar-Höhe = 56px. Verfügbare Canvas-Fläche: `window.innerWidth × (window.innerHeight - 56)`. `window.devicePixelRatio > 1` → Warnung zeigen.
+- **Alte Electron-Instanz killen (bash)** → `powershell.exe -Command "Get-Process electron -ErrorAction SilentlyContinue | Stop-Process -Force"`
 
 ---
 

@@ -332,6 +332,34 @@ function downsample(buf, outSize) {
   return out
 }
 
+// ─── ICNS-Datei (macOS) ──────────────────────────────────────────────────────
+//
+// ICNS-Format: magic 'icns' + uint32BE(Gesamtlänge) + [Icons…]
+// Jedes Icon:  OSType (4 Bytes) + uint32BE(8 + Datenlänge) + PNG-Bytes
+//
+// OSType → Größe (Apple-Dokumentation):
+//   ic04 =   16×16  (1×)
+//   ic05 =   32×32  (1×)
+//   ic07 =  128×128 (1×)
+//   ic08 =  256×256 (1×)
+//   ic09 =  512×512 (1×)
+//   ic10 = 1024×1024 (1× / 512@2×)
+
+function createIcns(entries) {
+  // entries: Array<{ type: string, png: Buffer }>
+  const chunks = entries.map(({ type, png }) => {
+    const typeBuf = Buffer.from(type, 'ascii')
+    const lenBuf  = Buffer.alloc(4)
+    lenBuf.writeUInt32BE(8 + png.length)
+    return Buffer.concat([typeBuf, lenBuf, png])
+  })
+  const body    = Buffer.concat(chunks)
+  const magic   = Buffer.from('icns', 'ascii')
+  const sizeBuf = Buffer.alloc(4)
+  sizeBuf.writeUInt32BE(8 + body.length)
+  return Buffer.concat([magic, sizeBuf, body])
+}
+
 // ─── Ausgabe ─────────────────────────────────────────────────────────────────
 
 console.log('Rendering icon (1024×1024 intern) …')
@@ -351,5 +379,21 @@ const ico = createIco(png256)
 fs.writeFileSync(path.join(__dirname, 'icon.ico'), ico)
 console.log('✓ icon.ico (ICO mit 256px PNG)')
 
+// macOS ICNS — 6 Größen aus dem 1024er Puffer
+const icnsEntries = [
+  { type: 'ic04', size:   16 },
+  { type: 'ic05', size:   32 },
+  { type: 'ic07', size:  128 },
+  { type: 'ic08', size:  256 },
+  { type: 'ic09', size:  512 },
+  { type: 'ic10', size: 1024 },
+].map(({ type, size }) => {
+  const rgba = size === 1024 ? buf1024 : downsample(buf1024, size)
+  return { type, png: encodePNG(size, size, rgba) }
+})
+
+const icns = createIcns(icnsEntries)
+fs.writeFileSync(path.join(__dirname, 'icon.icns'), icns)
+console.log('✓ icon.icns (macOS, 6 Größen: 16/32/128/256/512/1024)')
+
 console.log('\nDone.')
-console.log('  Für macOS .icns: icon-512.png mit iconutil oder cloudconvert.com konvertieren')

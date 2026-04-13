@@ -50,6 +50,32 @@ export function applyResizeDelta(
   return { x, y, w, h }
 }
 
+/**
+ * Snap nach Resize: nur die gezogene Kante snappt ans Grid, die Gegenseite bleibt fix.
+ * Wird nach applyResizeDelta aufgerufen wenn snap aktiviert ist.
+ */
+export function snapResizeGeo(geo: Rect, handle: HandleId, gridSize: number, minSize: number): Rect {
+  const snap = (v: number) => Math.round(v / gridSize) * gridSize
+  let { x, y, w, h } = geo
+  const right = x + w
+  const bottom = y + h
+
+  if (handle === 'tl' || handle === 'ml' || handle === 'bl') {
+    const sx = snap(x); w = Math.max(minSize, right - sx); x = sx
+  }
+  if (handle === 'tr' || handle === 'mr' || handle === 'br') {
+    w = Math.max(minSize, snap(right) - x)
+  }
+  if (handle === 'tl' || handle === 'tc' || handle === 'tr') {
+    const sy = snap(y); h = Math.max(minSize, bottom - sy); y = sy
+  }
+  if (handle === 'bl' || handle === 'bc' || handle === 'br') {
+    h = Math.max(minSize, snap(bottom) - y)
+  }
+
+  return { x, y, w, h }
+}
+
 /** Prüft ob zwei Rechtecke sich überlappen (exklusiv — berühren zählt nicht) */
 export function rectsOverlap(a: Rect, b: Rect): boolean {
   return (

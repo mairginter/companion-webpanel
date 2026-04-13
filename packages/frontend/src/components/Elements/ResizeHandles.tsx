@@ -8,7 +8,7 @@
 import React, { useRef, useCallback } from 'react'
 import { AnyElement } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
-import { applyResizeDelta, HandleId } from '../../utils/geometry'
+import { applyResizeDelta, snapResizeGeo, HandleId } from '../../utils/geometry'
 
 const MIN_SIZE: Record<string, number> = {
   companionButton: 72,
@@ -78,22 +78,30 @@ export function ResizeHandles({ element, panelId }: Props) {
       saveUndoSnapshot([element.id])
       state.snapshotSaved = true
     }
-    const currentZoom = useAppStore.getState().getActivePanel()?.zoom ?? 1
+    const panel = useAppStore.getState().getActivePanel()
+    const currentZoom = panel?.zoom ?? 1
     const dx = (e.clientX - state.startX) / currentZoom
     const dy = (e.clientY - state.startY) / currentZoom
     const minSize = MIN_SIZE[element.type] ?? 8
-    const newGeo = applyResizeDelta(state.startGeometry, state.handleId, dx, dy, minSize)
+    let newGeo = applyResizeDelta(state.startGeometry, state.handleId, dx, dy, minSize)
+    if (panel?.grid?.snap ?? true) {
+      newGeo = snapResizeGeo(newGeo, state.handleId, (panel?.grid?.size ?? 40) / 4, minSize)
+    }
     applyVisual(newGeo)
   }, [element, saveUndoSnapshot, applyVisual])
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     const state = resizeState.current
     if (!state) return
-    const currentZoom = useAppStore.getState().getActivePanel()?.zoom ?? 1
+    const panel = useAppStore.getState().getActivePanel()
+    const currentZoom = panel?.zoom ?? 1
     const dx = (e.clientX - state.startX) / currentZoom
     const dy = (e.clientY - state.startY) / currentZoom
     const minSize = MIN_SIZE[element.type] ?? 8
-    const newGeo = applyResizeDelta(state.startGeometry, state.handleId, dx, dy, minSize)
+    let newGeo = applyResizeDelta(state.startGeometry, state.handleId, dx, dy, minSize)
+    if (panel?.grid?.snap ?? true) {
+      newGeo = snapResizeGeo(newGeo, state.handleId, (panel?.grid?.size ?? 40) / 4, minSize)
+    }
     updateElementGeometry(panelId, element.id, newGeo)
     resizeState.current = null
   }, [element, panelId, updateElementGeometry])

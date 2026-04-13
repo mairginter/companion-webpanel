@@ -37,6 +37,7 @@ interface CanvasProps {
   sendRotate: (hostId: string, page: number, row: number, col: number, direction: 1 | -1) => void
 }
 
+// Dezentes Dot-Grid als permanenter Canvas-Hintergrund (View + Edit)
 const DOT_GRID = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='0' cy='0' r='1.2' fill='rgba(255,255,255,0.06)'/%3E%3C/svg%3E")`
 
 export function Canvas({ sendPress, sendRotate }: CanvasProps) {
@@ -68,7 +69,7 @@ export function Canvas({ sendPress, sendRotate }: CanvasProps) {
   const snapEnabled = panel?.grid?.snap ?? true
 
   const snapModifier = useMemo(
-    () => (snapEnabled ? createMagneticSnapModifier(gridSize) : undefined),
+    () => (snapEnabled ? createMagneticSnapModifier(gridSize / 4) : undefined),
     [snapEnabled, gridSize],
   )
 
@@ -199,36 +200,76 @@ export function Canvas({ sendPress, sendRotate }: CanvasProps) {
   const canvasWidth = panel?.canvas?.width
   const canvasHeight = panel?.canvas?.height
   const textureCss = getTextureCss(panel?.canvas?.texture)
+
+  // Scrollbarsteuerung: overflow:hidden wenn Canvas in den verfügbaren Bereich passt,
+  // overflow:auto wenn Canvas größer ist (Zoomed-In oder Canvas > Fenstergröße).
+  // Der äußere Container (outerRef) wird beobachtet — nicht scrollWrapperRef, da dessen
+  // clientWidth bei overflow:auto durch die Scrollleiste selbst verkleinert wird.
+  const outerRef = useRef<HTMLDivElement>(null)
+  const [overflowMode, setOverflowMode] = useState<'hidden' | 'auto'>('hidden')
+  useEffect(() => {
+    const el = outerRef.current
+    if (!el) return
+    const check = () => {
+      const w = el.clientWidth
+      const h = el.clientHeight
+      if (!canvasWidth || !canvasHeight) { setOverflowMode('hidden'); return }
+      const fits = Math.round(canvasWidth * zoom) <= w && Math.round(canvasHeight * zoom) <= h
+      setOverflowMode(fits ? 'hidden' : 'auto')
+    }
+    check()
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [canvasWidth, canvasHeight, zoom])
   const textureBgSize = getTextureBackgroundSize(panel?.canvas?.texture)
 
-  // backgroundImage: Textur + Dot-Grid (Dot-Grid liegt oben)
-  const backgroundImageLayers = [
-    DOT_GRID,
-    ...(textureCss !== 'none' ? [textureCss] : []),
-  ].join(', ')
+  // Edit-Mode: Dual-Grid als repeating-linear-gradient im backgroundImage.
+  // Major-Linien bei gridSize (= Snap-Positionen, besser sichtbar).
+  // Minor-Linien bei gridSize/4 (feineres Raster, dezenter).
+  const minorGridSize = gridSize / 4
+  const editGridLayers = mode === 'edit' ? [
+    // Major (Snap-Positionen)
+    `repeating-linear-gradient(0deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.14) 1px, transparent 1px, transparent ${gridSize}px)`,
+    `repeating-linear-gradient(90deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.14) 1px, transparent 1px, transparent ${gridSize}px)`,
+    // Minor (Unterteilung)
+    `repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent ${minorGridSize}px)`,
+    `repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent ${minorGridSize}px)`,
+  ] : []
 
-  // backgroundSize: DOT_GRID braucht kein explizites size (SVG hat eigene Größe),
-  // aber Textur-Gradienten brauchen ggf. eine Kachel-Größe
+  // backgroundImage: Edit-Grid (oben) + Dot-Grid + Textur (unten)
+  const bgImageLayers = [...editGridLayers, DOT_GRID, ...(textureCss !== 'none' ? [textureCss] : [])]
+  const backgroundImageLayers = bgImageLayers.join(', ')
+
+  // backgroundSize: pro Layer ein Eintrag — alle Gradient-Layer brauchen 'auto',
+  // Textur-Gradienten brauchen ggf. eine Kachel-Größe
   const backgroundSizeLayers = textureBgSize
-    ? ['auto', textureBgSize].join(', ')
+    ? [...bgImageLayers.slice(0, -1).map(() => 'auto'), textureBgSize].join(', ')
     : undefined
 
   // Äußerer Container: position:relative — PropertiesPanel als absolute Overlay-Sibling
   const content = (
-    <div style={{ flex: 1, overflow: 'hidden', background: '#0a0e14', position: 'relative' }}>
+    <div ref={outerRef} style={{ flex: 1, overflow: 'hidden', background: '#0a0e14', position: 'relative' }}>
       {/* Scrollbarer Canvas-Bereich */}
-      <div ref={scrollWrapperRef} style={{ position: 'absolute', inset: 0, overflow: 'auto' }}>
-        {/* Größen-Reserve: reserviert scroll-Platz entsprechend dem skalierten Canvas */}
+      <div ref={scrollWrapperRef} style={{ position: 'absolute', inset: 0, overflow: overflowMode }}>
+        {/* Größen-Reserve: reserviert scroll-Platz entsprechend dem skalierten Canvas.
+            Bei fixem Canvas: KEIN minWidth/minHeight — sonst entsteht ein Feedback-Loop:
+            Scrollleiste erscheint (1px Overflow) → reduziert clientWidth → 100% schrumpft
+            → fixer Canvas > 100% → Scrollleiste gerechtfertigt → beide Leisten locked.
+            Ohne min* bricht dieser Loop. Bei dynamischem Canvas füllt '100%' den Viewport. */}
         <div
-          style={{
-            width: canvasWidth ? canvasWidth * zoom : '100%',
-            height: canvasHeight ? canvasHeight * zoom : '100%',
-            minWidth: '100%',
-            minHeight: '100%',
+          style={canvasWidth && canvasHeight ? {
+            width: canvasWidth * zoom,
+            height: canvasHeight * zoom,
+          } : {
+            width: '100%',
+            height: '100%',
           }}
         >
-          {/* Scale-Root: CSS-Transform auf Canvas-Inhalt */}
-          <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
+          {/* Scale-Root: CSS-Transform auf Canvas-Inhalt.
+              minHeight: '100%' bei dynamischer Canvas-Größe — sonst erbt containerRef 0px Höhe
+              und das backgroundImage (Grid) wird nicht gerendert. */}
+          <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', minHeight: canvasHeight ? undefined : '100%' }}>
             <div
               ref={containerRef}
               style={{
