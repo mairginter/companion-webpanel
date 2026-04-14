@@ -13,7 +13,7 @@
   "properties": {
     "version": {
       "type": "string",
-      "pattern": "^1\\.3\\.0$"
+      "pattern": "^1\\.4\\.0$"
     },
     "server": {
       "type": "object",
@@ -261,6 +261,9 @@
         },
         {
           "$ref": "#/$defs/MeterElement"
+        },
+        {
+          "$ref": "#/$defs/VirtualCompanionDeckElement"
         }
       ]
     },
@@ -619,6 +622,80 @@
                   ]
                 }
               }
+            }
+          }
+        }
+      ]
+    },
+    "VirtualCompanionDeckElement": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/BaseElement"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "hostId", "deviceId", "surfaceName", "grid", "style"],
+          "properties": {
+            "type": {
+              "const": "virtualCompanionDeck"
+            },
+            "hostId": {
+              "type": "string"
+            },
+            "deviceId": {
+              "type": "string",
+              "pattern": "^cwp-[0-9a-f]{8}$"
+            },
+            "surfaceName": {
+              "type": "string"
+            },
+            "grid": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cols", "rows"],
+              "properties": {
+                "cols": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 32
+                },
+                "rows": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 32
+                }
+              }
+            },
+            "style": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["fill", "opacity", "borderRadius", "padding", "gap"],
+              "properties": {
+                "fill": {
+                  "type": "string"
+                },
+                "opacity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "borderRadius": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "padding": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "gap": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "render": {
+              "type": "object"
             }
           }
         }

@@ -1,7 +1,7 @@
-// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.3.0) ───
+// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.4.0) ───
 
 export interface Settings {
-  version: '1.3.0'
+  version: '1.4.0'
   activeHostId: string
   hosts: HostProfile[]
   panels: Panel[]
@@ -147,12 +147,43 @@ export interface ChannelStripElement extends BaseElement {
   }
 }
 
+export interface VirtualCompanionDeckElement extends BaseElement {
+  type: 'virtualCompanionDeck'
+  /** Host-ID aus settings.hosts — gegen diesen Host wird ADD-DEVICE gesendet */
+  hostId: string
+  /** Stabile Device-ID (Format: "cwp-<8hex>"), einmalig generiert, persistent */
+  deviceId: string
+  /** Surface-Name wie er in Companions Surface-Configuration-UI erscheint */
+  surfaceName: string
+  /** Grid-Konfiguration: cols = KEYS_PER_ROW, rows × cols = KEYS_TOTAL */
+  grid: { cols: number; rows: number }
+  /** Hintergrund-Shape des Decks */
+  style: {
+    fill: string         // Hintergrundfarbe hex, Default '#1e3a5f'
+    opacity: number      // 0–1, Default 0.85
+    borderRadius: number // px, Default 8
+    padding: number      // px rundum (innen), Default 8
+    gap: number          // px zwischen Buttons, Default 5
+  }
+  /** Button-Darstellung (deck-weit, identisch zu CompanionButtonElement.render) */
+  render?: {
+    showBitmap?: boolean    // Default false
+    scaleBitmap?: boolean   // Default true
+    showText?: boolean      // Default true
+    showBgColor?: boolean   // Default true
+    borderRadius?: number   // Button-Eckenradius px, Default 4
+    fontSize?: number       // Text-Overlay px, Default 11
+    textAlign?: 'center' | 'top' | 'bottom'
+  }
+}
+
 export type AnyElement =
   | CompanionButtonElement
   | ShapeElement
   | LabelElement
   | MeterElement
   | ChannelStripElement
+  | VirtualCompanionDeckElement
 
 export interface Panel {
   id: string
@@ -238,8 +269,49 @@ export interface RotateMessage {
   direction: 1 | -1
 }
 
-export type BackendToFrontend = DeltaMessage | SnapshotMessage | SessionStatusMessage | HostInfoMessage
-export type FrontendToBackend = PressMessage | RotateMessage
+/** Backend → Frontend: ein Virtual-Deck-Button hat sich geändert */
+export interface VDeltaMessage {
+  t: 'vDelta'
+  deviceId: string
+  keyIndex: number
+  bgColor?: string
+  textColor?: string
+  text?: string
+  bitmap?: string
+}
+
+/** Backend → Frontend: kompletter Snapshot aller Keys eines Virtual Decks — bei Connect */
+export interface VSnapshotMessage {
+  t: 'vSnapshot'
+  deviceId: string
+  /** keyIndex (Zahl als String-Key) → KeyState */
+  keys: Record<number, KeyState>
+}
+
+/** Backend → Frontend: Verbindungsstatus einer VirtualSurfaceSession */
+export interface VSessionStatusMessage {
+  t: 'vSessionStatus'
+  deviceId: string
+  status: 'connecting' | 'connected' | 'stale' | 'error'
+}
+
+/** Frontend → Backend: User klickt Button im Virtual Deck */
+export interface VPressMessage {
+  t: 'vPress'
+  deviceId: string
+  keyIndex: number
+  pressed: boolean
+}
+
+export type BackendToFrontend =
+  | DeltaMessage
+  | SnapshotMessage
+  | SessionStatusMessage
+  | HostInfoMessage
+  | VDeltaMessage
+  | VSnapshotMessage
+  | VSessionStatusMessage
+export type FrontendToBackend = PressMessage | RotateMessage | VPressMessage
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
