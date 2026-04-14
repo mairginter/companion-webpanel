@@ -9,6 +9,9 @@ import {
   SnapshotMessage,
   SessionStatusMessage,
   HostInfoMessage,
+  VDeltaMessage,
+  VSnapshotMessage,
+  VSessionStatusMessage,
   pageKey,
 } from '@cwp/shared'
 
@@ -44,6 +47,18 @@ interface AppStore {
   /** key: hostId → { companionVersion, apiVersion } */
   hostInfo: Record<string, { companionVersion: string; apiVersion: string }>
   applyHostInfo: (msg: HostInfoMessage) => void
+
+  // ─── Virtual Deck State ───────────────────────────────────────────────────
+  /** key: deviceId → Record<keyIndex as string, KeyState> */
+  virtualKeys: Record<string, Record<string, KeyState>>
+  applyVDelta: (msg: VDeltaMessage) => void
+  applyVSnapshot: (msg: VSnapshotMessage) => void
+  getVirtualKeyState: (deviceId: string, keyIndex: number) => KeyState | undefined
+
+  /** key: deviceId → status */
+  virtualSessionStatus: Record<string, 'connecting' | 'connected' | 'stale' | 'error'>
+  applyVSessionStatus: (msg: VSessionStatusMessage) => void
+  getVirtualSessionStatus: (deviceId: string) => string | undefined
 
   // ─── Host CRUD ────────────────────────────────────────────────────────────
   addHost: (host: HostProfile) => void
@@ -179,6 +194,56 @@ export const useAppStore = create<AppStore>((set, get) => ({
         [msg.hostId]: { companionVersion: msg.companionVersion, apiVersion: msg.apiVersion },
       },
     })),
+
+  // ─── Virtual Deck ─────────────────────────────────────────────────────────
+  virtualKeys: {},
+
+  applyVDelta: (msg) => {
+    set((s) => {
+      const deviceKeys = s.virtualKeys[msg.deviceId] ?? {}
+      const keyStr = String(msg.keyIndex)
+      return {
+        virtualKeys: {
+          ...s.virtualKeys,
+          [msg.deviceId]: {
+            ...deviceKeys,
+            [keyStr]: {
+              ...deviceKeys[keyStr],
+              ...(msg.bgColor !== undefined && { bgColor: msg.bgColor }),
+              ...(msg.textColor !== undefined && { textColor: msg.textColor }),
+              ...(msg.text !== undefined && { text: msg.text }),
+              ...(msg.bitmap !== undefined && { bitmap: msg.bitmap }),
+            },
+          },
+        },
+      }
+    })
+  },
+
+  applyVSnapshot: (msg) => {
+    set((s) => ({
+      virtualKeys: {
+        ...s.virtualKeys,
+        [msg.deviceId]: msg.keys as Record<string, KeyState>,
+      },
+    }))
+  },
+
+  getVirtualKeyState: (deviceId, keyIndex) => {
+    return get().virtualKeys[deviceId]?.[String(keyIndex)]
+  },
+
+  virtualSessionStatus: {},
+
+  applyVSessionStatus: (msg) => {
+    set((s) => ({
+      virtualSessionStatus: { ...s.virtualSessionStatus, [msg.deviceId]: msg.status },
+    }))
+  },
+
+  getVirtualSessionStatus: (deviceId) => {
+    return get().virtualSessionStatus[deviceId]
+  },
 
   // ─── Host CRUD ────────────────────────────────────────────────────────────
   addHost: (host) =>

@@ -329,3 +329,36 @@ describe('setZoom', () => {
     expect(useAppStore.getState().settings?.panels.length).toBe(1)
   })
 })
+
+describe('virtualKeys — applyVDelta', () => {
+  it('speichert Virtual-Key-State nach vDelta', () => {
+    useAppStore.getState().applyVDelta({ t: 'vDelta', deviceId: 'cwp-a1b2c3d4', keyIndex: 3, bgColor: '#f00' })
+    const state = useAppStore.getState().getVirtualKeyState('cwp-a1b2c3d4', 3)
+    expect(state?.bgColor).toBe('#f00')
+  })
+
+  it('merged vDelta auf bestehenden State', () => {
+    useAppStore.getState().applyVDelta({ t: 'vDelta', deviceId: 'cwp-a1b2c3d4', keyIndex: 0, bgColor: '#f00' })
+    useAppStore.getState().applyVDelta({ t: 'vDelta', deviceId: 'cwp-a1b2c3d4', keyIndex: 0, text: 'LIVE' })
+    const state = useAppStore.getState().getVirtualKeyState('cwp-a1b2c3d4', 0)
+    expect(state?.bgColor).toBe('#f00')
+    expect(state?.text).toBe('LIVE')
+  })
+})
+
+describe('virtualKeys — applyVSnapshot', () => {
+  it('ersetzt alle Keys eines Devices nach vSnapshot', () => {
+    useAppStore.getState().applyVDelta({ t: 'vDelta', deviceId: 'cwp-a1b2c3d4', keyIndex: 0, bgColor: '#f00' })
+    useAppStore.getState().applyVSnapshot({ t: 'vSnapshot', deviceId: 'cwp-a1b2c3d4', keys: { '1': { bgColor: '#0f0' } } })
+    // Key 0 weg (replaced), Key 1 vorhanden
+    expect(useAppStore.getState().getVirtualKeyState('cwp-a1b2c3d4', 0)).toBeUndefined()
+    expect(useAppStore.getState().getVirtualKeyState('cwp-a1b2c3d4', 1)?.bgColor).toBe('#0f0')
+  })
+})
+
+describe('virtualSessionStatus', () => {
+  it('speichert vSessionStatus', () => {
+    useAppStore.getState().applyVSessionStatus({ t: 'vSessionStatus', deviceId: 'cwp-a1b2c3d4', status: 'connected' })
+    expect(useAppStore.getState().getVirtualSessionStatus('cwp-a1b2c3d4')).toBe('connected')
+  })
+})
