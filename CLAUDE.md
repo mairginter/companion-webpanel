@@ -117,7 +117,7 @@ CompanionWebpannel/
     │       ├── Toolbar/                          ← Mode-Toggle, Panel-CRUD, ZoomControl, Status-Dots
     │       ├── HostManager/HostManagerModal.tsx  ← Host Add/Edit/Delete/Connect
     │       ├── Canvas/Canvas.tsx                 ← Element-Rendering + Textur-Layering + Zoom
-    │       └── Elements/                         ← CompanionButtonElement, ShapeElement, LabelElement, ChannelStripElement
+    │       └── Elements/                         ← CompanionButtonElement, ShapeElement, LabelElement, ChannelStripElement, VirtualCompanionDeckElement
     └── electron/
         ├── src/main.ts                           ← Entry Point + IPC-Handler
         ├── src/preload.ts                        ← contextBridge (cwpApi)
@@ -147,20 +147,25 @@ CompanionWebpannel/
 ### CompanionButton-Picker
 - ⬜ Page-Name anzeigen — Companion sendet Page-Namen via Satellite API (prüfen ob `PAGE-NAME` verfügbar)
 
+### Virtual Companion Deck (nächste Iteration)
+- ⬜ **Grid editierbar in PropertiesPanel** — cols + rows als NumericInput (aktuell nur lesbar)
+- ⬜ **Button-Render-Settings angleichen an CompanionButtonElement** — showBgColor Checkbox + Text-Align Dropdown + scaleBitmap Checkbox im PropsPanel
+- ⬜ **Fallback-Buttonfarbe konfigurierbar** — statt hardcoded #111 im DeckButton
+
 ### Zukünftige Features (geplant)
 - **Panel Export/Import** (~2–3h): `.cwp`-Datei (JSON) pro Panel; hostId-Mapping-Dialog beim Import
 - **Host-ID Remapping** (~3–5h): alle Button-Referenzen von hostId A → B umschreiben
-- **Virtual StreamDeck Element**: registriert sich als echtes Companion Surface (ADD-DEVICE), Grid-Element auf Canvas
 
 ---
 
 ## Dev-Gotchas
 
 - **ELECTRON_RUN_AS_NODE** → Claude Code und VS Code setzen `ELECTRON_RUN_AS_NODE=1`. `npm run electron:dev` löscht es via `scripts/launch-electron.mjs`. Bei manuellem Aufruf: `ELECTRON_RUN_AS_NODE= electron packages/electron` oder separates Terminal.
-- **Settings-Version bump** → immer **5 Stellen** anfassen: `schema.json` + `types.ts` + `backend/standalone.ts` + `backend/server/ClientServer.ts` + `CompanionWebpannelSettings.json`
+- **Settings-Version bump** → immer **6 Stellen** anfassen: `schema.json` + `types.ts` + `backend/standalone.ts` + `backend/server/ClientServer.ts` + `CompanionWebpannelSettings.json` + `electron/src/settingsHelper.ts` (getDefaultSettings + Migration)
 - **shared neu bauen nach Typänderungen** → `npm run build -w @cwp/shared` — sonst kompiliert Backend gegen alten Stand
 - **vitest/esbuild strippt TypeScript** → Type-Fehler nicht als Test-Failures sichtbar. TS-Check: `npx tsc --noEmit -p packages/frontend/tsconfig.json`
-- **Test-Fixture-Version** → `makeSettings()` in `useAppStore.test.ts` verwendet `version: '1.3.0'` — bei Version-Bump anpassen
+- **Test-Fixture-Version** → `makeSettings()` in `useAppStore.test.ts` verwendet `version: '1.4.0'` — bei Version-Bump anpassen
+- **vitest Backend-Build** → `packages/backend/tsconfig.json` braucht `skipLibCheck: true` — vitest-Typen sind inkompatibel mit `module: CommonJS`
 - **caps-disabled Status** → konsistent in 3 Stellen: `SessionStatusMessage['status']` (shared/types.ts) + `HostStatus.status` (electron/types.ts) + `tray.ts` switch-Statement
 - **Alte Electron-Instanz** → `Get-Process electron | Stop-Process -Force` (PowerShell) — sonst blockiert Single-Instance-Lock
 - **Electron frontend veraltet** → nach `npm run build -w @cwp/frontend` immer: `cd packages/electron && node build.mjs`
