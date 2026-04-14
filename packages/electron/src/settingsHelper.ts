@@ -16,7 +16,7 @@ export function getSettingsPath(userDataPath: string): string {
 /** Gibt leere Default-Settings zurück (keine Hosts, kein Panel). */
 export function getDefaultSettings(): Settings {
   return {
-    version: '1.3.0',
+    version: '1.4.0',
     server: { port: 8080 },
     activeHostId: '',
     hosts: [],
@@ -42,10 +42,22 @@ export function loadSettings(userDataPath: string): Settings {
   const raw = fs.readFileSync(filePath, 'utf8')
   const settings = JSON.parse(raw) as Settings
 
+  let migrated = false
+
   // Migration: v1.2.0 hat keinen server-Block
   if (!settings.server) {
     settings.server = { port: 8080 }
     settings.version = '1.3.0'
+    migrated = true
+  }
+
+  // Migration: v1.3.0 → v1.4.0 (VirtualCompanionDeck-Feature)
+  if (settings.version === '1.3.0') {
+    settings.version = '1.4.0'
+    migrated = true
+  }
+
+  if (migrated) {
     fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), 'utf8')
   }
 
