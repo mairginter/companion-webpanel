@@ -17,6 +17,7 @@ import { CompanionButtonProps } from './CompanionButtonProps'
 import { ShapeProps } from './ShapeProps'
 import { LabelProps } from './LabelProps'
 import { ChannelStripProps } from './ChannelStripProps'
+import { VirtualCompanionDeckProps } from './VirtualCompanionDeckProps'
 
 const LS_SIDE = 'cwp:propsPanelSide'
 const LS_OPEN = 'cwp:propsPanelOpen'
@@ -185,6 +186,15 @@ export function PropertiesPanel() {
             {specificContent}
             <div style={{ borderTop: '1px solid #2a3344', paddingTop: 12 }}>
               <ChannelStripProps element={singleEl} panelId={panel!.id} side={side} panelWidth={PANEL_W} />
+            </div>
+          </>
+        )
+      } else if (singleEl.type === 'virtualCompanionDeck') {
+        specificContent = (
+          <>
+            {specificContent}
+            <div style={{ borderTop: '1px solid #2a3344', paddingTop: 12 }}>
+              <VirtualCompanionDeckProps element={singleEl} panelId={panel!.id} />
             </div>
           </>
         )

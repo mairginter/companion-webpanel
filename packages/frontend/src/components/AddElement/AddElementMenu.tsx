@@ -10,6 +10,7 @@ import { useAppStore } from '../../store/useAppStore'
 import type { AnyElement } from '@cwp/shared'
 import { CompanionButtonPickerDialog } from './CompanionButtonPickerDialog'
 import { ChannelStripWizard } from './ChannelStripWizard'
+import { VirtualCompanionDeckWizard } from './VirtualCompanionDeckWizard'
 
 export interface AddElementMenuProps {
   /** Bildschirm-Position des Popups (clientX/clientY oder Button-Anker) */
@@ -21,10 +22,11 @@ export interface AddElementMenuProps {
 }
 
 const MENU_ITEMS = [
-  { type: 'companionButton', label: 'Companion Button', icon: '⊞' },
-  { type: 'channelStrip',    label: 'Channel Strip',    icon: '🎚' },
-  { type: 'label',           label: 'Label',            icon: 'T' },
-  { type: 'shape',           label: 'Shape',            icon: '▭' },
+  { type: 'companionButton',    label: 'Companion Button',      icon: '⊞' },
+  { type: 'virtualCompanionDeck', label: 'Virtual Companion Deck', icon: '\u25a6' },
+  { type: 'channelStrip',       label: 'Channel Strip',         icon: '🎚' },
+  { type: 'label',              label: 'Label',                 icon: 'T' },
+  { type: 'shape',              label: 'Shape',                 icon: '▭' },
 ] as const
 
 function makeDefault(
@@ -55,20 +57,25 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
   const menuRef = useRef<HTMLDivElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
+  const [deckWizardOpen, setDeckWizardOpen] = useState(false)
 
   // Schließen bei Klick außerhalb (nur wenn Picker/Wizard nicht offen)
   useEffect(() => {
-    if (pickerOpen || wizardOpen) return
+    if (pickerOpen || wizardOpen || deckWizardOpen) return
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose()
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [pickerOpen, wizardOpen, onClose])
+  }, [pickerOpen, wizardOpen, deckWizardOpen, onClose])
 
-  const handleSelect = (type: 'companionButton' | 'channelStrip' | 'label' | 'shape') => {
+  const handleSelect = (type: 'companionButton' | 'virtualCompanionDeck' | 'channelStrip' | 'label' | 'shape') => {
     if (type === 'companionButton') {
       setPickerOpen(true)
+      return
+    }
+    if (type === 'virtualCompanionDeck') {
+      setDeckWizardOpen(true)
       return
     }
     if (type === 'channelStrip') {
@@ -85,6 +92,12 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
   }
 
   const handleWizardConfirm = (draft: Omit<import('@cwp/shared').ChannelStripElement, 'id'>) => {
+    const id = crypto.randomUUID()
+    addElement(panelId, { id, ...draft } as import('@cwp/shared').AnyElement)
+    onClose()
+  }
+
+  const handleDeckWizardConfirm = (draft: Omit<import('@cwp/shared').VirtualCompanionDeckElement, 'id'>) => {
     const id = crypto.randomUUID()
     addElement(panelId, { id, ...draft } as import('@cwp/shared').AnyElement)
     onClose()
@@ -142,6 +155,14 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
           canvasPos={canvasPos}
           onConfirm={handleWizardConfirm}
           onClose={() => { setWizardOpen(false); onClose() }}
+        />
+      )}
+
+      {deckWizardOpen && (
+        <VirtualCompanionDeckWizard
+          canvasPos={canvasPos}
+          onConfirm={handleDeckWizardConfirm}
+          onClose={() => { setDeckWizardOpen(false); onClose() }}
         />
       )}
     </>
