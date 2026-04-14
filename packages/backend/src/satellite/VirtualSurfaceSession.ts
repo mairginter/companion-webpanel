@@ -164,6 +164,7 @@ export class VirtualSurfaceSession extends EventEmitter {
     } else if (line.startsWith('ADD-DEVICE ERROR')) {
       console.error(`[VirtualSurface ${this.deviceId}] ADD-DEVICE Fehler: ${line}`)
       this.setStatus('error')
+      this.ws?.close()
     } else if (line.startsWith('KEY-STATE ')) {
       this.handleKeyState(line)
     } else if (line.startsWith('PING')) {
