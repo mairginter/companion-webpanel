@@ -94,4 +94,55 @@ export class StateStore {
       if (k.startsWith(prefix)) this.store.delete(k)
     }
   }
+
+  // ─── Virtual Keys (virtualCompanionDeck-Elemente) ─────────────────────────
+  // key: "deviceId:keyIndex"
+  private virtualStore = new Map<string, KeyState>()
+
+  /**
+   * Aktualisiert den State für einen Virtual-Key.
+   * Gibt nur geänderte Felder zurück (Delta), oder null wenn kein Unterschied.
+   */
+  setVirtualKey(deviceId: string, keyIndex: number, incoming: Partial<KeyState>): Partial<KeyState> | null {
+    const k = `${deviceId}:${keyIndex}`
+    const current = this.virtualStore.get(k) ?? {}
+    const changed: Partial<KeyState> = {}
+    let hasChange = false
+    for (const field of ['bgColor', 'textColor', 'text', 'bitmap'] as const) {
+      const newVal = incoming[field]
+      if (newVal !== undefined && newVal !== current[field]) {
+        changed[field] = newVal
+        hasChange = true
+      }
+    }
+    if (!hasChange) return null
+    this.virtualStore.set(k, { ...current, ...changed })
+    return changed
+  }
+
+  /**
+   * Gibt alle Virtual-Keys eines Devices zurück (keyIndex als String-Key → KeyState).
+   * Wird beim Connect eines neuen Frontend-Clients als vSnapshot gesendet.
+   */
+  getVirtualSnapshot(deviceId: string): Record<string, KeyState> {
+    const prefix = `${deviceId}:`
+    const result: Record<string, KeyState> = {}
+    for (const [k, state] of this.virtualStore) {
+      if (k.startsWith(prefix)) {
+        const keyIndex = k.slice(prefix.length)
+        result[keyIndex] = state
+      }
+    }
+    return result
+  }
+
+  /**
+   * Löscht alle Virtual-Keys eines Devices (bei Session-Stop oder Element-Löschen).
+   */
+  clearVirtualKeys(deviceId: string): void {
+    const prefix = `${deviceId}:`
+    for (const k of this.virtualStore.keys()) {
+      if (k.startsWith(prefix)) this.virtualStore.delete(k)
+    }
+  }
 }
