@@ -695,7 +695,17 @@
               }
             },
             "render": {
-              "type": "object"
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "showBitmap": { "type": "boolean" },
+                "scaleBitmap": { "type": "boolean" },
+                "showText": { "type": "boolean" },
+                "showBgColor": { "type": "boolean" },
+                "borderRadius": { "type": "integer", "minimum": 0 },
+                "fontSize": { "type": "integer", "minimum": 6 },
+                "textAlign": { "type": "string", "enum": ["center", "top", "bottom"] }
+              }
             }
           }
         }

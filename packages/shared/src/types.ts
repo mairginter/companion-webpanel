@@ -284,8 +284,8 @@ export interface VDeltaMessage {
 export interface VSnapshotMessage {
   t: 'vSnapshot'
   deviceId: string
-  /** keyIndex (Zahl als String-Key) → KeyState */
-  keys: Record<number, KeyState>
+  /** keyIndex als String-Key → KeyState */
+  keys: Record<string, KeyState>
 }
 
 /** Backend → Frontend: Verbindungsstatus einer VirtualSurfaceSession */
