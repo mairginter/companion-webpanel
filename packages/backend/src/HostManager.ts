@@ -16,10 +16,11 @@
  *  - Graceful Shutdown: REMOVE-SUB für alle Subscriptions
  */
 import { WebSocket } from 'ws'
-import { Settings, AnyElement } from '@cwp/shared'
+import { Settings, AnyElement, VDeltaMessage, VSessionStatusMessage, VSnapshotMessage } from '@cwp/shared'
 import { SatelliteClient, ClientStatus } from './satellite/SatelliteClient'
 import { StateStore } from './state/StateStore'
 import { ClientServer } from './server/ClientServer'
+import { VirtualSurfaceManager } from './VirtualSurfaceManager'
 
 /**
  * Verwaltet alle SatelliteClients (eine pro Host aus den Settings).
@@ -30,6 +31,7 @@ export class HostManager {
   private store: StateStore
   private clientServer: ClientServer
   private onStatusChange?: (hostId: string, status: ClientStatus) => void
+  private virtualSurfaceManager: VirtualSurfaceManager
 
   // Echte Subscriptions (von Panel-Elementen): hostId → Set<"page/row/col">
   private realSubKeys = new Map<string, Set<string>>()
@@ -46,8 +48,20 @@ export class HostManager {
     this.clientServer = clientServer
     this.onStatusChange = onStatusChange
 
+    this.virtualSurfaceManager = new VirtualSurfaceManager(
+      store,
+      (msg: VDeltaMessage | VSessionStatusMessage) => clientServer.broadcast(msg),
+    )
+
     // Snapshot an jeden neuen Frontend-Client senden
-    clientServer.onNewClient((ws) => this.sendAllSnapshotsToClient(ws))
+    clientServer.onNewClient((ws) => {
+      this.sendAllSnapshotsToClient(ws)
+      // vSnapshot für alle aktiven Virtual Decks senden
+      for (const { deviceId, keys } of this.virtualSurfaceManager.getAllSnapshots()) {
+        const snap: VSnapshotMessage = { t: 'vSnapshot', deviceId, keys }
+        clientServer.sendVSnapshotToClient(ws, snap)
+      }
+    })
   }
 
   /**
@@ -110,6 +124,8 @@ export class HostManager {
 
       this.realSubKeys.set(hostId, desiredForHost)
     }
+
+    this.virtualSurfaceManager.sync(settings)
   }
 
   /**
@@ -169,6 +185,13 @@ export class HostManager {
   }
 
   /**
+   * Leitet einen Virtual-Deck-Key-Press vom Frontend an den VirtualSurfaceManager weiter.
+   */
+  handleVPress(deviceId: string, keyIndex: number, pressed: boolean): void {
+    this.virtualSurfaceManager.handleVPress(deviceId, keyIndex, pressed)
+  }
+
+  /**
    * Leitet einen Fader-Rotate ans richtige SatelliteClient weiter.
    */
   handleRotate(hostId: string, page: number, row: number, col: number, direction: 1 | -1): void {
@@ -185,6 +208,7 @@ export class HostManager {
    */
   async stop(): Promise<void> {
     await Promise.all([...this.clients.values()].map((c) => c.stop()))
+    await this.virtualSurfaceManager.stop()
     this.clients.clear()
     this.realSubKeys.clear()
     this.pickerSubKeys.clear()

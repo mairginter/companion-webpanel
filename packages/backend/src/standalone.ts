@@ -30,7 +30,7 @@ function loadSettings(): Settings {
   }
 
   const settings = JSON.parse(raw!) as Settings
-  const expectedVersion: Settings['version'] = '1.3.0'
+  const expectedVersion: Settings['version'] = '1.4.0'
   if (settings.version !== expectedVersion) {
     console.warn(`[Boot] Unbekannte Settings-Version: ${settings.version} (erwartet: ${expectedVersion})`)
   }

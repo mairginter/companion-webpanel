@@ -24,12 +24,14 @@ import {
   FrontendToBackend,
   Settings,
   SnapshotMessage,
+  VSnapshotMessage,
 } from '@cwp/shared'
 
 export type PressHandler = (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
 export type RotateHandler = (hostId: string, page: number, row: number, col: number, direction: 1 | -1) => void
 export type PreviewPageHandler = (hostId: string, page: number, keysPerRow: number, rows: number) => void
 export type PreviewPageRemoveHandler = (hostId: string, page: number) => void
+export type VPressHandler = (deviceId: string, keyIndex: number, pressed: boolean) => void
 
 // Eindeutiger Key für einen gehaltenen Button
 type PressKey = `${string}:${number}:${number}:${number}`
@@ -51,6 +53,7 @@ export class ClientServer {
   private onSettingsUpdate?: (settings: Settings) => void
   private onPreviewPageAdd?: PreviewPageHandler
   private onPreviewPageRemove?: PreviewPageRemoveHandler
+  private onVPress?: VPressHandler
   private settings: Settings
   private settingsPath: string
   private staticDir?: string
@@ -64,6 +67,7 @@ export class ClientServer {
     onPreviewPageAdd?: PreviewPageHandler,
     onPreviewPageRemove?: PreviewPageRemoveHandler,
     onRotate?: RotateHandler,
+    onVPress?: VPressHandler,
     staticDir?: string,
   ) {
     this.settings = settings
@@ -73,6 +77,7 @@ export class ClientServer {
     this.onSettingsUpdate = onSettingsUpdate
     this.onPreviewPageAdd = onPreviewPageAdd
     this.onPreviewPageRemove = onPreviewPageRemove
+    this.onVPress = onVPress
     this.staticDir = staticDir
 
     // ─── HTTP Server ────────────────────────────────────────────────────────
@@ -99,7 +104,7 @@ export class ClientServer {
           try {
             const incoming = JSON.parse(body) as Settings
 
-            if (incoming.version !== '1.3.0') {
+            if (incoming.version !== '1.4.0') {
               res.writeHead(400, { 'Content-Type': 'application/json' })
               res.end(JSON.stringify({ error: `Ungültige Schema-Version: ${incoming.version}` }))
               return
@@ -195,6 +200,8 @@ export class ClientServer {
             this.onPress(msg.hostId, msg.page, msg.row, msg.col, msg.pressed)
           } else if (msg.t === 'rotate') {
             this.onRotate?.(msg.hostId, msg.page, msg.row, msg.col, msg.direction)
+          } else if (msg.t === 'vPress') {
+            this.onVPress?.(msg.deviceId, msg.keyIndex, msg.pressed)
           }
         } catch {
           console.warn('[ClientServer] Ungültige Nachricht vom Client')
@@ -252,6 +259,10 @@ export class ClientServer {
   }
 
   sendSnapshotToClient(ws: WebSocket, snapshot: SnapshotMessage): void {
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(snapshot))
+  }
+
+  sendVSnapshotToClient(ws: WebSocket, snapshot: VSnapshotMessage): void {
     if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(snapshot))
   }
 
