@@ -15,6 +15,7 @@ const RECONNECT_DELAY_MS = 2000
 export function useWebSocket(): {
   sendPress: (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
   sendRotate: (hostId: string, page: number, row: number, col: number, direction: 1 | -1) => void
+  sendVPress: (deviceId: string, keyIndex: number, pressed: boolean) => void
 } {
   const ws = useRef<WebSocket | null>(null)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -23,6 +24,9 @@ export function useWebSocket(): {
   const applySessionStatus = useAppStore((s) => s.applySessionStatus)
   const applyHostInfo = useAppStore((s) => s.applyHostInfo)
   const markAllSessionsStale = useAppStore((s) => s.markAllSessionsStale)
+  const applyVDelta = useAppStore((s) => s.applyVDelta)
+  const applyVSnapshot = useAppStore((s) => s.applyVSnapshot)
+  const applyVSessionStatus = useAppStore((s) => s.applyVSessionStatus)
 
   const connect = useCallback(() => {
     // Nicht verbinden wenn bereits offen oder am verbinden
@@ -56,6 +60,15 @@ export function useWebSocket(): {
           case 'hostInfo':
             applyHostInfo(msg)
             break
+          case 'vDelta':
+            applyVDelta(msg)
+            break
+          case 'vSnapshot':
+            applyVSnapshot(msg)
+            break
+          case 'vSessionStatus':
+            applyVSessionStatus(msg)
+            break
         }
       } catch {
         console.warn('[WS] Ungültige Nachricht vom Backend')
@@ -76,7 +89,7 @@ export function useWebSocket(): {
     socket.onerror = (err) => {
       console.error('[WS] Fehler:', err)
     }
-  }, [applyDelta, applySnapshot, applySessionStatus, applyHostInfo, markAllSessionsStale])
+  }, [applyDelta, applySnapshot, applySessionStatus, applyHostInfo, markAllSessionsStale, applyVDelta, applyVSnapshot, applyVSessionStatus])
 
   useEffect(() => {
     connect()
@@ -104,5 +117,14 @@ export function useWebSocket(): {
     [],
   )
 
-  return { sendPress, sendRotate }
+  const sendVPress = useCallback(
+    (deviceId: string, keyIndex: number, pressed: boolean) => {
+      if (ws.current?.readyState !== WebSocket.OPEN) return
+      const msg: FrontendToBackend = { t: 'vPress', deviceId, keyIndex, pressed }
+      ws.current.send(JSON.stringify(msg))
+    },
+    [],
+  )
+
+  return { sendPress, sendRotate, sendVPress }
 }
