@@ -10,21 +10,23 @@ interface Props {
   value: number
   onChange: (v: number) => void
   min?: number
+  max?: number
   label?: string
   unit?: string
   /** Kein ±-Button — für enge 2-Spalten-Layouts. Tastatur/Wheel funktionieren weiterhin. */
   compact?: boolean
 }
 
-export function NumericInput({ value, onChange, min, label, unit, compact }: Props) {
+export function NumericInput({ value, onChange, min, max, label, unit, compact }: Props) {
   const [localValue, setLocalValue] = useState(String(value))
 
   useEffect(() => { setLocalValue(String(value)) }, [value])
 
   const clamp = useCallback((v: number) => {
     if (min !== undefined && v < min) return min
+    if (max !== undefined && v > max) return max
     return v
-  }, [min])
+  }, [min, max])
 
   const commit = useCallback((raw: string) => {
     const n = parseFloat(raw)

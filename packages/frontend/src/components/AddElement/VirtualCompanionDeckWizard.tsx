@@ -172,9 +172,9 @@ export function VirtualCompanionDeckWizard({ canvasPos, onConfirm, onClose }: Pr
             <div>
               <label style={labelStyle}>Grid-Größe (Spalten × Zeilen)</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <NumericInput value={cols} onChange={setCols} min={1} compact />
+                <NumericInput value={cols} onChange={setCols} min={1} max={32} compact />
                 <span style={{ color: '#555', fontSize: 14 }}>{'\u00d7'}</span>
-                <NumericInput value={rows} onChange={setRows} min={1} compact />
+                <NumericInput value={rows} onChange={setRows} min={1} max={32} compact />
               </div>
               {/* Grid-Vorschau */}
               <div style={{ marginTop: 12, background: '#111', border: '1px solid #222', borderRadius: 4, padding: 10 }}>

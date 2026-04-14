@@ -182,6 +182,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessionStatus: Object.fromEntries(
         Object.keys(s.sessionStatus).map((k) => [k, 'stale' as SessionStatus]),
       ),
+      virtualSessionStatus: Object.fromEntries(
+        Object.keys(s.virtualSessionStatus).map((k) => [k, 'stale' as const]),
+      ),
     })),
 
   // ─── Host Info ────────────────────────────────────────────────────────────
