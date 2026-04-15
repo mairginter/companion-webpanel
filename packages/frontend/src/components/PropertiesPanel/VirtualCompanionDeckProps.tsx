@@ -136,7 +136,12 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
       <div style={row}>
         <span style={lbl}>Hintergrund</span>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <div style={{ width: 18, height: 18, borderRadius: 3, background: element.style.fill, border: '1px solid #2a3344', cursor: 'pointer', flexShrink: 0 }} />
+          <input
+            type="color"
+            value={element.style.fill}
+            onChange={e => updateStyle({ fill: e.target.value })}
+            style={{ width: 24, height: 24, borderRadius: 3, border: '1px solid #2a3344', cursor: 'pointer', padding: 2, background: '#1a2030', flexShrink: 0 }}
+          />
           <input
             style={{ background: '#1a2030', border: '1px solid #2a3344', borderRadius: 4, padding: '6px 8px', color: '#e9edf2', fontSize: 13, width: 80, textAlign: 'center' }}
             value={element.style.fill}
@@ -264,10 +269,15 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
       <div style={row}>
         <span style={lbl}>Leer-Button Farbe</span>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <div style={{ width: 18, height: 18, borderRadius: 3, background: element.render?.emptyButtonColor ?? '#111', border: '1px solid #2a3344', cursor: 'pointer', flexShrink: 0 }} />
+          <input
+            type="color"
+            value={element.render?.emptyButtonColor ?? '#111111'}
+            onChange={e => updateRender({ emptyButtonColor: e.target.value })}
+            style={{ width: 24, height: 24, borderRadius: 3, border: '1px solid #2a3344', cursor: 'pointer', padding: 2, background: '#1a2030', flexShrink: 0 }}
+          />
           <input
             style={{ background: '#1a2030', border: '1px solid #2a3344', borderRadius: 4, padding: '6px 8px', color: '#e9edf2', fontSize: 13, width: 80, textAlign: 'center' }}
-            value={element.render?.emptyButtonColor ?? '#111'}
+            value={element.render?.emptyButtonColor ?? '#111111'}
             onChange={e => updateRender({ emptyButtonColor: e.target.value })}
           />
         </div>
