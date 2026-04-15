@@ -174,6 +174,7 @@ export interface VirtualCompanionDeckElement extends BaseElement {
     borderRadius?: number   // Button-Eckenradius px, Default 4
     fontSize?: number       // Text-Overlay px, Default 11
     textAlign?: 'center' | 'top' | 'bottom'
+    emptyButtonColor?: string  // Hintergrundfarbe leerer Buttons, Default '#111'
   }
 }
 

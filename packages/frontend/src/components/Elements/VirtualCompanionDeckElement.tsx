@@ -43,6 +43,7 @@ const DeckButton = React.memo(function DeckButton({
   const showText    = render?.showText !== false
   const showBgColor = render?.showBgColor !== false
   const borderRadius = render?.borderRadius ?? 4
+  const emptyButtonColor = render?.emptyButtonColor ?? '#111'
   const fontSize    = render?.fontSize ?? 11
   const textAlign   = render?.textAlign ?? 'bottom'
   const bitmapSize  = 72
@@ -94,7 +95,7 @@ const DeckButton = React.memo(function DeckButton({
         userSelect: 'none',
         touchAction: 'none',
         aspectRatio: '1',
-        background: showBgColor && bgColor ? bgColor : (hasData ? '#1a2030' : '#111'),
+        background: showBgColor && bgColor ? bgColor : (hasData ? '#1a2030' : emptyButtonColor),
         ...(!hasData && { border: '1px solid #1e2530', opacity: 0.6 }),
         ...(pressed && { transform: 'scale(0.95)', outline: '2px solid #ff5a5f', outlineOffset: '-2px' }),
         transition: pressed ? 'none' : 'transform 0.08s',

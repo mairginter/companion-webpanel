@@ -233,6 +233,18 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
           <span style={labelStyle}>Schriftgr&ouml;&szlig;e</span>
           <NumericInput value={element.render?.fontSize ?? 11} onChange={v => updateRender({ fontSize: v })} min={6} compact />
         </div>
+
+        <div style={rowStyle}>
+          <span style={labelStyle}>Leer-Button Farbe</span>
+          <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+            <div style={{ width: 14, height: 14, borderRadius: 2, background: element.render?.emptyButtonColor ?? '#111', border: '1px solid #444', cursor: 'pointer' }} />
+            <input
+              style={{ background: '#111', border: '1px solid #333', borderRadius: 3, padding: '3px 7px', color: '#ddd', fontSize: 11, textAlign: 'center', width: 70 }}
+              value={element.render?.emptyButtonColor ?? '#111'}
+              onChange={e => updateRender({ emptyButtonColor: e.target.value })}
+            />
+          </div>
+        </div>
       </div>
 
     </div>
