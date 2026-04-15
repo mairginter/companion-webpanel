@@ -63,6 +63,10 @@ export function useWebSocket(): {
           case 'vDelta':
             applyVDelta(msg)
             break
+          case 'vDeltaBatch':
+            // Gebündelte Deltas — alle auf einmal anwenden (ein React-Render-Pass)
+            for (const delta of msg.deltas) applyVDelta(delta)
+            break
           case 'vSnapshot':
             applyVSnapshot(msg)
             break

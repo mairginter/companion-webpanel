@@ -281,6 +281,12 @@ export interface VDeltaMessage {
   bitmap?: string
 }
 
+/** Backend → Frontend: mehrere Virtual-Deck-Button-Updates gebündelt (Batch-Optimierung) */
+export interface VDeltaBatchMessage {
+  t: 'vDeltaBatch'
+  deltas: VDeltaMessage[]
+}
+
 /** Backend → Frontend: kompletter Snapshot aller Keys eines Virtual Decks — bei Connect */
 export interface VSnapshotMessage {
   t: 'vSnapshot'
@@ -310,6 +316,7 @@ export type BackendToFrontend =
   | SessionStatusMessage
   | HostInfoMessage
   | VDeltaMessage
+  | VDeltaBatchMessage
   | VSnapshotMessage
   | VSessionStatusMessage
 export type FrontendToBackend = PressMessage | RotateMessage | VPressMessage

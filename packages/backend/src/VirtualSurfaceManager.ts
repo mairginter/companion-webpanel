@@ -9,23 +9,31 @@
  *  - Status-Events → vSessionStatus an Frontend broadcasen
  *  - getSnapshot(deviceId): vSnapshot-Daten aus StateStore lesen (für neue WS-Clients)
  */
-import { Settings, VirtualCompanionDeckElement, VDeltaMessage, VSessionStatusMessage } from '@cwp/shared'
+import { Settings, VirtualCompanionDeckElement, VDeltaMessage, VDeltaBatchMessage, VSessionStatusMessage } from '@cwp/shared'
 import { VirtualSurfaceSession } from './satellite/VirtualSurfaceSession'
 import type { VirtualSurfaceStatus } from './satellite/VirtualSurfaceSession'
 import { StateStore } from './state/StateStore'
 
-type BroadcastFn = (msg: VDeltaMessage | VSessionStatusMessage) => void
+type BroadcastFn = (msg: VDeltaBatchMessage | VSessionStatusMessage) => void
 
 /**
  * Orchestriert VirtualSurfaceSession-Instanzen.
  * Eine Session pro virtualCompanionDeck-Element (identifiziert über deviceId).
  */
+/** Batch-Fenster in ms: alle vDelta-Events in diesem Zeitraum werden gebündelt gesendet */
+const BATCH_WINDOW_MS = 30
+
 export class VirtualSurfaceManager {
   private sessions = new Map<string, VirtualSurfaceSession>()
   /** Speichert Grid-Parameter + Host pro Session für Änderungs-Erkennung */
   private sessionGrids = new Map<string, { cols: number; rows: number; hostId: string }>()
   private store: StateStore
   private broadcast: BroadcastFn
+
+  /** Puffer für noch nicht gesendete vDelta-Nachrichten */
+  private deltaBuffer: VDeltaMessage[] = []
+  /** Timer-Handle für den laufenden Batch-Flush */
+  private batchTimer: NodeJS.Timeout | null = null
 
   constructor(store: StateStore, broadcast: BroadcastFn) {
     this.store = store
@@ -118,12 +126,30 @@ export class VirtualSurfaceManager {
    * Stoppt alle Sessions (Graceful Shutdown).
    */
   async stop(): Promise<void> {
+    // Laufenden Batch-Timer abbrechen — kein Flush nötig, Frontend trennt sich sowieso
+    if (this.batchTimer) {
+      clearTimeout(this.batchTimer)
+      this.batchTimer = null
+    }
+    this.deltaBuffer = []
     await Promise.all([...this.sessions.values()].map(s => s.stop()))
     this.sessions.clear()
     this.sessionGrids.clear()
   }
 
   // ─── Private ───────────────────────────────────────────────────────────────
+
+  /**
+   * Sendet alle gepufferten Deltas als ein vDeltaBatch an das Frontend.
+   * Wird nach BATCH_WINDOW_MS ausgelöst.
+   */
+  private flushBatch(): void {
+    this.batchTimer = null
+    if (this.deltaBuffer.length === 0) return
+    const deltas = this.deltaBuffer
+    this.deltaBuffer = []
+    this.broadcast({ t: 'vDeltaBatch', deltas })
+  }
 
   private createSession(el: VirtualCompanionDeckElement, settings: Settings): void {
     const host = settings.hosts.find(h => h.id === el.hostId)
@@ -144,7 +170,11 @@ export class VirtualSurfaceManager {
     session.on('keyState', (keyIndex: number, state: Partial<import('@cwp/shared').KeyState>) => {
       const delta = this.store.setVirtualKey(el.deviceId, keyIndex, state)
       if (delta) {
-        this.broadcast({ t: 'vDelta', deviceId: el.deviceId, keyIndex, ...delta })
+        // Delta in Puffer legen — nach BATCH_WINDOW_MS gebündelt senden
+        this.deltaBuffer.push({ t: 'vDelta', deviceId: el.deviceId, keyIndex, ...delta })
+        if (!this.batchTimer) {
+          this.batchTimer = setTimeout(() => this.flushBatch(), BATCH_WINDOW_MS)
+        }
       }
     })
 
