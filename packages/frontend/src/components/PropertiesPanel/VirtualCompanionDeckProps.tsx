@@ -67,7 +67,11 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
         <div style={rowStyle}>
           <span style={labelStyle}>Grid</span>
-          <span style={{ ...inputStyle, color: '#aaa' }}>{element.grid.cols} &times; {element.grid.rows}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <NumericInput value={element.grid.cols} onChange={v => update({ grid: { ...element.grid, cols: v } })} min={1} max={32} compact />
+            <span style={{ color: '#555', fontSize: 11 }}>×</span>
+            <NumericInput value={element.grid.rows} onChange={v => update({ grid: { ...element.grid, rows: v } })} min={1} max={32} compact />
+          </div>
         </div>
 
         <div style={rowStyle}>
