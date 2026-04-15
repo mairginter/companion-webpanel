@@ -148,9 +148,11 @@ CompanionWebpannel/
 - ⬜ Page-Name anzeigen — Companion sendet Page-Namen via Satellite API (prüfen ob `PAGE-NAME` verfügbar)
 
 ### Virtual Companion Deck (nächste Iteration)
-- ⬜ **Grid editierbar in PropertiesPanel** — cols + rows als NumericInput (aktuell nur lesbar)
-- ⬜ **Button-Render-Settings angleichen an CompanionButtonElement** — showBgColor Checkbox + Text-Align Dropdown + scaleBitmap Checkbox im PropsPanel
-- ⬜ **Fallback-Buttonfarbe konfigurierbar** — statt hardcoded #111 im DeckButton
+- ✅ **Grid editierbar in PropertiesPanel** — cols + rows als NumericInput; Grid-Änderung triggert Backend-Session-Restart (Companion bekommt neue Dimensionen)
+- ✅ **Button-Render-Settings angleichen an CompanionButtonElement** — showBgColor, scaleBitmap (konditionell), textAlign Dropdown, natives Color-Picker-Widget
+- ✅ **Fallback-Buttonfarbe konfigurierbar** — `emptyButtonColor` in render-Objekt + PropertiesPanel Color-Picker
+- ✅ **Status-Bug gefixt** — initialer `connecting`-Status wird jetzt emittet; neue Frontend-Clients bekommen `vSessionStatus` beim Connect
+- ✅ **PropertiesPanel-Layout** — auf CompanionButtonProps-Niveau (lbl/row/sel-Style, 20px Checkboxen, grote Selects)
 
 ### Zukünftige Features (geplant)
 - **Panel Export/Import** (~2–3h): `.cwp`-Datei (JSON) pro Panel; hostId-Mapping-Dialog beim Import
