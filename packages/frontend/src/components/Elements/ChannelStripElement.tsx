@@ -200,9 +200,16 @@ export const ChannelStripElement = React.memo(function ChannelStripElement({
   }, [mode, sendPress, refs.solo])
 
   // Layout
-  const containerStyle: React.CSSProperties = isContained
-    ? { position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 6, background: '#0f141a', border: '1px solid #1e2535' }
-    : { position: 'absolute', left: element.x, top: element.y, width: element.w, height: element.h, overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 6, background: '#0f141a', border: '1px solid #1e2535' }
+  const containerStyle: React.CSSProperties = {
+    ...(isContained
+      ? { position: 'relative' as const, width: '100%', height: '100%' }
+      : { position: 'absolute' as const, left: element.x, top: element.y, width: element.w, height: element.h }
+    ),
+    overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 6,
+    background: '#0f141a', border: '1px solid #1e2535',
+    // Äußerer Drop-Shadow für Tiefe
+    boxShadow: '0 3px 8px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.3)',
+  }
 
   const meterHeight = 80
   const showRChannel = !isMono && refs.button.meterRIndex !== undefined
@@ -369,6 +376,18 @@ export const ChannelStripElement = React.memo(function ChannelStripElement({
           MUTE
         </button>
       </div>
+
+      {/* 3D-Bevel-Overlay: Inset-Shadow am Randbereich */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: 6,
+          pointerEvents: 'none',
+          boxShadow: 'inset 0 1.5px 2px rgba(255,255,255,0.22), inset 1.5px 0 2px rgba(255,255,255,0.11), inset 0 -2.5px 5px rgba(0,0,0,0.60), inset -2.5px 0 4px rgba(0,0,0,0.42)',
+        }}
+      />
 
       {/* ── hostMissing overlay ──────────────────────────────── */}
       {hostMissing && (

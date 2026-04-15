@@ -98,8 +98,14 @@ const DeckButton = React.memo(function DeckButton({
         background: showBgColor && bgColor ? bgColor : (hasData ? '#1a2030' : emptyButtonColor),
         ...(!hasData && { border: '1px solid #1e2530', opacity: 0.6 }),
         ...(pressed && { transform: 'scale(0.95)', outline: '2px solid #ff5a5f', outlineOffset: '-2px' }),
-        transition: pressed ? 'none' : 'transform 0.08s',
+        transition: pressed ? 'none' : 'transform 0.08s, box-shadow 0.08s',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
+        // Äußerer Drop-Shadow für Tiefe
+        ...(hasData && {
+          boxShadow: pressed
+            ? '0 1px 2px rgba(0,0,0,0.4)'
+            : '0 3px 8px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.3)',
+        }),
       }}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
@@ -117,6 +123,23 @@ const DeckButton = React.memo(function DeckButton({
           draggable={false}
         />
       )}
+      {/* 3D-Bevel-Overlay: Inset-Shadow am Randbereich, Text/Bitmap bleiben frei */}
+      {hasData && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius,
+            pointerEvents: 'none',
+            boxShadow: pressed
+              ? 'inset 0 2px 5px rgba(0,0,0,0.65), inset 2px 0 4px rgba(0,0,0,0.45), inset 0 -1px 2px rgba(255,255,255,0.07), inset -1px 0 2px rgba(255,255,255,0.05)'
+              : 'inset 0 1.5px 2px rgba(255,255,255,0.22), inset 1.5px 0 2px rgba(255,255,255,0.11), inset 0 -2.5px 5px rgba(0,0,0,0.60), inset -2.5px 0 4px rgba(0,0,0,0.42)',
+            transition: pressed ? 'none' : 'box-shadow 0.08s',
+          }}
+        />
+      )}
+
       {showText && text && (
         <span style={{
           position: 'absolute',
@@ -167,6 +190,8 @@ export const VirtualCompanionDeckElement = React.memo(function VirtualCompanionD
     padding,
     boxSizing: 'border-box',
     overflow: 'hidden',
+    // Äußerer Drop-Shadow für Tiefe
+    boxShadow: '0 3px 8px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.3)',
   }
 
   const gridStyle: React.CSSProperties = {
@@ -191,6 +216,18 @@ export const VirtualCompanionDeckElement = React.memo(function VirtualCompanionD
           />
         ))}
       </div>
+
+      {/* 3D-Bevel-Overlay: Inset-Shadow am äußeren Rand des Decks */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius,
+          pointerEvents: 'none',
+          boxShadow: 'inset 0 1.5px 2px rgba(255,255,255,0.22), inset 1.5px 0 2px rgba(255,255,255,0.11), inset 0 -2.5px 5px rgba(0,0,0,0.60), inset -2.5px 0 4px rgba(0,0,0,0.42)',
+        }}
+      />
 
       {isStale && (
         <div style={{

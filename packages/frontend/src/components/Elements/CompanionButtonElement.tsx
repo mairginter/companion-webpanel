@@ -84,10 +84,16 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
     ...(!hasData && !isStale && { border: '1.5px dashed #2a3344', opacity: 0.6 }),
     ...(isStale && { opacity: 0.5, outline: '2px solid #ff8a3d', outlineOffset: '-2px' }),
     ...(pressed && { transform: 'scale(0.97)', outline: '2.5px solid #ff5a5f', outlineOffset: '-2px' }),
-    transition: pressed ? 'none' : 'transform 0.08s',
+    transition: pressed ? 'none' : 'transform 0.08s, box-shadow 0.08s',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    // Äußerer Drop-Shadow — gibt dem Button Tiefe / "Lift" vom Canvas
+    ...(hasData && {
+      boxShadow: pressed
+        ? '0 1px 2px rgba(0,0,0,0.4)'
+        : '0 3px 8px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.3)',
+    }),
   }
 
   // ─── Text-Positionierung ──────────────────────────────────────────────────
@@ -130,6 +136,25 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
           )}
           alt=""
           draggable={false}
+        />
+      )}
+
+      {/* 3D-Bevel-Overlay: Inset-Shadow am Randbereich, Text/Bitmap bleiben frei */}
+      {hasData && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius,
+            pointerEvents: 'none',
+            // Lichtquelle oben-links → Highlight oben/links, Schatten unten/rechts
+            // Pressed: invertiert → "eingedrückt"-Gefühl
+            boxShadow: pressed
+              ? 'inset 0 2px 5px rgba(0,0,0,0.65), inset 2px 0 4px rgba(0,0,0,0.45), inset 0 -1px 2px rgba(255,255,255,0.07), inset -1px 0 2px rgba(255,255,255,0.05)'
+              : 'inset 0 1.5px 2px rgba(255,255,255,0.22), inset 1.5px 0 2px rgba(255,255,255,0.11), inset 0 -2.5px 5px rgba(0,0,0,0.60), inset -2.5px 0 4px rgba(0,0,0,0.42)',
+            transition: pressed ? 'none' : 'box-shadow 0.08s',
+          }}
         />
       )}
 
