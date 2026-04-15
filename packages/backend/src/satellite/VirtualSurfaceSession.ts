@@ -71,6 +71,8 @@ export class VirtualSurfaceSession extends EventEmitter {
 
   start(): void {
     if (this.destroyed) return
+    // Initialen Status immer emittieren (damit neuer Frontend-Client ihn bekommt)
+    this.emit('status', this.status)
     this.connect()
   }
 

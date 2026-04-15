@@ -22,6 +22,8 @@ type BroadcastFn = (msg: VDeltaMessage | VSessionStatusMessage) => void
  */
 export class VirtualSurfaceManager {
   private sessions = new Map<string, VirtualSurfaceSession>()
+  /** Speichert Grid-Parameter + Host pro Session für Änderungs-Erkennung */
+  private sessionGrids = new Map<string, { cols: number; rows: number; hostId: string }>()
   private store: StateStore
   private broadcast: BroadcastFn
 
@@ -52,12 +54,27 @@ export class VirtualSurfaceManager {
         session.stop().catch(() => {})
         this.store.clearVirtualKeys(deviceId)
         this.sessions.delete(deviceId)
+        this.sessionGrids.delete(deviceId)
       }
     }
 
-    // Neue Sessions starten
+    // Neue Sessions starten — oder bestehende neu starten wenn Grid/Host geändert wurde
     for (const [deviceId, el] of desired) {
-      if (!this.sessions.has(deviceId)) {
+      if (this.sessions.has(deviceId)) {
+        // Prüfen ob Grid oder Host geändert — dann Session neu starten
+        const oldGrid = this.sessionGrids.get(deviceId)
+        const gridChanged = !oldGrid
+          || oldGrid.cols !== el.grid.cols
+          || oldGrid.rows !== el.grid.rows
+          || oldGrid.hostId !== el.hostId
+        if (gridChanged) {
+          this.sessions.get(deviceId)!.stop().catch(() => {})
+          this.store.clearVirtualKeys(deviceId)
+          this.sessions.delete(deviceId)
+          this.sessionGrids.delete(deviceId)
+          this.createSession(el, settings)
+        }
+      } else {
         this.createSession(el, settings)
       }
     }
@@ -88,11 +105,22 @@ export class VirtualSurfaceManager {
   }
 
   /**
+   * Liefert aktuellen Status aller Sessions (für neue Frontend-Clients).
+   */
+  getAllStatuses(): Array<{ deviceId: string; status: VirtualSurfaceStatus }> {
+    return [...this.sessions.entries()].map(([deviceId, session]) => ({
+      deviceId,
+      status: session.getStatus(),
+    }))
+  }
+
+  /**
    * Stoppt alle Sessions (Graceful Shutdown).
    */
   async stop(): Promise<void> {
     await Promise.all([...this.sessions.values()].map(s => s.stop()))
     this.sessions.clear()
+    this.sessionGrids.clear()
   }
 
   // ─── Private ───────────────────────────────────────────────────────────────
@@ -125,6 +153,8 @@ export class VirtualSurfaceManager {
     })
 
     this.sessions.set(el.deviceId, session)
+    // Grid-Parameter für spätere Änderungs-Erkennung merken
+    this.sessionGrids.set(el.deviceId, { cols: el.grid.cols, rows: el.grid.rows, hostId: el.hostId })
     session.start()
   }
 }

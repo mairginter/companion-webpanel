@@ -266,6 +266,10 @@ export class ClientServer {
     if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(snapshot))
   }
 
+  sendToClient(ws: WebSocket, msg: object): void {
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
+  }
+
   onNewClient(handler: (ws: WebSocket) => void): void {
     this.newClientListeners.push(handler)
   }

@@ -61,6 +61,10 @@ export class HostManager {
         const snap: VSnapshotMessage = { t: 'vSnapshot', deviceId, keys }
         clientServer.sendVSnapshotToClient(ws, snap)
       }
+      // vSessionStatus für alle aktiven Virtual Decks senden
+      for (const { deviceId, status } of this.virtualSurfaceManager.getAllStatuses()) {
+        clientServer.sendToClient(ws, { t: 'vSessionStatus', deviceId, status } as VSessionStatusMessage)
+      }
     })
   }
 
