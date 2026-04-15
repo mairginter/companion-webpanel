@@ -180,6 +180,26 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
           />
         </div>
 
+        {element.render?.showBitmap === true && (
+          <div style={rowStyle}>
+            <span style={labelStyle}>Bitmap skalieren</span>
+            <input
+              type="checkbox"
+              checked={element.render?.scaleBitmap !== false}
+              onChange={e => updateRender({ scaleBitmap: e.target.checked })}
+            />
+          </div>
+        )}
+
+        <div style={rowStyle}>
+          <span style={labelStyle}>Hintergrundfarbe</span>
+          <input
+            type="checkbox"
+            checked={element.render?.showBgColor !== false}
+            onChange={e => updateRender({ showBgColor: e.target.checked })}
+          />
+        </div>
+
         <div style={rowStyle}>
           <span style={labelStyle}>Text-Overlay</span>
           <input
@@ -188,6 +208,21 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
             onChange={e => updateRender({ showText: e.target.checked })}
           />
         </div>
+
+        {element.render?.showText !== false && (
+          <div style={rowStyle}>
+            <span style={labelStyle}>Text-Position</span>
+            <select
+              style={{ background: '#111', border: '1px solid #333', borderRadius: 3, padding: '3px 7px', color: '#ddd', fontSize: 11 }}
+              value={element.render?.textAlign ?? 'bottom'}
+              onChange={e => updateRender({ textAlign: e.target.value as 'top' | 'center' | 'bottom' })}
+            >
+              <option value="top">Oben</option>
+              <option value="center">Mitte</option>
+              <option value="bottom">Unten</option>
+            </select>
+          </div>
+        )}
 
         <div style={rowStyle}>
           <span style={labelStyle}>Button-Radius</span>
