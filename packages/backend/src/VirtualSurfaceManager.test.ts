@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { VirtualSurfaceManager } from './VirtualSurfaceManager'
 import { StateStore } from './state/StateStore'
-import type { Settings, VirtualCompanionDeckElement, VDeltaMessage, VSessionStatusMessage } from '@cwp/shared'
+import type { Settings, VirtualCompanionDeckElement, VDeltaBatchMessage, VSessionStatusMessage } from '@cwp/shared'
 
 // Wir mocken VirtualSurfaceSession komplett
 const mockStart = vi.fn()
@@ -38,13 +38,13 @@ const makeDeckElement = (): VirtualCompanionDeckElement => ({
 
 describe('VirtualSurfaceManager', () => {
   let store: StateStore
-  let broadcast: (msg: VDeltaMessage | VSessionStatusMessage) => void
+  let broadcast: (msg: VDeltaBatchMessage | VSessionStatusMessage) => void
   let manager: VirtualSurfaceManager
 
   beforeEach(() => {
     vi.clearAllMocks()
     store = new StateStore()
-    broadcast = vi.fn() as (msg: VDeltaMessage | VSessionStatusMessage) => void
+    broadcast = vi.fn() as (msg: VDeltaBatchMessage | VSessionStatusMessage) => void
     manager = new VirtualSurfaceManager(store, broadcast)
   })
 

@@ -16,7 +16,7 @@
  *  - Graceful Shutdown: REMOVE-SUB für alle Subscriptions
  */
 import { WebSocket } from 'ws'
-import { Settings, AnyElement, VDeltaMessage, VSessionStatusMessage, VSnapshotMessage } from '@cwp/shared'
+import { Settings, AnyElement, VDeltaBatchMessage, VSessionStatusMessage, VSnapshotMessage } from '@cwp/shared'
 import { SatelliteClient, ClientStatus } from './satellite/SatelliteClient'
 import { StateStore } from './state/StateStore'
 import { ClientServer } from './server/ClientServer'
@@ -50,7 +50,7 @@ export class HostManager {
 
     this.virtualSurfaceManager = new VirtualSurfaceManager(
       store,
-      (msg: VDeltaMessage | VSessionStatusMessage) => clientServer.broadcast(msg),
+      (msg: VDeltaBatchMessage | VSessionStatusMessage) => clientServer.broadcast(msg),
     )
 
     // Snapshot an jeden neuen Frontend-Client senden
