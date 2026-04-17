@@ -136,6 +136,7 @@ CompanionWebpannel/
 ### Electron
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
 - ✅ macOS .icns Icon: `generate-app-icon.mjs` erzeugt `icon.icns` direkt (6 Größen, pure Node.js)
+- ✅ Tray-Icons im Release-Build sichtbar — `assets/tray-*.png` fehlten in `electron-builder.yml` `files`-Liste (war nur in `buildResources`, nicht im App-Package)
 
 ### Edit-Mode
 - ⬜ Ctrl+C / Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
@@ -146,6 +147,17 @@ CompanionWebpannel/
 
 ### CompanionButton-Picker
 - ⬜ Page-Name anzeigen — Companion sendet Page-Namen via Satellite API (prüfen ob `PAGE-NAME` verfügbar)
+
+### ChannelStrip (nächste Iteration)
+- ✅ **Fader per Touch/Maus bedienbar** — vertikaler Pointer-Drag → SUB-ROTATE; `setPointerCapture` für konsistentes Tracking
+- ✅ **Drum Wheel ausblendbar** — `showWheel` Flag in `style` + Checkbox in PropertiesPanel
+- ✅ **Solo-Button nur sichtbar wenn konfiguriert** — `hasSolo = !!refs.solo`, kein Grayout mehr
+- ✅ **Pan-Section nur sichtbar wenn konfiguriert** — `{refs.pan && ...}`, Pan-Label entfernt
+- ✅ **Clip-LED neu positioniert** — absolut über Name-Text, kein Platzverlust; blinkt nur beim Clipping
+- ✅ **Helleres Grau Hintergrund** — `#3a3d46 → #2d3038`, Buttons inaktiv `#202226 → #16181c`
+- ✅ **Fader-Knob gerippte 3D-Textur** — `repeating-linear-gradient` + weiße Mittellinie
+- ✅ **Drum Wheel Mausrad-Optik** — `borderRadius:10`, dunkle Gummirippen, zylindrischer Lichtreflex
+- ✅ **VirtualCompanionDeck Opacity-Fix** — `hexToRgba()` — Opacity gilt nur für Hintergrund, nicht Buttons
 
 ### Virtual Companion Deck (nächste Iteration)
 - ✅ **Grid editierbar in PropertiesPanel** — cols + rows als NumericInput; Grid-Änderung triggert Backend-Session-Restart (Companion bekommt neue Dimensionen)
@@ -180,6 +192,7 @@ CompanionWebpannel/
 - **Scrollbar-Feedback-Loop** → `overflow:auto` + `minWidth:'100%'` + fixer Canvas-Breite: 1px Overflow → Scrollbar (17px) → `100%` schrumpft → Canvas > `100%` → beide Scrollbars locked. Fix: bei fixem Canvas kein `min*:'100%'`; ResizeObserver auf äußerem Container → `overflow:hidden` wenn Canvas passt, `overflow:auto` wenn nicht.
 - **Windows-DPI-Skalierung** → User sieht "1920px" (physisch), Canvas braucht CSS-px = physisch/scaleFactor. Toolbar-Höhe = 56px. Verfügbare Canvas-Fläche: `window.innerWidth × (window.innerHeight - 56)`. `window.devicePixelRatio > 1` → Warnung zeigen.
 - **Alte Electron-Instanz killen (bash)** → `powershell.exe -Command "Get-Process electron -ErrorAction SilentlyContinue | Stop-Process -Force"`
+- **electron-builder `buildResources` ≠ `files`** → `buildResources` zeigt nur wo Build-Ressourcen (icon.ico) für den Installer liegen. Dateien die die App zur Laufzeit braucht (z.B. `assets/tray-*.png`) müssen explizit in `files` stehen.
 
 ---
 

@@ -12,6 +12,13 @@ import { VirtualCompanionDeckElement as VirtualCompanionDeckElementType } from '
 import { useAppStore } from '../../store/useAppStore'
 import { rawRgbBase64ToDataUrl } from '../../utils/bitmap'
 
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r},${g},${b},${alpha})`
+}
+
 interface Props {
   element: VirtualCompanionDeckElementType
   mode: 'view' | 'edit'
@@ -184,8 +191,7 @@ export const VirtualCompanionDeckElement = React.memo(function VirtualCompanionD
       : { position: 'absolute' as const, left: element.x, top: element.y,
           width: element.w, height: element.h, zIndex: element.z }
     ),
-    background: fill,
-    opacity,
+    background: hexToRgba(fill, opacity),
     borderRadius,
     padding,
     boxSizing: 'border-box',

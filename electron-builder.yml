@@ -15,6 +15,7 @@ files:
   - dist/**          # kompilierter Electron-Code (main.js, preload.js)
   - renderer/**      # startup.html
   - frontend/**      # Frontend PWA (von build.mjs kopiert)
+  - assets/tray-*.png  # Tray-Icons (connected/error/partial)
 
 # Windows
 win:

@@ -261,6 +261,15 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
         />
       </div>
 
+      <div style={row}>
+        <span style={lbl}>Drum Wheel anzeigen</span>
+        <input
+          type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }}
+          checked={style.showWheel !== false}
+          onChange={(e) => patchStyle({ showWheel: e.target.checked ? undefined : false })}
+        />
+      </div>
+
       {/* Button Picker — per Portal direkt in document.body */}
       {pickerTarget && createPortal(
         <CompanionButtonPickerDialog

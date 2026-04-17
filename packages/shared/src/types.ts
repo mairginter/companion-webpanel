@@ -121,6 +121,8 @@ export interface ChannelStripElement extends BaseElement {
     coarseMultiplier?: number
     /** Mute-Logik umkehren: true wenn aktive Feedback-Farbe = unmuted (z.B. vMix invertiert) */
     invertMute?: boolean
+    /** Drum Wheel ausblenden (default: true = sichtbar) */
+    showWheel?: boolean
   }
 
   refs: {
