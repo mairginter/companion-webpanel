@@ -137,6 +137,8 @@ CompanionWebpannel/
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
 - ✅ macOS .icns Icon: `generate-app-icon.mjs` erzeugt `icon.icns` direkt (6 Größen, pure Node.js)
 - ✅ Tray-Icons im Release-Build sichtbar — `assets/tray-*.png` fehlten in `electron-builder.yml` `files`-Liste (war nur in `buildResources`, nicht im App-Package)
+- ✅ Version im Startup-Fenster — war hardcoded `v1.0.0`; jetzt `get-version` IPC → `app.getVersion()` → dynamisch aus `package.json` (Commit 4447d2d, v1.2.3)
+- ✅ App-Icon im Startup-Fenster — `assets/icon-256.png` fehlte in `electron-builder.yml` `files`-Liste (Commit 4447d2d, v1.2.3)
 
 ### Edit-Mode
 - ⬜ Ctrl+C / Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
@@ -144,6 +146,9 @@ CompanionWebpannel/
 - ✅ Canvas Grid Snap für alle Elemente: Drag + Resize snappen auf `gridSize/4` (feines Raster)
 - ✅ Resize Snap: `snapResizeGeo()` in `geometry.ts`, angewandt in `ResizeHandles.tsx` (nur gezogene Kante snappt)
 - ✅ Edit-Mode Grid: Dual-Grid im `backgroundImage` des Canvas — Major-Linien bei `gridSize` (14% opacity), Minor bei `gridSize/4` (5% opacity); `minHeight: 100%` am Scale-Root-Div fixes dynamische Canvas-Größe
+
+### CompanionButton
+- ✅ **Physical Style** — opt-in `physicalStyle?: boolean` in render; aktiviert silber-metallischen Rahmen + kreisförmige konkave Dom-Fläche (CSS radial-gradients); Companion bgColor tönst Dom; Pressed-State skaliert Dom auf 0.97; `lightenHex`/`darkenHex`/`buildDomeBackground` als testbare Exports; Toggle-Checkbox in PropertiesPanel nach Border-Radius (Commits 0c0dafe–92b3373, Settings v1.5.0 — kein Bump nötig)
 
 ### CompanionButton-Picker
 - ⬜ Page-Name anzeigen — Companion sendet Page-Namen via Satellite API (prüfen ob `PAGE-NAME` verfügbar)
