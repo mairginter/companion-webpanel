@@ -45,7 +45,7 @@ function makeDefault(
       style: { fill: '#1a2030', stroke: '#2a3344', strokeWidth: 1, borderRadius: 6 } }
   }
   // companionButton — ref wird vom Picker geliefert
-  return { id, type: 'companionButton', x, y, w: 120, h: 120, z: 0,
+  return { id, type: 'companionButton', x, y, w: 72, h: 72, z: 0,
     ref: ref!,
     render: { textAlign: 'center', showText: true, showBgColor: true },
   }
@@ -91,7 +91,7 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
     const positions = compactLayout(
       refs.map((r) => ({ row: r.row, col: r.col })),
       canvasPos,
-      120,
+      72,
     )
     refs.forEach((ref, i) => {
       const pos = positions[i] ?? canvasPos
