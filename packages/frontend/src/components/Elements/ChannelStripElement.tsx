@@ -90,7 +90,7 @@ export const ChannelStripElement = React.memo(function ChannelStripElement({
   const meterLDb = parsed.meterL ?? -144
   const meterRDb = parsed.meterR ?? -144
   const levelDb = parsed.level
-  const channelName = parsed.name ?? style.name ?? ''
+  const channelName = style.name || parsed.name || ''
 
   const muteBgColor = buttonState?.bgColor
   const rawSoloed = isMuted(soloState?.bgColor)

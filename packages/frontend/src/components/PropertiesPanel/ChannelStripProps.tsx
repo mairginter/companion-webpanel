@@ -212,7 +212,7 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       <div style={row}>
-        <span style={lbl}>Name (Fallback)</span>
+        <span style={lbl}>Name (Override)</span>
         <input
           style={inputStyle}
           value={style.name ?? ''}
