@@ -126,6 +126,7 @@ async function main(): Promise<void> {
   // ─── IPC-Handler ───────────────────────────────────────────────────────────
 
   ipcMain.handle('get-status', () => appStatus)
+  ipcMain.handle('get-version', () => app.getVersion())
 
   // Fix #4: Fenster beim Open Panel nicht schließen
   ipcMain.handle('open-panel', () => {

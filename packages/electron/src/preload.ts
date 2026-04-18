@@ -9,6 +9,7 @@
  *   onStatusUpdate(cb)   → registriert einen Listener für Push-Updates
  *   changePort(port)     → fordert Port-Änderung + Neustart an
  *   openPanel()          → öffnet localhost:<port> im Default-Browser
+ *   getVersion()         → App-Version aus package.json (z.B. "1.2.3")
  *   quit()               → graceful shutdown
  */
 import { contextBridge, ipcRenderer } from 'electron'
@@ -30,6 +31,9 @@ contextBridge.exposeInMainWorld('cwpApi', {
 
   openPanelApp: (): Promise<void> =>
     ipcRenderer.invoke('open-panel-app'),
+
+  getVersion: (): Promise<string> =>
+    ipcRenderer.invoke('get-version'),
 
   quit: (): void => {
     ipcRenderer.send('quit')

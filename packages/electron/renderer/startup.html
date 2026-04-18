@@ -210,7 +210,7 @@
   <div class="titlebar">
     <img class="titlebar-icon" src="../assets/icon-256.png" alt="" />
     <span class="titlebar-title">Companion Webpanel</span>
-    <span class="titlebar-version" id="version">v1.0.0</span>
+    <span class="titlebar-version" id="version"></span>
   </div>
 
   <div class="content">
@@ -282,6 +282,10 @@
     }
 
     // ─── Init ────────────────────────────────────────────────────────────────
+
+    api.getVersion().then((v) => {
+      document.getElementById('version').textContent = 'v' + v
+    })
 
     api.getStatus().then(renderStatus)
 

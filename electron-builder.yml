@@ -16,6 +16,7 @@ files:
   - renderer/**      # startup.html
   - frontend/**      # Frontend PWA (von build.mjs kopiert)
   - assets/tray-*.png  # Tray-Icons (connected/error/partial)
+  - assets/icon-256.png  # App-Icon im Startup-Fenster
 
 # Windows
 win:
