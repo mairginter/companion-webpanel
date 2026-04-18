@@ -62,6 +62,7 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   const showBgColor = render?.showBgColor !== false    // default: true
   const textAlign = render?.textAlign ?? 'bottom'
   const fontSize = render?.fontSize ?? 11
+  const physicalStyle = render?.physicalStyle === true
 
   // Button-State direkt per row/col — kein keysPerRow-Lookup mehr nötig
   const keyState = useAppStore((s) => s.getButtonState(ref.hostId, ref.page, ref.row, ref.col))
@@ -104,33 +105,56 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   )
 
   // ─── Container ────────────────────────────────────────────────────────────
-  const containerStyle: React.CSSProperties = {
-    ...(isContained
-      ? { position: 'relative' as const, width: '100%', height: '100%' }
-      : { position: 'absolute' as const, left: element.x, top: element.y,
-          width: element.w, height: element.h, zIndex: element.z }
-    ),
-    borderRadius,
-    overflow: 'hidden',
-    cursor: mode === 'view' ? 'pointer' : 'default',
-    userSelect: 'none',
-    touchAction: 'none',
-    boxSizing: 'border-box',
-    background: showBgColor && bgColor ? bgColor : (hasData ? '#1a2030' : 'transparent'),
-    ...(!hasData && !isStale && { border: '1.5px dashed #2a3344', opacity: 0.6 }),
-    ...(isStale && { opacity: 0.5, outline: '2px solid #ff8a3d', outlineOffset: '-2px' }),
-    ...(pressed && { transform: 'scale(0.97)', outline: '2.5px solid #ff5a5f', outlineOffset: '-2px' }),
-    transition: pressed ? 'none' : 'transform 0.08s, box-shadow 0.08s',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Äußerer Drop-Shadow — gibt dem Button Tiefe / "Lift" vom Canvas
-    ...(hasData && {
-      boxShadow: pressed
-        ? '0 1px 2px rgba(0,0,0,0.4)'
-        : '0 3px 8px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.3)',
-    }),
-  }
+  const positionBase: React.CSSProperties = isContained
+    ? { position: 'relative' as const, width: '100%', height: '100%' }
+    : { position: 'absolute' as const, left: element.x, top: element.y,
+        width: element.w, height: element.h, zIndex: element.z }
+
+  const containerStyle: React.CSSProperties = physicalStyle
+    ? {
+        ...positionBase,
+        borderRadius,
+        overflow: 'hidden',
+        cursor: mode === 'view' ? 'pointer' : 'default',
+        userSelect: 'none',
+        touchAction: 'none',
+        boxSizing: 'border-box',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: pressed
+          ? 'linear-gradient(145deg, #a8acb8 0%, #d4d8e0 30%, #ccd0d8 50%, #b0b4c0 75%, #909098 100%)'
+          : 'linear-gradient(145deg, #c0c4ce 0%, #eceef6 30%, #e4e8f0 50%, #c4c8d4 75%, #a0a4b0 100%)',
+        boxShadow: pressed
+          ? '0 2px 6px rgba(0,0,0,0.7), inset 0 2px 5px rgba(0,0,0,0.35), inset 0 -1px 2px rgba(255,255,255,0.3)'
+          : '0 6px 20px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.9), inset 0 -1px 3px rgba(0,0,0,0.2)',
+        transition: pressed ? 'none' : 'transform 0.08s, box-shadow 0.08s',
+        ...(!hasData && { opacity: 0.6 }),
+        ...(isStale && { opacity: 0.5, outline: '2px solid #ff8a3d', outlineOffset: '-2px' }),
+        ...(pressed && { outline: '2.5px solid #ff5a5f', outlineOffset: '-2px' }),
+      }
+    : {
+        ...positionBase,
+        borderRadius,
+        overflow: 'hidden',
+        cursor: mode === 'view' ? 'pointer' : 'default',
+        userSelect: 'none',
+        touchAction: 'none',
+        boxSizing: 'border-box',
+        background: showBgColor && bgColor ? bgColor : (hasData ? '#1a2030' : 'transparent'),
+        ...(!hasData && !isStale && { border: '1.5px dashed #2a3344', opacity: 0.6 }),
+        ...(isStale && { opacity: 0.5, outline: '2px solid #ff8a3d', outlineOffset: '-2px' }),
+        ...(pressed && { transform: 'scale(0.97)', outline: '2.5px solid #ff5a5f', outlineOffset: '-2px' }),
+        transition: pressed ? 'none' : 'transform 0.08s, box-shadow 0.08s',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...(hasData && {
+          boxShadow: pressed
+            ? '0 1px 2px rgba(0,0,0,0.4)'
+            : '0 3px 8px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.3)',
+        }),
+      }
 
   // ─── Text-Positionierung ──────────────────────────────────────────────────
   const textPos: React.CSSProperties =
@@ -175,8 +199,24 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
         />
       )}
 
-      {/* 3D-Bevel-Overlay: Inset-Shadow am Randbereich, Text/Bitmap bleiben frei */}
-      {hasData && (
+      {/* Physical dome OR normal 3D bevel overlay */}
+      {physicalStyle ? (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: '10px',
+            borderRadius: '50%',
+            pointerEvents: 'none',
+            background: buildDomeBackground(bgColor, pressed),
+            boxShadow: pressed
+              ? 'inset 0 3px 12px rgba(0,0,0,0.25), inset 0 5px 20px rgba(0,0,0,0.15), inset 2px 2px 8px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.3)'
+              : 'inset 0 2px 8px rgba(0,0,0,0.18), inset 0 4px 16px rgba(0,0,0,0.10), inset 2px 2px 6px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.25)',
+            transform: pressed ? 'scale(0.97)' : undefined,
+            transition: pressed ? 'none' : 'transform 0.08s',
+          }}
+        />
+      ) : hasData ? (
         <div
           aria-hidden="true"
           style={{
@@ -184,15 +224,13 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
             inset: 0,
             borderRadius,
             pointerEvents: 'none',
-            // Lichtquelle oben-links → Highlight oben/links, Schatten unten/rechts
-            // Pressed: invertiert → "eingedrückt"-Gefühl
             boxShadow: pressed
               ? 'inset 0 2px 5px rgba(0,0,0,0.65), inset 2px 0 4px rgba(0,0,0,0.45), inset 0 -1px 2px rgba(255,255,255,0.07), inset -1px 0 2px rgba(255,255,255,0.05)'
               : 'inset 0 1.5px 2px rgba(255,255,255,0.22), inset 1.5px 0 2px rgba(255,255,255,0.11), inset 0 -2.5px 5px rgba(0,0,0,0.60), inset -2.5px 0 4px rgba(0,0,0,0.42)',
             transition: pressed ? 'none' : 'box-shadow 0.08s',
           }}
         />
-      )}
+      ) : null}
 
       {showText && text && (
         <span style={textStyle}>
