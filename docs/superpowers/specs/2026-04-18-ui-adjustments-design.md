@@ -83,7 +83,7 @@
 **Problem:** Keine Möglichkeit, Style-Einstellungen von einem Element auf andere zu übertragen.
 
 **Store-State:**
-- `useAppStore` bekommt `copiedStyle: { type: AnyElement['type']; style: unknown } | null`
+- `useAppStore` bekommt `copiedStyle: { type: AnyElement['type']; style: unknown; w: number; h: number } | null`
 - `copyElementStyle(elementId: string, panelId: string): void` — kopiert style/render des Elements
 - `pasteElementStyle(panelId: string, targetIds: string[]): void` — wendet kopiertes Style auf Ziel-Elemente gleichen Typs an
 
@@ -94,7 +94,8 @@
 - `channelStrip` → `style` (alles außer refs)
 - `virtualCompanionDeck` → `render` (alles außer ref/deviceId)
 
-**Was NICHT kopiert wird:** `x, y, w, h, z, locked`, alle `ref`/`refs`-Felder
+**Was kopiert wird (zusätzlich zu style/render):** `w, h` (Größe)
+**Was NICHT kopiert wird:** `x, y, z, locked`, alle `ref`/`refs`-Felder
 
 **UX:**
 - PropertiesPanel Header: Button "Style kopieren" (nur bei Einzelauswahl, alle 5 Typen)
