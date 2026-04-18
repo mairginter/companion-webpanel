@@ -37,6 +37,9 @@ export function PropertiesPanel() {
   const panel = useAppStore((s) => s.getActivePanel())
   const selectedIds = useAppStore((s) => s.selectedIds)
   const deleteElements = useAppStore((s) => s.deleteElements)
+  const copiedStyle = useAppStore((s) => s.copiedStyle)
+  const copyElementStyle = useAppStore((s) => s.copyElementStyle)
+  const pasteElementStyle = useAppStore((s) => s.pasteElementStyle)
 
   const flipSide = () => {
     const next = side === 'right' ? 'left' : 'right'
@@ -203,12 +206,34 @@ export function PropertiesPanel() {
   }
 
   const canDelete = selectedElements.length > 0 && selectedElements.every((el) => !el.locked)
+  const canCopy = singleEl !== null
+  const canPaste = copiedStyle !== null
+    && selectedElements.length > 0
+    && selectedElements.some((el) => el.type === copiedStyle.type)
 
   return (
     <div style={panelStyle}>
       <div style={headerStyle}>
         <span style={titleStyle}>Properties</span>
         <div style={{ display: 'flex', gap: 4 }}>
+          {canCopy && (
+            <button
+              style={collapseBtn}
+              title="Style kopieren (Ctrl+Shift+C)"
+              onClick={() => singleEl && copyElementStyle(panel!.id, singleEl.id)}
+            >
+              ⎘
+            </button>
+          )}
+          {canPaste && (
+            <button
+              style={{ ...collapseBtn, color: '#4a9eff' }}
+              title="Style einfügen (Ctrl+Shift+V)"
+              onClick={() => pasteElementStyle(panel!.id, [...selectedIds])}
+            >
+              ⎗
+            </button>
+          )}
           <button style={collapseBtn} onClick={flipSide} title="Seite wechseln">⇄</button>
           <button style={collapseBtn} onClick={toggleOpen} title="Einklappen">‹</button>
         </div>
