@@ -77,6 +77,16 @@ const SELECT_STYLE: React.CSSProperties = {
   borderRadius: 6, color: '#e9edf2', fontSize: 13, padding: '6px 8px',
 }
 
+const LS_PAGE_KEY = (hostId: string) => `cwp:picker:lastPage:${hostId}`
+
+function loadLastPage(hostId: string): number {
+  return parseInt(localStorage.getItem(LS_PAGE_KEY(hostId)) ?? '') || 1
+}
+
+function saveLastPage(hostId: string, page: number): void {
+  localStorage.setItem(LS_PAGE_KEY(hostId), String(page))
+}
+
 export function CompanionButtonPickerDialog({
   onConfirm, onClose, confirmLabel = 'Hinzufügen', initialRef, alignSide, panelWidth = 320,
   initialGridCols, initialGridRows,
@@ -92,12 +102,22 @@ export function CompanionButtonPickerDialog({
   }, [settings, sessionStatus])
 
   const [hostId, setHostId] = useState<string>(initialRef?.hostId ?? connectedHosts[0]?.id ?? '')
-  const [pageNum, setPageNum] = useState<number>(initialRef?.page ?? 1)
+  const [pageNum, setPageNum] = useState<number>(() => {
+    const startHost = initialRef?.hostId ?? connectedHosts[0]?.id ?? ''
+    return initialRef?.page ?? (startHost ? loadLastPage(startHost) : 1)
+  })
   const [keysPerRow, setKeysPerRow] = useState(initialGridCols ?? 8)
   const [rows, setRows] = useState(initialGridRows ?? 4)
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set())
   const lastClickedCell = useRef<{ row: number; col: number } | null>(null)
   const [loadingPreview, setLoadingPreview] = useState(false)
+
+  const changePage = (page: number) => {
+    setPageNum(page)
+    if (hostId) saveLastPage(hostId, page)
+    setSelectedCells(new Set())
+    lastClickedCell.current = null
+  }
 
   // Trackt die zuletzt aktivierte Preview damit wir sie beim Wechsel/Schließen entfernen
   const activePreview = useRef<{ hostId: string; page: number } | null>(null)
@@ -162,10 +182,12 @@ export function CompanionButtonPickerDialog({
     setHostId(id)
     setSelectedCells(new Set())
     lastClickedCell.current = null
-    // Grid-Größe des neuen Hosts als Default setzen
     const host = settings?.hosts.find((h) => h.id === id)
     if (host?.gridCols !== undefined) setKeysPerRow(host.gridCols)
     if (host?.gridRows !== undefined) setRows(host.gridRows)
+    const savedPage = loadLastPage(id)
+    setPageNum(savedPage)
+    saveLastPage(id, savedPage)
   }
 
   const handleCellClick = useCallback((row: number, col: number, e: React.MouseEvent) => {
@@ -241,13 +263,25 @@ export function CompanionButtonPickerDialog({
                 </select>
               </div>
               <div style={{ flex: 1 }}>
-                <NumericInput
-                  label="Page"
-                  value={pageNum}
-                  min={1}
-                  onChange={(v) => { setPageNum(v); setSelectedCells(new Set()); lastClickedCell.current = null }}
-                  compact
-                />
+                <div style={LABEL_STYLE}>Page</div>
+                {(() => {
+                  const host = settings?.hosts.find((h) => h.id === hostId)
+                  const maxP = host?.maxPages ?? 99
+                  const pageNamesMap = host?.pageNames ?? {}
+                  return (
+                    <select
+                      style={SELECT_STYLE}
+                      value={pageNum}
+                      onChange={(e) => changePage(parseInt(e.target.value, 10))}
+                    >
+                      {Array.from({ length: maxP }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {pageNamesMap[n] ? `${n} — ${pageNamesMap[n]}` : String(n)}
+                        </option>
+                      ))}
+                    </select>
+                  )
+                })()}
               </div>
             </div>
 
