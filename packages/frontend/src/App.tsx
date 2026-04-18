@@ -70,6 +70,28 @@ export function App() {
             }
             return
           }
+          case 'c': {
+            if (!e.shiftKey) break
+            e.preventDefault()
+            if (inEdit) {
+              const panel = store.getActivePanel()
+              if (panel && store.selectedIds.size === 1) {
+                store.copyElementStyle(panel.id, [...store.selectedIds][0])
+              }
+            }
+            return
+          }
+          case 'v': {
+            if (!e.shiftKey) break
+            e.preventDefault()
+            if (inEdit) {
+              const panel = store.getActivePanel()
+              if (panel && store.copiedStyle) {
+                store.pasteElementStyle(panel.id, [...store.selectedIds])
+              }
+            }
+            return
+          }
         }
       }
 
