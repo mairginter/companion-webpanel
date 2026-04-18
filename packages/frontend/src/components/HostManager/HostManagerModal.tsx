@@ -144,6 +144,8 @@ function emptyHost(): Omit<HostProfile, 'id'> {
     showInToolbar: true,
     gridCols: 8,
     gridRows: 4,
+    maxPages: 99,
+    pageNames: {},
   }
 }
 
@@ -156,6 +158,9 @@ interface HostFormProps {
 
 function HostForm({ value, onChange }: HostFormProps) {
   const set = (patch: Partial<Omit<HostProfile, 'id'>>) => onChange({ ...value, ...patch })
+  const [pageNamesOpen, setPageNamesOpen] = React.useState(false)
+  const maxP = value.maxPages ?? 99
+  const pageNums = Array.from({ length: maxP }, (_, i) => i + 1)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -255,6 +260,63 @@ function HostForm({ value, onChange }: HostFormProps) {
           </div>
         </div>
       </div>
+      {/* Max. Pages */}
+      <div>
+        <label style={labelStyle}>Max. Pages (Picker-Dropdown)</label>
+        <input
+          style={inputStyle}
+          type="number"
+          min={1}
+          max={999}
+          value={value.maxPages ?? 99}
+          onChange={(e) => set({ maxPages: Math.max(1, Math.min(999, parseInt(e.target.value, 10) || 99)) })}
+        />
+      </div>
+      {/* Page-Namen */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setPageNamesOpen((v) => !v)}
+          style={{
+            background: 'none', border: '1px solid #2a3344', borderRadius: 6,
+            color: '#8896aa', fontSize: 12, padding: '5px 10px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          {pageNamesOpen ? '▼' : '▶'} Page-Namen konfigurieren
+        </button>
+        {pageNamesOpen && (
+          <div style={{
+            marginTop: 8,
+            maxHeight: 200,
+            overflowY: 'auto',
+            border: '1px solid #2a3344',
+            borderRadius: 6,
+            background: '#121821',
+            padding: '8px 10px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+          }}>
+            {pageNums.map((n) => (
+              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, color: '#4a5568', minWidth: 52 }}>Page {n}</span>
+                <input
+                  style={{ ...inputStyle, padding: '3px 8px', fontSize: 12 }}
+                  placeholder="(kein Name)"
+                  value={value.pageNames?.[n] ?? ''}
+                  onChange={(e) => {
+                    const names = { ...(value.pageNames ?? {}) }
+                    if (e.target.value) names[n] = e.target.value
+                    else delete names[n]
+                    set({ pageNames: Object.keys(names).length > 0 ? names : undefined })
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -344,7 +406,7 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
   }
 
   function startEdit(host: HostProfile) {
-    setFormValue({ name: host.name, host: host.host, satellite: host.satellite, notes: host.notes ?? '', autoConnect: host.autoConnect, showInToolbar: host.showInToolbar, gridCols: host.gridCols, gridRows: host.gridRows })
+    setFormValue({ name: host.name, host: host.host, satellite: host.satellite, notes: host.notes ?? '', autoConnect: host.autoConnect, showInToolbar: host.showInToolbar, gridCols: host.gridCols, gridRows: host.gridRows, maxPages: host.maxPages, pageNames: host.pageNames })
     setEditing(host.id)
   }
 
