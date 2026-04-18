@@ -210,7 +210,7 @@ export function CompanionButtonPickerDialog({
 
   const handleInsertPage = () => {
     if (configuredCells.length === 0) return
-    const refs: CompanionRef[] = configuredCells
+    const refs: CompanionRef[] = [...configuredCells]
       .sort((a, b) => a.row !== b.row ? a.row - b.row : a.col - b.col)
       .map(({ row, col }) => ({ hostId, page: pageNum, row, col }))
     onConfirm(refs)
