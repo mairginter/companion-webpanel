@@ -109,6 +109,15 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
       </div>
       <NumericInput label="Border-Radius" value={r.borderRadius ?? 6} min={0}
         onChange={(v) => updateRender({ borderRadius: v })} />
+      <div style={row}>
+        <span style={lbl}>Physical Style</span>
+        <input
+          type="checkbox"
+          style={{ width: 20, height: 20, cursor: 'pointer' }}
+          checked={r.physicalStyle === true}
+          onChange={(e) => updateRender({ physicalStyle: e.target.checked || undefined })}
+        />
+      </div>
       {tog(r.showText, true) && (
         <NumericInput label="Font-Size" value={r.fontSize ?? 11} min={6} unit="px"
           onChange={(v) => updateRender({ fontSize: v })} />
