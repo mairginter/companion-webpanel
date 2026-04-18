@@ -14,7 +14,7 @@ import { useAppStore } from '../../store/useAppStore'
 import { pageKey } from '@cwp/shared'
 import type { CompanionRef } from '@cwp/shared'
 import { NumericInput } from '../PropertiesPanel/NumericInput'
-import { buildRangeSelection, selectedCellsToRefs } from '../../utils/pickerUtils'
+import { buildRangeSelection, isConfiguredButton, selectedCellsToRefs } from '../../utils/pickerUtils'
 
 const BACKEND_BASE = import.meta.env.DEV ? `http://${window.location.hostname}:8080` : ''
 
@@ -199,9 +199,21 @@ export function CompanionButtonPickerDialog({
     lastClickedCell.current = { row, col }
   }, [])
 
+  const configuredCells = useMemo(() => {
+    return gridCells.filter(({ bgColor, text }) => isConfiguredButton(bgColor, text))
+  }, [gridCells])
+
   const handleConfirm = () => {
     if (selectedCells.size === 0) return
     onConfirm(selectedCellsToRefs(selectedCells, hostId, pageNum))
+  }
+
+  const handleInsertPage = () => {
+    if (configuredCells.length === 0) return
+    const refs: CompanionRef[] = configuredCells
+      .sort((a, b) => a.row !== b.row ? a.row - b.row : a.col - b.col)
+      .map(({ row, col }) => ({ hostId, page: pageNum, row, col }))
+    onConfirm(refs)
   }
 
   // Zellgröße: max 48px, passt in 400px Dialog-Breite
@@ -332,6 +344,19 @@ export function CompanionButtonPickerDialog({
             }}
           >
             Abbrechen
+          </button>
+          <button
+            onClick={handleInsertPage}
+            disabled={configuredCells.length === 0}
+            title={configuredCells.length === 0 ? 'Keine konfigurierten Buttons auf dieser Seite' : undefined}
+            style={{
+              padding: '7px 16px', borderRadius: 6, border: '1px solid #2a3344',
+              background: configuredCells.length > 0 ? 'rgba(74,158,255,0.08)' : '#1a2030',
+              color: configuredCells.length > 0 ? '#8896aa' : '#4a5568',
+              fontSize: 13, cursor: configuredCells.length > 0 ? 'pointer' : 'not-allowed',
+            }}
+          >
+            Seite einfügen
           </button>
           <button
             onClick={handleConfirm}
