@@ -3,6 +3,42 @@ import { CompanionButtonElement as CompanionButtonElementType } from '@cwp/share
 import { useAppStore } from '../../store/useAppStore'
 import { rawRgbBase64ToDataUrl } from '../../utils/bitmap'
 
+/** Blends hex color channels toward white. amount: 0=unchanged, 1=white */
+export function lightenHex(hex: string, amount: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgb(${Math.round(r + (255 - r) * amount)},${Math.round(g + (255 - g) * amount)},${Math.round(b + (255 - b) * amount)})`
+}
+
+/** Multiplies hex color channels toward black. amount: 0=unchanged, 1=black */
+export function darkenHex(hex: string, amount: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgb(${Math.round(r * (1 - amount))},${Math.round(g * (1 - amount))},${Math.round(b * (1 - amount))})`
+}
+
+/** CSS background value for the physical-style dome circle.
+ *  bgColor must be #rrggbb — anything else falls back to the default grey dome. */
+export function buildDomeBackground(bgColor: string | undefined, pressed: boolean): string {
+  const s1 = pressed ? 0.6 : 0.9
+  const s2 = pressed ? 0.3 : 0.4
+  if (bgColor && /^#[0-9a-fA-F]{6}$/.test(bgColor)) {
+    const r = parseInt(bgColor.slice(1, 3), 16)
+    const g = parseInt(bgColor.slice(3, 5), 16)
+    const b = parseInt(bgColor.slice(5, 7), 16)
+    return [
+      `radial-gradient(ellipse 80% 50% at 50% 70%, rgba(${r},${g},${b},${s1}) 0%, rgba(${r},${g},${b},${s2}) 35%, transparent 70%)`,
+      `radial-gradient(circle at 50% 50%, ${lightenHex(bgColor, 0.5)} 0%, ${bgColor} 48%, ${darkenHex(bgColor, 0.6)} 100%)`,
+    ].join(', ')
+  }
+  return [
+    `radial-gradient(ellipse 80% 50% at 50% 70%, rgba(255,255,255,${s1}) 0%, rgba(255,255,255,${s2}) 35%, transparent 70%)`,
+    `radial-gradient(circle at 50% 50%, #f4f6fa 0%, #e0e4ec 25%, #c8ccd8 48%, #a8acb8 65%, #888c98 80%, #6c7080 92%, #545868 100%)`,
+  ].join(', ')
+}
+
 interface Props {
   element: CompanionButtonElementType
   mode: 'view' | 'edit'
