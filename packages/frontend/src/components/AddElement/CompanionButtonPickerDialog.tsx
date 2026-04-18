@@ -185,9 +185,7 @@ export function CompanionButtonPickerDialog({
     const host = settings?.hosts.find((h) => h.id === id)
     if (host?.gridCols !== undefined) setKeysPerRow(host.gridCols)
     if (host?.gridRows !== undefined) setRows(host.gridRows)
-    const savedPage = loadLastPage(id)
-    setPageNum(savedPage)
-    saveLastPage(id, savedPage)
+    setPageNum(loadLastPage(id))
   }
 
   const handleCellClick = useCallback((row: number, col: number, e: React.MouseEvent) => {
