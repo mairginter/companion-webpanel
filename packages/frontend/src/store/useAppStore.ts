@@ -99,6 +99,17 @@ interface AppStore {
   deleteElements: (panelId: string, ids: string[]) => void
   addElement: (panelId: string, element: AnyElement) => void
 
+  // ─── Style Copy/Paste ─────────────────────────────────────────────────────
+  copiedStyle: {
+    type: AnyElement['type']
+    w: number
+    h: number
+    /** style (shape/label/channelStrip) oder render (companionButton/virtualCompanionDeck) */
+    payload: Record<string, unknown>
+  } | null
+  copyElementStyle: (panelId: string, elementId: string) => void
+  pasteElementStyle: (panelId: string, targetIds: string[]) => void
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
   getButtonState: (hostId: string, page: number, row: number, col: number) => KeyState | undefined
   /** Verbindungsstatus eines Hosts (kein page-Parameter mehr nötig) */
@@ -513,6 +524,57 @@ export const useAppStore = create<AppStore>((set, get) => ({
         },
       }
     }),
+
+  // ─── Style Copy/Paste ─────────────────────────────────────────────────────
+  copiedStyle: null,
+
+  copyElementStyle: (panelId, elementId) => {
+    const panel = get().settings?.panels.find((p) => p.id === panelId)
+    const el = panel?.elements.find((e) => e.id === elementId)
+    if (!el) return
+    let payload: Record<string, unknown> = {}
+    if (el.type === 'companionButton' || el.type === 'virtualCompanionDeck') {
+      payload = { ...(el as any).render }
+    } else {
+      payload = { ...(el as any).style }
+    }
+    set({ copiedStyle: { type: el.type, w: el.w, h: el.h, payload } })
+  },
+
+  pasteElementStyle: (panelId, targetIds) => {
+    const { copiedStyle, settings } = get()
+    if (!copiedStyle || !settings) return
+    const panel = settings.panels.find((p) => p.id === panelId)
+    if (!panel) return
+    const updates: Record<string, Partial<AnyElement>> = {}
+    for (const id of targetIds) {
+      const el = panel.elements.find((e) => e.id === id)
+      if (!el || el.type !== copiedStyle.type) continue
+      const patch: Record<string, unknown> = { w: copiedStyle.w, h: copiedStyle.h }
+      if (el.type === 'companionButton' || el.type === 'virtualCompanionDeck') {
+        patch.render = { ...(el as any).render, ...copiedStyle.payload }
+      } else {
+        patch.style = { ...(el as any).style, ...copiedStyle.payload }
+      }
+      updates[id] = patch as Partial<AnyElement>
+    }
+    set((s) => {
+      if (!s.settings) return s
+      return {
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) =>
+            p.id !== panelId ? p : {
+              ...p,
+              elements: p.elements.map((el) =>
+                updates[el.id] ? { ...el, ...updates[el.id] } as AnyElement : el,
+              ),
+            },
+          ),
+        },
+      }
+    })
+  },
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   getButtonState: (hostId, page, row, col) =>

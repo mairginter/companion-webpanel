@@ -13,8 +13,11 @@ const makeSettings = (): Settings => ({
     defaultMode: 'view',
     grid: { enabled: true, size: 40, snap: true },
     elements: [
-      { id: 'e1', type: 'label', x: 10, y: 20, w: 100, h: 50, z: 0, text: 'Hello', style: {} },
-      { id: 'e2', type: 'shape', x: 200, y: 100, w: 80, h: 80, z: 1, style: { fill: '#ff0000' } },
+      { id: 'e1', type: 'label', x: 10, y: 20, w: 100, h: 50, z: 0, text: 'Hello', style: { color: '#ff0000', fontSize: 14 } },
+      { id: 'e2', type: 'shape', x: 200, y: 100, w: 80, h: 80, z: 1, style: { fill: '#ff0000', stroke: '#000', strokeWidth: 1, borderRadius: 4 } },
+      { id: 'e3', type: 'companionButton', x: 0, y: 0, w: 72, h: 72, z: 2,
+        ref: { hostId: 'h1', page: 1, row: 0, col: 0 },
+        render: { showBgColor: true, showText: true, textAlign: 'center', borderRadius: 6 } },
     ],
   }],
 })
@@ -87,8 +90,8 @@ describe('duplicateElements', () => {
   it('dupliziert ein Element mit Offset +75', () => {
     useAppStore.getState().duplicateElements('panel-1', ['e1'])
     const elements = useAppStore.getState().settings!.panels[0].elements
-    expect(elements).toHaveLength(3)
-    const copy = elements[2]
+    expect(elements).toHaveLength(4)
+    const copy = elements[3]
     expect(copy.x).toBe(10 + 75)
     expect(copy.y).toBe(20 + 75)
     expect(copy.id).not.toBe('e1')
@@ -96,7 +99,7 @@ describe('duplicateElements', () => {
   it('Selektion zeigt auf Kopien', () => {
     useAppStore.getState().duplicateElements('panel-1', ['e1'])
     const elements = useAppStore.getState().settings!.panels[0].elements
-    const copyId = elements[2].id
+    const copyId = elements[3].id
     expect(useAppStore.getState().selectedIds.has(copyId)).toBe(true)
     expect(useAppStore.getState().selectedIds.has('e1')).toBe(false)
   })
@@ -107,7 +110,7 @@ describe('deleteElements', () => {
     useAppStore.getState().deleteElements('panel-1', ['e1'])
     const elements = useAppStore.getState().settings!.panels[0].elements
     expect(elements.find(e => e.id === 'e1')).toBeUndefined()
-    expect(elements).toHaveLength(1)
+    expect(elements).toHaveLength(2)
   })
   it('leert Selektion nach Delete', () => {
     useAppStore.getState().selectElement('e1', false)
@@ -360,5 +363,63 @@ describe('virtualSessionStatus', () => {
   it('speichert vSessionStatus', () => {
     useAppStore.getState().applyVSessionStatus({ t: 'vSessionStatus', deviceId: 'cwp-a1b2c3d4', status: 'connected' })
     expect(useAppStore.getState().getVirtualSessionStatus('cwp-a1b2c3d4')).toBe('connected')
+  })
+})
+
+describe('copyElementStyle / pasteElementStyle', () => {
+  it('copiedStyle ist initial null', () => {
+    expect(useAppStore.getState().copiedStyle).toBeNull()
+  })
+
+  it('copyElementStyle speichert style + w + h von label', () => {
+    useAppStore.getState().copyElementStyle('panel-1', 'e1')
+    const copied = useAppStore.getState().copiedStyle
+    expect(copied).not.toBeNull()
+    expect(copied!.type).toBe('label')
+    expect(copied!.w).toBe(100)
+    expect(copied!.h).toBe(50)
+    expect((copied!.payload as any).color).toBe('#ff0000')
+    expect((copied!.payload as any).fontSize).toBe(14)
+  })
+
+  it('pasteElementStyle überträgt style + w + h auf gleichen Typ', () => {
+    useAppStore.getState().copyElementStyle('panel-1', 'e1')
+    // Zweites label hinzufügen als Ziel
+    useAppStore.getState().addElement('panel-1', {
+      id: 'e4', type: 'label', x: 300, y: 300, w: 50, h: 30, z: 3,
+      text: 'Other', style: { color: '#00ff00', fontSize: 10 },
+    })
+    useAppStore.getState().pasteElementStyle('panel-1', ['e4'])
+    const el = useAppStore.getState().settings!.panels[0].elements.find(e => e.id === 'e4')! as any
+    expect(el.style.color).toBe('#ff0000')
+    expect(el.style.fontSize).toBe(14)
+    expect(el.w).toBe(100)
+    expect(el.h).toBe(50)
+  })
+
+  it('pasteElementStyle ignoriert Elemente anderen Typs', () => {
+    useAppStore.getState().copyElementStyle('panel-1', 'e1') // label
+    useAppStore.getState().pasteElementStyle('panel-1', ['e2']) // shape — anderer Typ
+    const el = useAppStore.getState().settings!.panels[0].elements.find(e => e.id === 'e2')! as any
+    expect(el.style.fill).toBe('#ff0000') // unverändert
+    expect(el.w).toBe(80) // unverändert
+  })
+
+  it('pasteElementStyle kopiert render für companionButton', () => {
+    useAppStore.getState().copyElementStyle('panel-1', 'e3')
+    // Zweiten companionButton hinzufügen
+    useAppStore.getState().addElement('panel-1', {
+      id: 'e5', type: 'companionButton', x: 100, y: 100, w: 120, h: 120, z: 4,
+      ref: { hostId: 'h1', page: 1, row: 0, col: 1 },
+      render: { showBgColor: false, textAlign: 'bottom' },
+    })
+    useAppStore.getState().pasteElementStyle('panel-1', ['e5'])
+    const el = useAppStore.getState().settings!.panels[0].elements.find(e => e.id === 'e5')! as any
+    expect(el.render.showBgColor).toBe(true)
+    expect(el.render.textAlign).toBe('center')
+    expect(el.w).toBe(72)
+    expect(el.h).toBe(72)
+    // ref darf NICHT überschrieben worden sein
+    expect(el.ref.col).toBe(1)
   })
 })
