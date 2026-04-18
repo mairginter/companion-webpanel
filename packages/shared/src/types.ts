@@ -69,6 +69,8 @@ export interface CompanionButtonElement extends BaseElement {
     opacity?: number
     /** Schriftgröße des Text-Overlays in px. Default: 11 */
     fontSize?: number
+    /** Simuliert einen physischen Taster mit konkaver Wölbung. Default: false */
+    physicalStyle?: boolean
   }
 }
 
