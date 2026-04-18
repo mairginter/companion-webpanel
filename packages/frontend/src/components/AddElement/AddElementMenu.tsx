@@ -7,7 +7,8 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
-import type { AnyElement } from '@cwp/shared'
+import type { AnyElement, CompanionRef } from '@cwp/shared'
+import { compactLayout } from '../../utils/pickerUtils'
 import { CompanionButtonPickerDialog } from './CompanionButtonPickerDialog'
 import { ChannelStripWizard } from './ChannelStripWizard'
 import { VirtualCompanionDeckWizard } from './VirtualCompanionDeckWizard'
@@ -86,9 +87,16 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
     onClose()
   }
 
-  const handlePickerConfirm = (refs: { hostId: string; page: number; row: number; col: number }[]) => {
-    if (refs.length === 0) return
-    addElement(panelId, makeDefault('companionButton', canvasPos, refs[0]))
+  const handlePickerConfirm = (refs: CompanionRef[]) => {
+    const positions = compactLayout(
+      refs.map((r) => ({ row: r.row, col: r.col })),
+      canvasPos,
+      120,
+    )
+    refs.forEach((ref, i) => {
+      const pos = positions[i] ?? canvasPos
+      addElement(panelId, makeDefault('companionButton', pos, ref))
+    })
     onClose()
   }
 
