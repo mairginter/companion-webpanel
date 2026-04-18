@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildRangeSelection, compactLayout, isConfiguredButton } from './pickerUtils'
+import { buildRangeSelection, compactLayout, isConfiguredButton, parseCellKey, selectedCellsToRefs } from './pickerUtils'
 
 describe('isConfiguredButton', () => {
   it('returns false for empty button', () => {
@@ -81,6 +81,33 @@ describe('compactLayout', () => {
       { x: 0, y: 0 },
       { x: 120, y: 0 },
       { x: 0, y: 120 },
+    ])
+  })
+})
+
+describe('parseCellKey', () => {
+  it('parses "row:col" into {row, col} numbers', () => {
+    expect(parseCellKey('3:7')).toEqual({ row: 3, col: 7 })
+  })
+  it('parses "0:0"', () => {
+    expect(parseCellKey('0:0')).toEqual({ row: 0, col: 0 })
+  })
+})
+
+describe('selectedCellsToRefs', () => {
+  it('returns empty array for empty set', () => {
+    expect(selectedCellsToRefs(new Set(), 'host1', 1)).toEqual([])
+  })
+  it('converts keys to CompanionRefs with correct hostId and page', () => {
+    const result = selectedCellsToRefs(new Set(['2:3']), 'host1', 5)
+    expect(result).toEqual([{ hostId: 'host1', page: 5, row: 2, col: 3 }])
+  })
+  it('sorts output by row then col', () => {
+    const result = selectedCellsToRefs(new Set(['3:1', '1:2', '1:1']), 'h', 1)
+    expect(result).toEqual([
+      { hostId: 'h', page: 1, row: 1, col: 1 },
+      { hostId: 'h', page: 1, row: 1, col: 2 },
+      { hostId: 'h', page: 1, row: 3, col: 1 },
     ])
   })
 })

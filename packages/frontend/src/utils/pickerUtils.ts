@@ -1,3 +1,4 @@
+/** pickerUtils.ts — Reine Hilfsfunktionen für den Companion Button Picker (Multi-Select, Range, kompaktes Canvas-Layout). */
 import type { CompanionRef } from '@cwp/shared'
 
 /**
