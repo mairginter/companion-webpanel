@@ -13,7 +13,7 @@
   "properties": {
     "version": {
       "type": "string",
-      "pattern": "^1\\.4\\.0$"
+      "pattern": "^1\\.5\\.0$"
     },
     "server": {
       "type": "object",

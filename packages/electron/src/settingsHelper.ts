@@ -16,7 +16,7 @@ export function getSettingsPath(userDataPath: string): string {
 /** Gibt leere Default-Settings zurück (keine Hosts, kein Panel). */
 export function getDefaultSettings(): Settings {
   return {
-    version: '1.4.0',
+    version: '1.5.0',
     server: { port: 8080 },
     activeHostId: '',
     hosts: [],
@@ -54,6 +54,12 @@ export function loadSettings(userDataPath: string): Settings {
   // Migration: v1.3.0 → v1.4.0 (VirtualCompanionDeck-Feature)
   if (settings.version === '1.3.0') {
     settings.version = '1.4.0'
+    migrated = true
+  }
+
+  // Migration: v1.4.0 → v1.5.0 (maxPages + pageNames in HostProfile)
+  if (settings.version === '1.4.0') {
+    settings.version = '1.5.0'
     migrated = true
   }
 

@@ -1,7 +1,7 @@
-// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.4.0) ───
+// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.5.0) ───
 
 export interface Settings {
-  version: '1.4.0'
+  version: '1.5.0'
   activeHostId: string
   hosts: HostProfile[]
   panels: Panel[]
@@ -23,6 +23,10 @@ export interface HostProfile {
   gridCols?: number
   /** Zeilen im Picker-Grid. Default: 4 */
   gridRows?: number
+  /** Maximale Anzahl Pages im Picker-Dropdown. Default: 99 */
+  maxPages?: number
+  /** Lokale Page-Namen. Key = Page-Nummer (1-basiert). */
+  pageNames?: Record<number, string>
 }
 
 // ─── Canvas / Element Types ───────────────────────────────────────────────────
