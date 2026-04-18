@@ -86,8 +86,9 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
     onClose()
   }
 
-  const handlePickerConfirm = (ref: { hostId: string; page: number; row: number; col: number }) => {
-    addElement(panelId, makeDefault('companionButton', canvasPos, ref))
+  const handlePickerConfirm = (refs: { hostId: string; page: number; row: number; col: number }[]) => {
+    if (refs.length === 0) return
+    addElement(panelId, makeDefault('companionButton', canvasPos, refs[0]))
     onClose()
   }
 

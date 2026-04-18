@@ -407,7 +407,9 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
       {/* Button Picker (Schritt 1, 3) — per Portal direkt in document.body, kein Stacking-Context-Problem */}
       {pickerTarget && createPortal(
         <CompanionButtonPickerDialog
-          onConfirm={(ref) => {
+          onConfirm={(refs) => {
+            if (refs.length === 0) return
+            const ref = refs[0]
             if (pickerTarget === 'button') setButtonRef(ref)
             else if (pickerTarget === 'solo') setSoloRef(ref)
             else if (pickerTarget === 'pan') setPanRef(ref)

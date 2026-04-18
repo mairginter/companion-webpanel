@@ -9,15 +9,17 @@
  * echte Button-Zustände von Companion zeigt.
  * Beim Schließen werden diese Subscriptions per DELETE /api/preview-page entfernt.
  */
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { pageKey } from '@cwp/shared'
+import type { CompanionRef } from '@cwp/shared'
 import { NumericInput } from '../PropertiesPanel/NumericInput'
+import { buildRangeSelection, selectedCellsToRefs } from '../../utils/pickerUtils'
 
 const BACKEND_BASE = import.meta.env.DEV ? `http://${window.location.hostname}:8080` : ''
 
 interface Props {
-  onConfirm: (ref: { hostId: string; page: number; row: number; col: number }) => void
+  onConfirm: (refs: CompanionRef[]) => void
   onClose: () => void
   confirmLabel?: string
   /** Vorauswahl beim Öffnen */
@@ -93,8 +95,8 @@ export function CompanionButtonPickerDialog({
   const [pageNum, setPageNum] = useState<number>(initialRef?.page ?? 1)
   const [keysPerRow, setKeysPerRow] = useState(initialGridCols ?? 8)
   const [rows, setRows] = useState(initialGridRows ?? 4)
-  const [selectedRow, setSelectedRow] = useState<number | null>(null)
-  const [selectedCol, setSelectedCol] = useState<number | null>(null)
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set())
+  const lastClickedCell = useRef<{ row: number; col: number } | null>(null)
   const [loadingPreview, setLoadingPreview] = useState(false)
 
   // Trackt die zuletzt aktivierte Preview damit wir sie beim Wechsel/Schließen entfernen
@@ -158,17 +160,48 @@ export function CompanionButtonPickerDialog({
 
   const handleHostChange = (id: string) => {
     setHostId(id)
-    setSelectedRow(null)
-    setSelectedCol(null)
+    setSelectedCells(new Set())
+    lastClickedCell.current = null
     // Grid-Größe des neuen Hosts als Default setzen
     const host = settings?.hosts.find((h) => h.id === id)
     if (host?.gridCols !== undefined) setKeysPerRow(host.gridCols)
     if (host?.gridRows !== undefined) setRows(host.gridRows)
   }
 
+  const handleCellClick = useCallback((row: number, col: number, e: React.MouseEvent) => {
+    const key = `${row}:${col}`
+
+    if (e.shiftKey && lastClickedCell.current) {
+      // Rectangular range — add to existing selection, don't update lastClickedCell
+      const range = buildRangeSelection(lastClickedCell.current, { row, col })
+      setSelectedCells((prev) => {
+        const next = new Set(prev)
+        range.forEach((k) => next.add(k))
+        return next
+      })
+      return
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+      // Toggle individual cell
+      setSelectedCells((prev) => {
+        const next = new Set(prev)
+        if (next.has(key)) next.delete(key)
+        else next.add(key)
+        return next
+      })
+      lastClickedCell.current = { row, col }
+      return
+    }
+
+    // Plain click — select only this cell
+    setSelectedCells(new Set([key]))
+    lastClickedCell.current = { row, col }
+  }, [])
+
   const handleConfirm = () => {
-    if (selectedRow === null || selectedCol === null) return
-    onConfirm({ hostId, page: pageNum, row: selectedRow, col: selectedCol })
+    if (selectedCells.size === 0) return
+    onConfirm(selectedCellsToRefs(selectedCells, hostId, pageNum))
   }
 
   // Zellgröße: max 48px, passt in 400px Dialog-Breite
@@ -200,7 +233,7 @@ export function CompanionButtonPickerDialog({
                   label="Page"
                   value={pageNum}
                   min={1}
-                  onChange={(v) => { setPageNum(v); setSelectedRow(null); setSelectedCol(null) }}
+                  onChange={(v) => { setPageNum(v); setSelectedCells(new Set()); lastClickedCell.current = null }}
                   compact
                 />
               </div>
@@ -213,7 +246,7 @@ export function CompanionButtonPickerDialog({
                   label="Spalten"
                   value={keysPerRow}
                   min={1}
-                  onChange={(v) => { setKeysPerRow(v); setSelectedRow(null); setSelectedCol(null) }}
+                  onChange={(v) => { setKeysPerRow(v); setSelectedCells(new Set()); lastClickedCell.current = null }}
                   compact
                 />
               </div>
@@ -222,7 +255,7 @@ export function CompanionButtonPickerDialog({
                   label="Zeilen"
                   value={rows}
                   min={1}
-                  onChange={(v) => { setRows(v); setSelectedRow(null); setSelectedCol(null) }}
+                  onChange={(v) => { setRows(v); setSelectedCells(new Set()); lastClickedCell.current = null }}
                   compact
                 />
               </div>
@@ -247,11 +280,11 @@ export function CompanionButtonPickerDialog({
                 maxHeight: 8 * cellSize + 7 * 2 + 16,
               }}>
                 {gridCells.map(({ row, col, bgColor, text }) => {
-                  const isSelected = selectedRow === row && selectedCol === col
+                  const isSelected = selectedCells.has(`${row}:${col}`)
                   return (
                     <div
                       key={`${row}:${col}`}
-                      onClick={() => { setSelectedRow(row); setSelectedCol(col) }}
+                      onClick={(e) => handleCellClick(row, col, e)}
                       title={`Zeile ${row + 1}, Spalte ${col + 1}`}
                       style={{
                         width: cellSize, height: cellSize,
@@ -275,9 +308,14 @@ export function CompanionButtonPickerDialog({
                   )
                 })}
               </div>
-              {selectedRow !== null && selectedCol !== null && (
+              {selectedCells.size > 0 && (
                 <div style={{ fontSize: 11, color: '#8896aa', marginTop: 6 }}>
-                  Zeile {selectedRow + 1}, Spalte {selectedCol + 1}
+                  {selectedCells.size === 1
+                    ? (() => {
+                        const [r, c] = [...selectedCells][0].split(':').map(Number)
+                        return `Zeile ${r + 1}, Spalte ${c + 1}`
+                      })()
+                    : `${selectedCells.size} Buttons ausgewählt`}
                 </div>
               )}
             </div>
@@ -297,12 +335,12 @@ export function CompanionButtonPickerDialog({
           </button>
           <button
             onClick={handleConfirm}
-            disabled={selectedRow === null || selectedCol === null}
+            disabled={selectedCells.size === 0}
             style={{
               padding: '7px 16px', borderRadius: 6, border: '1px solid #4a9eff',
-              background: selectedRow !== null && selectedCol !== null ? 'rgba(74,158,255,0.15)' : '#1a2030',
-              color: selectedRow !== null && selectedCol !== null ? '#4a9eff' : '#4a5568',
-              fontSize: 13, cursor: selectedRow !== null && selectedCol !== null ? 'pointer' : 'not-allowed',
+              background: selectedCells.size > 0 ? 'rgba(74,158,255,0.15)' : '#1a2030',
+              color: selectedCells.size > 0 ? '#4a9eff' : '#4a5568',
+              fontSize: 13, cursor: selectedCells.size > 0 ? 'pointer' : 'not-allowed',
               fontWeight: 600,
             }}
           >

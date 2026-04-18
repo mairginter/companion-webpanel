@@ -61,7 +61,9 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
     patch({ refs: { ...element.refs, button: { ...element.refs.button, ...partial } } })
   }
 
-  const handlePickerConfirm = (ref: CompanionRef) => {
+  const handlePickerConfirm = (refs: CompanionRef[]) => {
+    if (refs.length === 0) return
+    const ref = refs[0]
     if (pickerTarget === 'button') patchButton({ ref })
     else if (pickerTarget === 'solo') patch({ refs: { ...element.refs, solo: ref } })
     else if (pickerTarget === 'pan') patch({ refs: { ...element.refs, pan: ref } })

@@ -118,7 +118,7 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
         <CompanionButtonPickerDialog
           confirmLabel="Übernehmen"
           initialRef={{ hostId: element.ref.hostId, page: element.ref.page }}
-          onConfirm={(ref) => { updateRef(ref); setPickerOpen(false) }}
+          onConfirm={(refs) => { if (refs.length > 0) updateRef(refs[0]); setPickerOpen(false) }}
           onClose={() => setPickerOpen(false)}
           alignSide={side}
           panelWidth={panelWidth}
