@@ -72,18 +72,14 @@ const CARD: (color: string) => React.CSSProperties = (color) => ({
   marginBottom: 8,
 })
 
-function tabStyle(active: boolean): React.CSSProperties {
-  return {
-    padding: '10px 16px',
-    fontSize: 12,
-    cursor: 'pointer',
-    color: active ? '#7db9e8' : '#888',
-    background: 'none',
-    border: 'none',
-    borderBottom: active ? '2px solid #7db9e8' : '2px solid transparent',
-    fontWeight: active ? 500 : 400,
-    lineHeight: 1,
-  }
+const TAB_ACTIVE: React.CSSProperties = {
+  padding: '10px 16px', fontSize: 12, cursor: 'pointer',
+  color: '#7db9e8', background: 'none', border: 'none',
+  borderBottom: '2px solid #7db9e8', fontWeight: 500, lineHeight: 1,
+}
+const TAB_INACTIVE: React.CSSProperties = {
+  ...TAB_ACTIVE,
+  color: '#888', borderBottom: '2px solid transparent', fontWeight: 400,
 }
 
 const FEATURES = [
@@ -146,7 +142,7 @@ export function HelpModal({ onClose }: HelpModalProps) {
           {(['ki', 'shortcuts', 'features'] as Tab[]).map((tab) => (
             <button
               key={tab}
-              style={tabStyle(activeTab === tab)}
+              style={activeTab === tab ? TAB_ACTIVE : TAB_INACTIVE}
               onClick={() => setActiveTab(tab)}
             >
               {tab === 'ki'        && `📥 ${t('helpModal.tabKi')}`}
