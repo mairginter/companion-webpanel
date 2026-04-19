@@ -22,8 +22,8 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | [docs/design-system.md](docs/design-system.md) | Farben, Typografie, Keyboard Shortcuts, Button-States, Edit/View-Mode-Tabelle |
 | [docs/phase-history.md](docs/phase-history.md) | Abgeschlossene Phasen 1–7 mit Commit-Referenzen |
 | [docs/satellite-api-protocol.md](docs/satellite-api-protocol.md) | Vollständige Satellite API Protokoll-Referenz (v1.10 / Companion 4.3+) |
-| [Webpanel-Architektur.md](Webpanel-Architektur.md) | Architektur-Doku (aktuell, v1.1) |
-| [bitfocus-companion-module-sources.md](bitfocus-companion-module-sources.md) | API-Quellen / Docs-Links |
+| [docs/Webpanel-Architektur.md](docs/Webpanel-Architektur.md) | Architektur-Doku (aktuell, v1.1) |
+| [docs/bitfocus-companion-module-sources.md](docs/bitfocus-companion-module-sources.md) | API-Quellen / Docs-Links |
 
 ---
 
@@ -224,4 +224,4 @@ npm run build -w @cwp/shared
 - Satellite API: `docs/satellite-api-protocol.md` (lokal, v1.10 / Companion 4.3+)  
   Update: `gh api "repos/bitfocus/website/contents/for-developers/Satellite-API.md" --jq '.content' | base64 -d > docs/satellite-api-protocol.md`
 - companion-satellite Referenz-Impl.: https://github.com/bitfocus/companion-satellite
-- Alle API-Quellen: `bitfocus-companion-module-sources.md`
+- Alle API-Quellen: `docs/bitfocus-companion-module-sources.md`
