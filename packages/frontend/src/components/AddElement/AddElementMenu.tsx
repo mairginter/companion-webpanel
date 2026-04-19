@@ -6,6 +6,7 @@
  * canvasPos = Zielposition auf dem Canvas — linke obere Ecke des neuen Elements.
  */
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../../store/useAppStore'
 import type { AnyElement, CompanionRef } from '@cwp/shared'
 import { compactLayout } from '../../utils/pickerUtils'
@@ -21,14 +22,6 @@ export interface AddElementMenuProps {
   panelId: string
   onClose: () => void
 }
-
-const MENU_ITEMS = [
-  { type: 'companionButton',    label: 'Companion Button',      icon: '⊞' },
-  { type: 'virtualCompanionDeck', label: 'Virtual Companion Deck', icon: '\u25a6' },
-  { type: 'channelStrip',       label: 'Channel Strip',         icon: '🎚' },
-  { type: 'label',              label: 'Label',                 icon: 'T' },
-  { type: 'shape',              label: 'Shape',                 icon: '▭' },
-] as const
 
 function makeDefault(
   type: 'companionButton' | 'label' | 'shape',
@@ -52,6 +45,7 @@ function makeDefault(
 }
 
 export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddElementMenuProps) {
+  const { t } = useTranslation()
   const addElement = useAppStore((s) => s.addElement)
   const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
@@ -59,6 +53,14 @@ export function AddElementMenu({ screenPos, canvasPos, panelId, onClose }: AddEl
   const [pickerOpen, setPickerOpen] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
   const [deckWizardOpen, setDeckWizardOpen] = useState(false)
+
+  const MENU_ITEMS = [
+    { type: 'companionButton' as const,       label: t('addElement.companionButton'), icon: '⊞' },
+    { type: 'virtualCompanionDeck' as const,  label: t('addElement.virtualDeck'),     icon: '\u25a6' },
+    { type: 'channelStrip' as const,          label: t('addElement.channelStrip'),    icon: '🎚' },
+    { type: 'label' as const,                 label: t('addElement.label'),           icon: 'T' },
+    { type: 'shape' as const,                 label: t('addElement.shape'),           icon: '▭' },
+  ]
 
   // Schließen bei Klick außerhalb (nur wenn Picker/Wizard nicht offen)
   useEffect(() => {
