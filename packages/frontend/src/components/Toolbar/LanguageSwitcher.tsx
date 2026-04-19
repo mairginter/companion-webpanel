@@ -35,11 +35,9 @@ export function LanguageSwitcher() {
   const ref = useRef<HTMLDivElement>(null)
 
   const available = Object.keys(i18n.options.resources ?? {})
-  // Only render when more than one language is available
-  if (available.length <= 1) return null
-
   const current = i18n.resolvedLanguage ?? i18n.language
 
+  // ALL hooks before any early return
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
@@ -48,6 +46,9 @@ export function LanguageSwitcher() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
+
+  // Only render when more than one language is available
+  if (available.length <= 1) return null
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>

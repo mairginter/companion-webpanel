@@ -148,7 +148,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
             border: `1px solid ${dropdownOpen ? '#4a9eff' : '#2a3344'}`,
           }}
           onClick={() => setDropdownOpen((o) => !o)}
-          title="Panel wechseln"
+          title={t('toolbar.switchPanel')}
         >
           <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {activePanel?.name ?? t('toolbar.noPanel')}
@@ -340,11 +340,11 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
       <div style={dividerStyle} />
 
       {/* Mode Toggle */}
-      <button style={modeButtonStyle(mode === 'view')} onClick={() => mode !== 'view' && onToggleMode()} title="View Mode (V)">
-        View
+      <button style={modeButtonStyle(mode === 'view')} onClick={() => mode !== 'view' && onToggleMode()} title={t('toolbar.viewMode')}>
+        {t('toolbar.viewMode')}
       </button>
-      <button style={modeButtonStyle(mode === 'edit')} onClick={() => mode !== 'edit' && onToggleMode()} title="Edit Mode (E)">
-        Edit
+      <button style={modeButtonStyle(mode === 'edit')} onClick={() => mode !== 'edit' && onToggleMode()} title={t('toolbar.editMode')}>
+        {t('toolbar.editMode')}
       </button>
 
       {mode === 'edit' && (
@@ -387,7 +387,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
               statusLabel(status, t),
               info ? `Companion ${info.companionVersion}` : '',
               info ? `API ${info.apiVersion}` : '',
-              host.notes ? `Notizen: ${host.notes}` : '',
+              host.notes ? `${t('toolbar.notes')}: ${host.notes}` : '',
             ].filter(Boolean).join('\n')
             return (
               <div

@@ -16,7 +16,10 @@
     "addHost": "+ Host hinzufügen",
     "capsDisabledWarning": "Button Subscriptions API deaktiviert für: {{hosts}}.\nIn Companion Settings → \"Button Subscriptions API\" aktivieren.",
     "keyboardShortcuts": "Keyboard Shortcuts",
-    "language": "Sprache"
+    "language": "Sprache",
+    "viewMode": "Ansichtsmodus (V)",
+    "editMode": "Bearbeitungsmodus (E)",
+    "notes": "Notizen"
   },
   "status": {
     "connected": "Verbunden",
