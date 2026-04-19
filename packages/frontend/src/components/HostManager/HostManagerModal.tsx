@@ -9,6 +9,7 @@
  *  - Speichern direkt via saveSettings() → POST /api/settings
  */
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../../store/useAppStore'
 import { HostProfile, Settings } from '@cwp/shared'
 
@@ -32,14 +33,14 @@ function statusDotColor(status: SessionStatus | undefined): string {
   }
 }
 
-function statusLabel(status: SessionStatus | undefined): string {
+function statusLabel(status: SessionStatus | undefined, t: (k: string) => string): string {
   switch (status) {
-    case 'connected':     return 'Verbunden'
-    case 'connecting':    return 'Verbinde…'
-    case 'stale':         return 'Unterbrochen (Reconnect)'
-    case 'error':         return 'Verbindungsfehler'
-    case 'caps-disabled': return 'CAPS SUBSCRIPTIONS=0 — in Companion Settings aktivieren'
-    default:              return 'Nicht verbunden'
+    case 'connected':      return t('status.connected')
+    case 'connecting':     return t('status.connecting')
+    case 'stale':          return t('status.staleReconnect')
+    case 'error':          return t('status.connectionError')
+    case 'caps-disabled':  return t('status.capsDisabledDetail')
+    default:               return t('status.disconnected')
   }
 }
 
@@ -157,6 +158,7 @@ interface HostFormProps {
 }
 
 function HostForm({ value, onChange }: HostFormProps) {
+  const { t } = useTranslation()
   const set = (patch: Partial<Omit<HostProfile, 'id'>>) => onChange({ ...value, ...patch })
   const [pageNamesOpen, setPageNamesOpen] = React.useState(false)
   const maxP = value.maxPages ?? 99
@@ -166,7 +168,7 @@ function HostForm({ value, onChange }: HostFormProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
-          <label style={labelStyle}>Name *</label>
+          <label style={labelStyle}>{t('hostManager.name')} *</label>
           <input
             style={inputStyle}
             placeholder="z.B. Studio A"
@@ -175,7 +177,7 @@ function HostForm({ value, onChange }: HostFormProps) {
           />
         </div>
         <div>
-          <label style={labelStyle}>IP / Hostname *</label>
+          <label style={labelStyle}>{t('hostManager.hostname')} *</label>
           <input
             style={inputStyle}
             placeholder="z.B. 192.168.1.100"
@@ -186,7 +188,7 @@ function HostForm({ value, onChange }: HostFormProps) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
         <div>
-          <label style={labelStyle}>WS-Port</label>
+          <label style={labelStyle}>{t('hostManager.wsPort')}</label>
           <input
             style={inputStyle}
             type="number"
@@ -197,7 +199,7 @@ function HostForm({ value, onChange }: HostFormProps) {
           />
         </div>
         <div>
-          <label style={labelStyle}>Notizen</label>
+          <label style={labelStyle}>{t('hostManager.notes')}</label>
           <input
             style={inputStyle}
             placeholder="Optional"
@@ -214,7 +216,7 @@ function HostForm({ value, onChange }: HostFormProps) {
             onChange={(e) => set({ autoConnect: e.target.checked })}
             style={{ width: 16, height: 16, accentColor: '#4a9eff' }}
           />
-          <span style={{ fontSize: 13, color: '#e9edf2' }}>Automatisch verbinden</span>
+          <span style={{ fontSize: 13, color: '#e9edf2' }}>{t('hostManager.autoConnect')}</span>
           <span style={{ fontSize: 12, color: '#4a5568' }}>
             (deaktivieren: Host gespeichert, aber kein Verbindungsversuch)
           </span>
@@ -226,7 +228,7 @@ function HostForm({ value, onChange }: HostFormProps) {
             onChange={(e) => set({ showInToolbar: e.target.checked })}
             style={{ width: 16, height: 16, accentColor: '#4a9eff' }}
           />
-          <span style={{ fontSize: 13, color: '#e9edf2' }}>In Toolbar anzeigen</span>
+          <span style={{ fontSize: 13, color: '#e9edf2' }}>{t('hostManager.showInToolbar')}</span>
           <span style={{ fontSize: 12, color: '#4a5568' }}>
             (Status-Dot in der Toolbar einblenden)
           </span>
@@ -234,10 +236,10 @@ function HostForm({ value, onChange }: HostFormProps) {
       </div>
       {/* Button-Grid Standardgröße */}
       <div>
-        <label style={{ ...labelStyle, marginBottom: 8 }}>Button-Grid (Picker-Standard)</label>
+        <label style={{ ...labelStyle, marginBottom: 8 }}>{t('hostManager.buttonGrid')}</label>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
-            <label style={labelStyle}>Buttons pro Zeile</label>
+            <label style={labelStyle}>{t('hostManager.buttonsPerRow')}</label>
             <input
               style={inputStyle}
               type="number"
@@ -248,7 +250,7 @@ function HostForm({ value, onChange }: HostFormProps) {
             />
           </div>
           <div>
-            <label style={labelStyle}>Zeilen</label>
+            <label style={labelStyle}>{t('hostManager.rowsCount')}</label>
             <input
               style={inputStyle}
               type="number"
@@ -262,7 +264,7 @@ function HostForm({ value, onChange }: HostFormProps) {
       </div>
       {/* Max. Pages */}
       <div>
-        <label style={labelStyle}>Max. Pages (Picker-Dropdown)</label>
+        <label style={labelStyle}>{t('hostManager.maxPages')}</label>
         <input
           style={inputStyle}
           type="number"
@@ -331,17 +333,18 @@ interface DeleteDialogProps {
 }
 
 function DeleteDialog({ hostName, refCount, onConfirm, onCancel }: DeleteDialogProps) {
+  const { t } = useTranslation()
   const [deleteRefs, setDeleteRefs] = useState(false)
 
   return (
     <div style={OVERLAY}>
       <div style={{ ...MODAL, width: 420 }}>
         <div style={HEADER}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#ff5a5f' }}>Host löschen</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#ff5a5f' }}>{t('hostManager.deleteHost')}</span>
         </div>
         <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <p style={{ margin: 0, fontSize: 14, color: '#e9edf2' }}>
-            Host <strong>"{hostName}"</strong> wirklich löschen?
+            Host <strong>"{hostName}"</strong> {t('hostManager.confirmDelete')}
           </p>
           {refCount > 0 && (
             <>
@@ -364,8 +367,8 @@ function DeleteDialog({ hostName, refCount, onConfirm, onCancel }: DeleteDialogP
           )}
         </div>
         <div style={FOOTER}>
-          <button style={btnSecondary} onClick={onCancel}>Abbrechen</button>
-          <button style={btnDanger} onClick={() => onConfirm(deleteRefs)}>Host löschen</button>
+          <button style={btnSecondary} onClick={onCancel}>{t('hostManager.cancel')}</button>
+          <button style={btnDanger} onClick={() => onConfirm(deleteRefs)}>{t('hostManager.deleteHost')}</button>
         </div>
       </div>
     </div>
@@ -375,6 +378,7 @@ function DeleteDialog({ hostName, refCount, onConfirm, onCancel }: DeleteDialogP
 // ─── Hauptmodal ──────────────────────────────────────────────────────────────
 
 export function HostManagerModal({ onClose, saveSettings }: Props) {
+  const { t } = useTranslation()
   const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
   const hostInfo = useAppStore((s) => s.hostInfo)
@@ -454,7 +458,7 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
         <div style={MODAL}>
           {/* Header */}
           <div style={HEADER}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#e9edf2' }}>Hosts verwalten</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#e9edf2' }}>{t('hostManager.title')}</span>
             <button
               style={{ background: 'none', border: 'none', color: '#8896aa', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
               onClick={onClose}
@@ -505,7 +509,7 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                           {host.host}:{host.satellite.wsPort}
                         </span>
                         <span style={{ color: dotColor }}>
-                          {host.autoConnect === false ? 'Nicht verbunden (manuell deaktiviert)' : statusLabel(status)}
+                          {host.autoConnect === false ? t('status.disconnected') : statusLabel(status, t)}
                         </span>
                         {info && (
                           <span style={{ color: '#4a5568' }}>
@@ -524,22 +528,22 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                         {(status === 'connected' || status === 'connecting') ? (
                           <button
                             style={{ ...btnDisconnect, padding: '5px 12px' }}
-                            title="Verbindung zu diesem Host trennen"
+                            title={t('hostManager.disconnect')}
                             onClick={() => saveSettings({ ...s, hosts: s.hosts.map((h) => h.id === host.id ? { ...h, autoConnect: false } : h) })}
                           >
-                            Trennen
+                            {t('hostManager.disconnect')}
                           </button>
                         ) : (
                           <button
                             style={{ ...btnConnect, padding: '5px 12px' }}
-                            title="Mit diesem Host verbinden"
+                            title={t('hostManager.connect')}
                             onClick={() => saveSettings({ ...s, hosts: s.hosts.map((h) => h.id === host.id ? { ...h, autoConnect: true } : h) })}
                           >
-                            Verbinden
+                            {t('hostManager.connect')}
                           </button>
                         )}
-                        <button style={{ ...btnSecondary, padding: '5px 12px' }} onClick={() => startEdit(host)}>Bearbeiten</button>
-                        <button style={{ ...btnDanger, padding: '5px 12px' }} onClick={() => confirmDelete(host)}>Löschen</button>
+                        <button style={{ ...btnSecondary, padding: '5px 12px' }} onClick={() => startEdit(host)}>{t('hostManager.edit')}</button>
+                        <button style={{ ...btnDanger, padding: '5px 12px' }} onClick={() => confirmDelete(host)}>{t('hostManager.delete')}</button>
                       </div>
                     )}
                   </div>
@@ -549,13 +553,13 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                     <div style={{ padding: '0 14px 14px', borderTop: '1px solid #2a3344', paddingTop: 14 }}>
                       <HostForm value={formValue} onChange={setFormValue} />
                       <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-                        <button style={btnSecondary} onClick={cancelEdit}>Abbrechen</button>
+                        <button style={btnSecondary} onClick={cancelEdit}>{t('hostManager.cancel')}</button>
                         <button
                           style={{ ...btnPrimary, opacity: (!formValue.name.trim() || !formValue.host.trim()) ? 0.5 : 1 }}
                           onClick={saveEdit}
                           disabled={!formValue.name.trim() || !formValue.host.trim()}
                         >
-                          Speichern
+                          {t('hostManager.save')}
                         </button>
                       </div>
                     </div>
@@ -571,8 +575,7 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                 color: '#4a5568', fontSize: 14,
                 border: '1px dashed #2a3344', borderRadius: 8,
               }}>
-                Noch kein Host konfiguriert.<br />
-                <span style={{ color: '#8896aa' }}>Klicke "+ Host hinzufügen"</span>
+                {t('hostManager.noHosts')}
               </div>
             )}
 
@@ -585,17 +588,17 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                 padding: 14,
               }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#4a9eff', marginBottom: 12 }}>
-                  Neuer Host
+                  {t('hostManager.addHost')}
                 </div>
                 <HostForm value={formValue} onChange={setFormValue} />
                 <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-                  <button style={btnSecondary} onClick={cancelEdit}>Abbrechen</button>
+                  <button style={btnSecondary} onClick={cancelEdit}>{t('hostManager.cancel')}</button>
                   <button
                     style={{ ...btnPrimary, opacity: (!formValue.name.trim() || !formValue.host.trim()) ? 0.5 : 1 }}
                     onClick={saveEdit}
                     disabled={!formValue.name.trim() || !formValue.host.trim()}
                   >
-                    Host hinzufügen
+                    {t('hostManager.addHost')}
                   </button>
                 </div>
               </div>
@@ -609,9 +612,9 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
               onClick={startAdd}
               disabled={editing !== null}
             >
-              + Host hinzufügen
+              + {t('hostManager.addHost')}
             </button>
-            <button style={btnSecondary} onClick={onClose}>Schließen</button>
+            <button style={btnSecondary} onClick={onClose}>{t('hostManager.cancel')}</button>
           </div>
         </div>
       </div>
