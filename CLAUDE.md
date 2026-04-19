@@ -195,7 +195,7 @@ CompanionWebpannel/
 - ⬜ **P3-2** SatelliteClient Reconnect-Backoff prüfen — Exponential statt fester Delay
 - ⬜ **P3-3** `@cwp/shared` Alias in `vite.config.ts` auf `dist/types.js` statt TS-Source zeigen lassen
 
-Plan-Datei mit vollständigen Fix-Details: `C:\Users\mairg\.claude\plans\reviewe-den-gesamten-code-wise-kay.md`
+Plan-Datei mit vollständigen Fix-Details: [docs/plans/2026-04-19-code-review-v1.3.0.md](docs/plans/2026-04-19-code-review-v1.3.0.md)
 
 ### Zukünftige Features (geplant)
 - **Panel Export/Import** (~2–3h): `.cwp`-Datei (JSON) pro Panel; hostId-Mapping-Dialog beim Import
