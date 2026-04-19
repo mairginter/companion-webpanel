@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../../store/useAppStore'
 import { AddElementMenu } from '../AddElement/AddElementMenu'
 import { ZoomControl } from './ZoomControl'
+import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface ToolbarProps {
   mode: 'view' | 'edit'
@@ -23,14 +25,14 @@ function statusDotColor(status: SessionStatus | undefined): string {
   }
 }
 
-function statusLabel(status: SessionStatus | undefined): string {
+function statusLabel(status: SessionStatus | undefined, t: (key: string) => string): string {
   switch (status) {
-    case 'connected':     return 'Verbunden'
-    case 'connecting':    return 'Verbinde…'
-    case 'stale':         return 'Unterbrochen'
-    case 'error':         return 'Fehler'
-    case 'caps-disabled': return 'CAPS SUBSCRIPTIONS=0'
-    default:              return 'Unbekannt'
+    case 'connected':     return t('status.connected')
+    case 'connecting':    return t('status.connecting')
+    case 'stale':         return t('status.stale')
+    case 'error':         return t('status.error')
+    case 'caps-disabled': return t('status.capsDisabled')
+    default:              return t('status.unknown')
   }
 }
 
@@ -70,6 +72,7 @@ const modeButtonStyle = (active: boolean): React.CSSProperties => ({
 })
 
 export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: ToolbarProps) {
+  const { t } = useTranslation()
   const panels = useAppStore((s) => s.settings?.panels ?? [])
   const activePanelId = useAppStore((s) => s.activePanelId)
   const setActivePanelId = useAppStore((s) => s.setActivePanelId)
@@ -148,7 +151,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
           title="Panel wechseln"
         >
           <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {activePanel?.name ?? 'Kein Panel'}
+            {activePanel?.name ?? t('toolbar.noPanel')}
           </span>
           <span style={{ fontSize: 10, color: '#4a5568' }}>{dropdownOpen ? '▲' : '▼'}</span>
         </button>
@@ -161,7 +164,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
             overflow: 'hidden',
           }}>
             {panels.length === 0 && (
-              <div style={{ padding: '10px 14px', color: '#4a5568', fontSize: 13 }}>Keine Panels</div>
+              <div style={{ padding: '10px 14px', color: '#4a5568', fontSize: 13 }}>{t('toolbar.noPanels')}</div>
             )}
             {panels.map((panel) => {
               const isActive = panel.id === activePanelId
@@ -213,14 +216,14 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
                   {!isRenaming && (
                     <div style={{ display: 'flex', gap: 2, paddingRight: 6, flexShrink: 0 }}>
                       <button
-                        title="Umbenennen"
+                        title={t('toolbar.rename')}
                         onClick={(e) => { e.stopPropagation(); setRenameValue(panel.name); setRenamingId(panel.id) }}
                         style={{ background: 'none', border: 'none', color: '#4a5568', cursor: 'pointer', fontSize: 13, padding: '2px 4px', borderRadius: 3 }}
                       >
                         ✎
                       </button>
                       <button
-                        title={panels.length <= 1 ? 'Letztes Panel kann nicht gelöscht werden' : 'Panel löschen'}
+                        title={panels.length <= 1 ? t('toolbar.cannotDeleteLast') : t('toolbar.deletePanel')}
                         onClick={(e) => {
                           e.stopPropagation()
                           if (deletePanel(panel.id)) onSave?.()
@@ -242,7 +245,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
                 <div style={{ display: 'flex', gap: 4 }}>
                   <input
                     autoFocus
-                    placeholder="Panel-Name…"
+                    placeholder={t('toolbar.panelNamePlaceholder')}
                     value={newPanelName}
                     onChange={(e) => setNewPanelName(e.target.value)}
                     onKeyDown={(e) => {
@@ -265,7 +268,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
                     }}
                   />
                   <button
-                    title="Erstellen (Enter)"
+                    title={t('toolbar.createPanel')}
                     disabled={!newPanelName.trim()}
                     onMouseDown={(e) => {
                       e.preventDefault() // verhindert blur auf input
@@ -287,7 +290,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
                     ✓
                   </button>
                   <button
-                    title="Abbrechen (Escape)"
+                    title={t('toolbar.cancelShortcut')}
                     onMouseDown={(e) => { e.preventDefault(); setCreatingPanel(false); setNewPanelName('') }}
                     style={{
                       padding: '0 8px', borderRadius: 4, flexShrink: 0,
@@ -306,7 +309,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
                     color: '#4a9eff', fontSize: 13, cursor: 'pointer', padding: '3px 4px',
                   }}
                 >
-                  + Neues Panel
+                  {t('toolbar.newPanel')}
                 </button>
               )}
             </div>
@@ -317,7 +320,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
       {/* Speichern — direkt neben Panel-Dropdown */}
       <button
         onClick={handleSaveClick}
-        title="Speichern (Ctrl+S)"
+        title={t('toolbar.save')}
         style={{
           width: 32, height: 32, padding: 0,
           borderRadius: 6,
@@ -354,7 +357,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
               width: 32, padding: 0, textAlign: 'center', fontSize: 18,
             }}
             onClick={handleAddClick}
-            title="Element hinzufügen"
+            title={t('toolbar.addElement')}
           >
             +
           </button>
@@ -381,7 +384,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
             const tooltip = [
               host.name,
               `${host.host}:${host.satellite.wsPort}`,
-              statusLabel(status),
+              statusLabel(status, t),
               info ? `Companion ${info.companionVersion}` : '',
               info ? `API ${info.apiVersion}` : '',
               host.notes ? `Notizen: ${host.notes}` : '',
@@ -419,7 +422,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
           <button
             style={{ ...modeButtonStyle(false), width: 36, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={onOpenHostManager}
-            title="Hosts verwalten"
+            title={t('toolbar.manageHosts')}
           >
             <span className="material-icons" style={{ fontSize: 18 }}>settings</span>
           </button>
@@ -430,9 +433,9 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
         <button
           style={{ ...modeButtonStyle(false), fontSize: 12, color: '#ff8a3d', borderColor: '#ff8a3d' }}
           onClick={onOpenHostManager}
-          title="Hosts verwalten"
+          title={t('toolbar.manageHosts')}
         >
-          + Host hinzufügen
+          {t('toolbar.addHost')}
         </button>
       )}
 
@@ -441,7 +444,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
       {/* CAPS SUBSCRIPTIONS=0 Warnung */}
       {capsDisabledHosts.length > 0 && (
         <div
-          title={`Button Subscriptions API deaktiviert für: ${capsDisabledHosts.join(', ')}.\nIn Companion Settings → "Button Subscriptions API" aktivieren.`}
+          title={t('toolbar.capsDisabledWarning', { hosts: capsDisabledHosts.join(', ') })}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '4px 10px',
@@ -455,14 +458,17 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
           }}
         >
           <span style={{ fontSize: 14 }}>!</span>
-          CAPS SUBSCRIPTIONS=0
+          {t('status.capsDisabled')}
         </div>
       )}
+
+      <LanguageSwitcher />
+      <div style={dividerStyle} />
 
       {/* Help */}
       <button
         style={{ ...modeButtonStyle(false), width: 32, padding: 0, textAlign: 'center' }}
-        title="Keyboard Shortcuts"
+        title={t('toolbar.keyboardShortcuts')}
       >
         ?
       </button>
