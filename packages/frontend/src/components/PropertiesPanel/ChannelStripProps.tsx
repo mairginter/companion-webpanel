@@ -141,11 +141,11 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
 
       {/* Index explanation */}
       <div style={{ padding: '2px 14px 6px', fontSize: 11, color: '#4a9eff', fontFamily: "'JetBrains Mono', monospace" }}>
-        Index 0-basiert: Feld<span style={{ color: '#6a7a8a' }}>0</span>|Feld<span style={{ color: '#6a7a8a' }}>1</span>|Feld<span style={{ color: '#6a7a8a' }}>2</span>|Feld<span style={{ color: '#6a7a8a' }}>3</span>
+        {t('propertiesPanel.textParsingIndexHint')}
       </div>
 
       <div style={row}>
-        <span style={lbl}>Separator</span>
+        <span style={lbl}>{t('propertiesPanel.separator')}</span>
         <input
           style={{ ...inputStyle, maxWidth: 50 }}
           value={refs.button.textSeparator ?? '|'}
@@ -154,7 +154,7 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       <div style={row}>
-        <span style={lbl}>Meter L — Index</span>
+        <span style={lbl}>{t('propertiesPanel.meterLIndex')}</span>
         <input
           type="number" min={0}
           style={inputNum}
@@ -164,12 +164,12 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       <div style={row}>
-        <span style={lbl}>Meter R — Index (leer = Mono)</span>
+        <span style={lbl}>{t('propertiesPanel.meterRIndex')} {t('propertiesPanel.meterRMono')}</span>
         <input
           type="number" min={0}
           style={inputNum}
           value={refs.button.meterRIndex ?? ''}
-          placeholder="leer"
+          placeholder={t('propertiesPanel.emptyOptional')}
           onChange={(e) => {
             const v = e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10))
             patchButton({ meterRIndex: v })
@@ -178,12 +178,12 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       <div style={row}>
-        <span style={lbl}>Fader Level — Index</span>
+        <span style={lbl}>{t('propertiesPanel.faderLevelIndex')}</span>
         <input
           type="number" min={0}
           style={inputNum}
           value={refs.button.levelIndex ?? ''}
-          placeholder="leer"
+          placeholder={t('propertiesPanel.emptyOptional')}
           onChange={(e) => {
             const v = e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10))
             patchButton({ levelIndex: v })
@@ -192,12 +192,12 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       <div style={row}>
-        <span style={lbl}>Channel Name — Index</span>
+        <span style={lbl}>{t('propertiesPanel.channelNameIndex')}</span>
         <input
           type="number" min={0}
           style={inputNum}
           value={refs.button.nameIndex ?? ''}
-          placeholder="leer"
+          placeholder={t('propertiesPanel.emptyOptional')}
           onChange={(e) => {
             const v = e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10))
             patchButton({ nameIndex: v })
