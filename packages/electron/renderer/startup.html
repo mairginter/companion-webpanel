@@ -251,6 +251,12 @@
   <script>
     const api = window.cwpApi
 
+    // ─── XSS escape helper ───────────────────────────────────────────────────
+
+    function esc(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    }
+
     // ─── i18n ────────────────────────────────────────────────────────────────
 
     api.getI18nStrings().then((s) => {
@@ -261,6 +267,7 @@
       document.getElementById('btnOpen').textContent = s.openInBrowser
       document.getElementById('btnHide').textContent = s.hide
       document.getElementById('btnQuit').textContent = s.quit
+      document.getElementById('initialHostMsg').textContent = s.waitingForConnection
       window._i18n = s
     })
 
@@ -286,9 +293,9 @@
 
       hostsEl.innerHTML = status.hosts.map(h => `
         <div class="host-row">
-          <div class="host-dot dot-${h.status}"></div>
-          <span class="host-name">${h.name || h.id}</span>
-          <span class="host-status-text">${h.status}</span>
+          <div class="host-dot dot-${esc(h.status)}"></div>
+          <span class="host-name">${esc(h.name || h.id)}</span>
+          <span class="host-status-text">${esc(h.status)}</span>
         </div>
       `).join('')
     }
