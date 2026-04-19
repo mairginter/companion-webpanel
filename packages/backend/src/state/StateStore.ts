@@ -23,6 +23,8 @@ import { KeyState, DeltaMessage, pageKey } from '@cwp/shared'
 export class StateStore {
   // key: "hostId:page:row:col"
   private store = new Map<string, KeyState>()
+  // Sekundär-Index: hostId → Set<key>. Macht clearHost() O(1)+O(k) statt O(n).
+  private hostIndex = new Map<string, Set<string>>()
 
   private stateKey(hostId: string, page: number, row: number, col: number): string {
     return `${pageKey(hostId, page)}:${row}:${col}`
@@ -56,6 +58,12 @@ export class StateStore {
     if (!hasChange) return null
 
     this.store.set(k, { ...current, ...changed })
+    let keys = this.hostIndex.get(hostId)
+    if (!keys) {
+      keys = new Set()
+      this.hostIndex.set(hostId, keys)
+    }
+    keys.add(k)
 
     return {
       t: 'delta',
@@ -87,17 +95,19 @@ export class StateStore {
 
   /**
    * Entfernt alle Keys eines Hosts (z.B. bei Disconnect).
+   * O(k) per Sekundär-Index — vorher O(n) über alle Keys im Store.
    */
   clearHost(hostId: string): void {
-    const prefix = `${hostId}:`
-    for (const k of this.store.keys()) {
-      if (k.startsWith(prefix)) this.store.delete(k)
-    }
+    const keys = this.hostIndex.get(hostId)
+    if (!keys) return
+    for (const k of keys) this.store.delete(k)
+    this.hostIndex.delete(hostId)
   }
 
   // ─── Virtual Keys (virtualCompanionDeck-Elemente) ─────────────────────────
   // key: "deviceId:keyIndex"
   private virtualStore = new Map<string, KeyState>()
+  private deviceIndex = new Map<string, Set<string>>()
 
   /**
    * Aktualisiert den State für einen Virtual-Key.
@@ -117,6 +127,12 @@ export class StateStore {
     }
     if (!hasChange) return null
     this.virtualStore.set(k, { ...current, ...changed })
+    let keys = this.deviceIndex.get(deviceId)
+    if (!keys) {
+      keys = new Set()
+      this.deviceIndex.set(deviceId, keys)
+    }
+    keys.add(k)
     return changed
   }
 
@@ -138,11 +154,12 @@ export class StateStore {
 
   /**
    * Löscht alle Virtual-Keys eines Devices (bei Session-Stop oder Element-Löschen).
+   * O(k) per Sekundär-Index.
    */
   clearVirtualKeys(deviceId: string): void {
-    const prefix = `${deviceId}:`
-    for (const k of this.virtualStore.keys()) {
-      if (k.startsWith(prefix)) this.virtualStore.delete(k)
-    }
+    const keys = this.deviceIndex.get(deviceId)
+    if (!keys) return
+    for (const k of keys) this.virtualStore.delete(k)
+    this.deviceIndex.delete(deviceId)
   }
 }

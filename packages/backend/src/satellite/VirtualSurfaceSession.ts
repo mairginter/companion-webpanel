@@ -22,6 +22,7 @@ export type VirtualSurfaceStatus = 'connecting' | 'connected' | 'stale' | 'error
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 30000]
 const KEEPALIVE_INTERVAL_MS = 2000
 const KEEPALIVE_TIMEOUT_MS  = 6000
+const LINE_BUFFER_MAX_BYTES = 10 * 1024 * 1024 // 10 MB — Schutz gegen Protokoll-Fehler
 
 /**
  * Eine Satellite-Verbindung als ADD-DEVICE Surface.
@@ -118,6 +119,12 @@ export class VirtualSurfaceSession extends EventEmitter {
 
     socket.on('message', (data: WebSocket.RawData) => {
       this.lineBuffer += data.toString()
+      if (this.lineBuffer.length > LINE_BUFFER_MAX_BYTES) {
+        console.error(`[VirtualSurface ${this.deviceId}] Line buffer overflow (${this.lineBuffer.length} B) — disconnect`)
+        this.lineBuffer = ''
+        this.ws?.close()
+        return
+      }
       const lines = this.lineBuffer.split('\n')
       this.lineBuffer = lines.pop() ?? ''
       for (const line of lines) {
@@ -223,6 +230,8 @@ export class VirtualSurfaceSession extends EventEmitter {
   private startKeepalive(): void {
     this.keepaliveTimer = setInterval(() => {
       this.sendLine(`PING ${Date.now()}`)
+      // Alten Timeout clearen bevor neuer gesetzt wird — sonst orphaned Timer bei Jitter
+      if (this.keepaliveTimeoutTimer) clearTimeout(this.keepaliveTimeoutTimer)
       this.keepaliveTimeoutTimer = setTimeout(() => {
         console.warn(`[VirtualSurface ${this.deviceId}] PONG Timeout — reconnect`)
         this.ws?.close()

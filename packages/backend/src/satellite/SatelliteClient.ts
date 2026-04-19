@@ -32,6 +32,10 @@ const BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 30000]
 const KEEPALIVE_INTERVAL_MS = 2000
 const KEEPALIVE_TIMEOUT_MS  = 6000
 
+// Schutz gegen Protokoll-Fehler: Companion-Zeilen haben \n-Terminierung.
+// Bei Ausbleiben (fehlerhafter Host / MitM) würde lineBuffer unbegrenzt wachsen.
+const LINE_BUFFER_MAX_BYTES = 10 * 1024 * 1024 // 10 MB
+
 interface SubInfo {
   page: number
   row: number
@@ -169,6 +173,12 @@ export class SatelliteClient extends EventEmitter {
       const chunk = data.toString()
       // Zeilenbasiertes Protokoll — mehrere Zeilen pro WS-Frame möglich
       this.lineBuffer += chunk
+      if (this.lineBuffer.length > LINE_BUFFER_MAX_BYTES) {
+        console.error(`[SatelliteClient ${this.hostId}] Line buffer overflow (${this.lineBuffer.length} B) — disconnect`)
+        this.lineBuffer = ''
+        this.ws?.close()
+        return
+      }
       const lines = this.lineBuffer.split('\n')
       this.lineBuffer = lines.pop() ?? ''
       for (const line of lines) {
@@ -269,6 +279,8 @@ export class SatelliteClient extends EventEmitter {
   private startKeepalive(): void {
     this.keepaliveTimer = setInterval(() => {
       this.sendLine(`PING ${Date.now()}`)
+      // Alten Timeout clearen bevor neuer gesetzt wird — sonst orphaned Timer bei Jitter
+      if (this.keepaliveTimeoutTimer) clearTimeout(this.keepaliveTimeoutTimer)
       // Wenn kein PONG innerhalb KEEPALIVE_TIMEOUT_MS → Verbindung schließen
       this.keepaliveTimeoutTimer = setTimeout(() => {
         console.warn(`[SatelliteClient ${this.hostId}] PONG Timeout — reconnect`)
@@ -349,11 +361,15 @@ export class SatelliteClient extends EventEmitter {
 
 // ─── Protocol Helpers ────────────────────────────────────────────────────────
 
+// Hot Path: einmal compilieren statt pro Aufruf. lastIndex wird vor jeder
+// Verwendung zurückgesetzt — kein State-Leak zwischen Aufrufen.
+const PARAM_REGEX = /(\w+)=(?:"([^"]*)"|(\S+))/g
+
 function parseParams(str: string): Record<string, string> {
   const result: Record<string, string> = {}
-  const re = /(\w+)=(?:"([^"]*)"|(\S+))/g
+  PARAM_REGEX.lastIndex = 0
   let m: RegExpExecArray | null
-  while ((m = re.exec(str)) !== null) {
+  while ((m = PARAM_REGEX.exec(str)) !== null) {
     result[m[1]] = m[2] !== undefined ? m[2] : m[3]
   }
   return result

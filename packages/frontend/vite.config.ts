@@ -39,6 +39,27 @@ export default defineConfig({
       '/api': { target: 'http://localhost:8080' },
     },
   },
+  build: {
+    target: 'es2020',
+    minify: 'esbuild',
+    sourcemap: false,
+    reportCompressedSize: false,
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        // Vendor-Chunks trennen → besseres Caching, kleinere Initial-Payload.
+        // Function-Form, damit React/Scheduler zuverlässig in react-vendor landen
+        // (Object-Form würde React teils ins Main-Bundle hoisten).
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react-vendor'
+          if (id.includes('@dnd-kit')) return 'dnd-kit'
+          if (id.includes('i18next') || id.includes('react-i18next')) return 'i18n'
+          return undefined
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

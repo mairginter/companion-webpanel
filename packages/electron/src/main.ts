@@ -37,12 +37,6 @@ if (!gotLock) {
 async function main(): Promise<void> {
   await app.whenReady()
 
-  // Cache + Service Worker beim Start löschen → immer aktueller Frontend-Stand
-  await session.defaultSession.clearCache()
-  await session.defaultSession.clearStorageData({
-    storages: ['cachestorage', 'serviceworkers'],
-  })
-
   const userDataPath = app.getPath('userData')
   const settings = loadSettings(userDataPath)
 
@@ -72,14 +66,26 @@ async function main(): Promise<void> {
       })),
   }
 
-  // ─── Startup-Fenster ───────────────────────────────────────────────────────
+  // ─── Startup-Fenster (sofort anzeigen) ────────────────────────────────────
 
   const startupWindow = new StartupWindow()
   startupWindow.create()
 
   const panelWindow = new PanelWindow()
 
-  // ─── Backend starten ───────────────────────────────────────────────────────
+  // Cache + Service Worker im Hintergrund löschen (fire-and-forget) — vorher
+  // blockierte das den Startup um ~300 ms. Frontend wird mit frischem Cache
+  // geladen sobald Backend-Port live ist; der Timer kommt sowieso danach.
+  session.defaultSession.clearCache().catch((err) => {
+    console.warn('[Electron] clearCache fehlgeschlagen:', err)
+  })
+  session.defaultSession.clearStorageData({
+    storages: ['cachestorage', 'serviceworkers'],
+  }).catch((err) => {
+    console.warn('[Electron] clearStorageData fehlgeschlagen:', err)
+  })
+
+  // ─── Backend starten (asynchron, nicht blockierend) ───────────────────────
 
   let backendInstance: { stop: () => Promise<void> } | null = null
 
@@ -98,8 +104,17 @@ async function main(): Promise<void> {
     }
   }
 
+  // Backend-Start ohne await — Startup-Fenster + Tray sollen sofort da sein.
+  // Sobald Backend läuft wird ein Status-Update geschickt.
   if (actualPort !== null) {
-    backendInstance = await createBackend(settings, actualPort, settingsPath, onHostStatus, staticDir)
+    createBackend(settings, actualPort, settingsPath, onHostStatus, staticDir)
+      .then((instance) => {
+        backendInstance = instance
+        startupWindow.sendStatusUpdate(appStatus)
+      })
+      .catch((err) => {
+        console.error('[Electron] Backend-Start fehlgeschlagen:', err)
+      })
   }
 
   // ─── Tray ──────────────────────────────────────────────────────────────────
@@ -161,8 +176,17 @@ async function main(): Promise<void> {
     settings.server = { port: newPort }
     saveSettings(userDataPath, settings)
 
-    // Backend neu starten mit neuem Port (staticDir beibehalten)
-    if (backendInstance) await backendInstance.stop()
+    // Backend neu starten mit neuem Port (staticDir beibehalten).
+    // Fehler beim Stop protokollieren, aber nicht propagieren — sonst bleibt der
+    // Renderer in einem hängenden Promise und altes Backend läuft evtl. weiter.
+    if (backendInstance) {
+      try {
+        await backendInstance.stop()
+      } catch (err) {
+        console.error('[Electron] Backend-Stop fehlgeschlagen:', err)
+      }
+      backendInstance = null
+    }
     backendInstance = await createBackend(settings, newPort, settingsPath, onHostStatus, staticDir)
     appStatus.port = newPort
     appStatus.portAuto = false

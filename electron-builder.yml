@@ -2,6 +2,17 @@ appId: com.companionwebpanel.app
 productName: CompanionWebpanel
 copyright: "Copyright © 2026"
 
+# ASAR-Archivierung: alle App-Dateien in einem komprimierten Bundle.
+# Beschleunigt File-I/O beim Startup und reduziert Distribution-Größe.
+asar: true
+
+# Maximale Kompression (langsamerer Build, deutlich kleinere .exe).
+compression: maximum
+
+# Überflüssige Metadaten aus package.json im Bundle entfernen
+removePackageScripts: true
+removePackageKeywords: true
+
 # electron-builder verwendet packages/electron als App-Root
 # (wo package.json mit main: "dist/main.js" liegt)
 directories:
@@ -17,6 +28,9 @@ files:
   - frontend/**      # Frontend PWA (von build.mjs kopiert)
   - assets/tray-*.png  # Tray-Icons (connected/error/partial)
   - assets/icon-256.png  # App-Icon im Startup-Fenster
+  - "!**/*.map"      # Source-Maps nie mitliefern
+  - "!**/*.ts"       # TypeScript-Quellen nicht ins Bundle
+  - "!**/tsconfig*.json"
 
 # Windows
 win:

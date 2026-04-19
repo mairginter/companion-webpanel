@@ -8,12 +8,17 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, '../..')
 
+// Dev-Mode erhält Source-Maps; Release/Packaging baut minified ohne Maps.
+const isDev = process.env.NODE_ENV === 'development'
+
 const sharedConfig = {
   bundle: true,
   platform: 'node',
   target: 'node20',
   external: ['electron'],  // electron ist immer extern (vom Runtime geliefert)
-  sourcemap: true,
+  sourcemap: isDev,
+  minify: !isDev,
+  legalComments: 'none',
 }
 
 // Main process bundle (enthält backend-Code direkt)

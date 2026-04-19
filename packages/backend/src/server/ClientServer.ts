@@ -40,6 +40,22 @@ function pressKey(hostId: string, page: number, row: number, col: number): Press
   return `${hostId}:${page}:${row}:${col}`
 }
 
+// Max. POST-Body-Größe (1 MB) — schützt vor Heap-Exhaustion durch bösartige Clients
+const MAX_BODY_BYTES = 1024 * 1024
+
+// Modul-Level, einmal alloziert — vorher pro serveStatic-Call neu erzeugt
+const STATIC_MIME_TYPES: Record<string, string> = {
+  '.html':  'text/html',
+  '.js':    'application/javascript',
+  '.css':   'text/css',
+  '.png':   'image/png',
+  '.svg':   'image/svg+xml',
+  '.ico':   'image/x-icon',
+  '.json':  'application/json',
+  '.woff2': 'font/woff2',
+  '.woff':  'font/woff',
+}
+
 /**
  * HTTP + WebSocket Server für Frontend-Browser-Clients.
  */
@@ -93,14 +109,27 @@ export class ClientServer {
       }
 
       if (req.method === 'GET' && req.url === '/api/settings') {
-        const json = JSON.stringify(this.settings, null, 2)
+        // Kein pretty-print — die API-Response wird nicht menschlich gelesen,
+        // Frontend parst JSON sowieso. Spart 5-10 ms pro Request bei großem Settings-Objekt.
+        const json = JSON.stringify(this.settings)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(json)
 
       } else if (req.method === 'POST' && req.url === '/api/settings') {
         let body = ''
-        req.on('data', (chunk) => { body += chunk })
+        let aborted = false
+        req.on('data', (chunk) => {
+          if (aborted) return
+          body += chunk
+          if (body.length > MAX_BODY_BYTES) {
+            aborted = true
+            res.writeHead(413, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: 'Body too large' }))
+            req.destroy()
+          }
+        })
         req.on('end', () => {
+          if (aborted) return
           try {
             const incoming = JSON.parse(body) as Settings
 
@@ -132,8 +161,19 @@ export class ClientServer {
         // Temporäre Subscriptions für den Button-Picker-Dialog starten
         // Body: { hostId, page, keysPerRow, rows }
         let body = ''
-        req.on('data', (chunk) => { body += chunk })
+        let aborted = false
+        req.on('data', (chunk) => {
+          if (aborted) return
+          body += chunk
+          if (body.length > MAX_BODY_BYTES) {
+            aborted = true
+            res.writeHead(413, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: 'Body too large' }))
+            req.destroy()
+          }
+        })
         req.on('end', () => {
+          if (aborted) return
           try {
             const { hostId, page, keysPerRow, rows } = JSON.parse(body)
             if (!hostId || page === undefined || !keysPerRow || !rows) {
@@ -252,7 +292,13 @@ export class ClientServer {
   }
 
   broadcast(msg: BackendToFrontend): void {
-    const json = JSON.stringify(msg)
+    let json: string
+    try {
+      json = JSON.stringify(msg)
+    } catch (err) {
+      console.error('[ClientServer] Serialisierung fehlgeschlagen:', err)
+      return
+    }
     for (const ws of this.clients) {
       if (ws.readyState === WebSocket.OPEN) ws.send(json)
     }
@@ -298,8 +344,9 @@ export class ClientServer {
   /**
    * Serviert statische Dateien aus this.staticDir.
    * Fallback: index.html für SPA-Routing (alle nicht-gefundenen Pfade → index.html).
+   * Nutzt fs.promises.stat — blockiert den Event-Loop nicht.
    */
-  private serveStatic(urlPath: string, res: http.ServerResponse): void {
+  private async serveStatic(urlPath: string, res: http.ServerResponse): Promise<void> {
     const staticDir = this.staticDir!
     // URL-Pfad normalisieren (query-string entfernen, path-traversal verhindern)
     const safePath = urlPath.split('?')[0].replace(/\.\./g, '')
@@ -307,34 +354,29 @@ export class ClientServer {
       ? path.join(staticDir, 'index.html')
       : path.join(staticDir, safePath)
 
-    const mimeTypes: Record<string, string> = {
-      '.html':  'text/html',
-      '.js':    'application/javascript',
-      '.css':   'text/css',
-      '.png':   'image/png',
-      '.svg':   'image/svg+xml',
-      '.ico':   'image/x-icon',
-      '.json':  'application/json',
-      '.woff2': 'font/woff2',
-      '.woff':  'font/woff',
+    const ext = path.extname(filePath)
+    const mime = STATIC_MIME_TYPES[ext] ?? 'application/octet-stream'
+
+    try {
+      const stat = await fs.promises.stat(filePath)
+      if (stat.isFile()) {
+        res.writeHead(200, { 'Content-Type': mime })
+        fs.createReadStream(filePath).pipe(res)
+        return
+      }
+    } catch {
+      // Datei nicht gefunden → SPA-Fallback unten
     }
 
-    const ext = path.extname(filePath)
-    const mime = mimeTypes[ext] ?? 'application/octet-stream'
-
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-      res.writeHead(200, { 'Content-Type': mime })
-      fs.createReadStream(filePath).pipe(res)
-    } else {
-      // SPA-Fallback: index.html für alle unbekannten Pfade
-      const indexPath = path.join(staticDir, 'index.html')
-      if (fs.existsSync(indexPath)) {
-        res.writeHead(200, { 'Content-Type': 'text/html' })
-        fs.createReadStream(indexPath).pipe(res)
-      } else {
-        res.writeHead(404)
-        res.end()
-      }
+    // SPA-Fallback: index.html für alle unbekannten Pfade
+    const indexPath = path.join(staticDir, 'index.html')
+    try {
+      await fs.promises.stat(indexPath)
+      res.writeHead(200, { 'Content-Type': 'text/html' })
+      fs.createReadStream(indexPath).pipe(res)
+    } catch {
+      res.writeHead(404)
+      res.end()
     }
   }
 }
