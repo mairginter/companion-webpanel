@@ -56,7 +56,18 @@
     "disconnect": "Disconnect",
     "delete": "Delete",
     "edit": "Edit",
-    "add": "Add"
+    "add": "Add",
+    "namePlaceholder": "e.g. Studio A",
+    "hostnamePlaceholder": "e.g. 192.168.1.100",
+    "notesPlaceholder": "Optional",
+    "autoConnectHint": "(disable: host saved but no connection attempt)",
+    "showInToolbarHint": "(show status dot in toolbar)",
+    "configurePageNames": "Configure page names",
+    "pageName": "Page {{n}}",
+    "pageNamePlaceholder": "(no name)",
+    "autoConnectOff": "(Auto-connect off)",
+    "deleteWarning": "⚠ {{count}} button element(s) reference this host and will be marked with ⛔ (no Companion access).",
+    "deleteLinkedButtons": "Also delete linked buttons ({{count}} element(s))"
   },
   "propertiesPanel": {
     "geometry": "Geometry",

@@ -171,7 +171,7 @@ function HostForm({ value, onChange }: HostFormProps) {
           <label style={labelStyle}>{t('hostManager.name')} *</label>
           <input
             style={inputStyle}
-            placeholder="z.B. Studio A"
+            placeholder={t('hostManager.namePlaceholder')}
             value={value.name}
             onChange={(e) => set({ name: e.target.value })}
           />
@@ -180,7 +180,7 @@ function HostForm({ value, onChange }: HostFormProps) {
           <label style={labelStyle}>{t('hostManager.hostname')} *</label>
           <input
             style={inputStyle}
-            placeholder="z.B. 192.168.1.100"
+            placeholder={t('hostManager.hostnamePlaceholder')}
             value={value.host}
             onChange={(e) => set({ host: e.target.value })}
           />
@@ -202,7 +202,7 @@ function HostForm({ value, onChange }: HostFormProps) {
           <label style={labelStyle}>{t('hostManager.notes')}</label>
           <input
             style={inputStyle}
-            placeholder="Optional"
+            placeholder={t('hostManager.notesPlaceholder')}
             value={value.notes ?? ''}
             onChange={(e) => set({ notes: e.target.value })}
           />
@@ -218,7 +218,7 @@ function HostForm({ value, onChange }: HostFormProps) {
           />
           <span style={{ fontSize: 13, color: '#e9edf2' }}>{t('hostManager.autoConnect')}</span>
           <span style={{ fontSize: 12, color: '#4a5568' }}>
-            (deaktivieren: Host gespeichert, aber kein Verbindungsversuch)
+            {t('hostManager.autoConnectHint')}
           </span>
         </label>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -230,7 +230,7 @@ function HostForm({ value, onChange }: HostFormProps) {
           />
           <span style={{ fontSize: 13, color: '#e9edf2' }}>{t('hostManager.showInToolbar')}</span>
           <span style={{ fontSize: 12, color: '#4a5568' }}>
-            (Status-Dot in der Toolbar einblenden)
+            {t('hostManager.showInToolbarHint')}
           </span>
         </label>
       </div>
@@ -285,7 +285,7 @@ function HostForm({ value, onChange }: HostFormProps) {
             display: 'flex', alignItems: 'center', gap: 6,
           }}
         >
-          {pageNamesOpen ? '▼' : '▶'} Page-Namen konfigurieren
+          {pageNamesOpen ? '▼' : '▶'} {t('hostManager.configurePageNames')}
         </button>
         {pageNamesOpen && (
           <div style={{
@@ -302,10 +302,10 @@ function HostForm({ value, onChange }: HostFormProps) {
           }}>
             {pageNums.map((n) => (
               <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#4a5568', minWidth: 52 }}>Page {n}</span>
+                <span style={{ fontSize: 12, color: '#4a5568', minWidth: 52 }}>{t('hostManager.pageName', { n })}</span>
                 <input
                   style={{ ...inputStyle, padding: '3px 8px', fontSize: 12 }}
-                  placeholder="(kein Name)"
+                  placeholder={t('hostManager.pageNamePlaceholder')}
                   value={value.pageNames?.[n] ?? ''}
                   onChange={(e) => {
                     const names = { ...(value.pageNames ?? {}) }
@@ -349,8 +349,7 @@ function DeleteDialog({ hostName, refCount, onConfirm, onCancel }: DeleteDialogP
           {refCount > 0 && (
             <>
               <p style={{ margin: 0, fontSize: 13, color: '#ff8a3d' }}>
-                ⚠ {refCount} Button-Element{refCount !== 1 ? 'e' : ''} referenzier{refCount !== 1 ? 'en' : 't'} diesen Host.
-                {!deleteRefs && ' Diese werden mit ⛔ markiert (kein Companion-Zugriff mehr).'}
+                {t('hostManager.deleteWarning', { count: refCount })}
               </p>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <input
@@ -360,7 +359,7 @@ function DeleteDialog({ hostName, refCount, onConfirm, onCancel }: DeleteDialogP
                   style={{ width: 16, height: 16, accentColor: '#ff5a5f' }}
                 />
                 <span style={{ fontSize: 13, color: '#e9edf2' }}>
-                  Verknüpfte Buttons ebenfalls löschen ({refCount} Element{refCount !== 1 ? 'e' : ''})
+                  {t('hostManager.deleteLinkedButtons', { count: refCount })}
                 </span>
               </label>
             </>
@@ -500,7 +499,7 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                         {host.name}
                         {host.autoConnect === false && (
                           <span style={{ marginLeft: 8, fontSize: 11, color: '#4a5568', fontWeight: 400 }}>
-                            (Auto-Connect aus)
+                            {t('hostManager.autoConnectOff')}
                           </span>
                         )}
                       </div>
