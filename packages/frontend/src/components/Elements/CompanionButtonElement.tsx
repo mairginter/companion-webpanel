@@ -19,24 +19,59 @@ export function darkenHex(hex: string, amount: number): string {
   return `rgb(${Math.round(r * (1 - amount))},${Math.round(g * (1 - amount))},${Math.round(b * (1 - amount))})`
 }
 
-/** CSS background value for the physical-style dome circle.
- *  bgColor must be #rrggbb — anything else falls back to the default grey dome. */
+/** CSS background for the physical-style dome.
+ *  Center and rim colors are computed from bgColor (lighten/darken) — no white/black overlays
+ *  so the hue stays correct across all companion colors (including black buttons). */
 export function buildDomeBackground(bgColor: string | undefined, pressed: boolean): string {
-  const s1 = pressed ? 0.6 : 0.9
-  const s2 = pressed ? 0.3 : 0.4
+  let r = 168, g = 170, b = 178
   if (bgColor && /^#[0-9a-fA-F]{6}$/.test(bgColor)) {
-    const r = parseInt(bgColor.slice(1, 3), 16)
-    const g = parseInt(bgColor.slice(3, 5), 16)
-    const b = parseInt(bgColor.slice(5, 7), 16)
-    return [
-      `radial-gradient(ellipse 80% 50% at 50% 70%, rgba(${r},${g},${b},${s1}) 0%, rgba(${r},${g},${b},${s2}) 35%, transparent 70%)`,
-      `radial-gradient(circle at 50% 50%, ${lightenHex(bgColor, 0.5)} 0%, ${bgColor} 48%, ${darkenHex(bgColor, 0.6)} 100%)`,
-    ].join(', ')
+    r = parseInt(bgColor.slice(1, 3), 16)
+    g = parseInt(bgColor.slice(3, 5), 16)
+    b = parseInt(bgColor.slice(5, 7), 16)
   }
-  return [
-    `radial-gradient(ellipse 80% 50% at 50% 70%, rgba(255,255,255,${s1}) 0%, rgba(255,255,255,${s2}) 35%, transparent 70%)`,
-    `radial-gradient(circle at 50% 50%, #f4f6fa 0%, #e0e4ec 25%, #c8ccd8 48%, #a8acb8 65%, #888c98 80%, #6c7080 92%, #545868 100%)`,
-  ].join(', ')
+  // mix toward white; dim toward black
+  const mix = (ch: number, f: number) => Math.round(ch + (255 - ch) * f)
+  const dim  = (ch: number, f: number) => Math.round(ch * f)
+
+  // 4-stop curve approximating cos(θ) hemispheric reflectance:
+  // center changes slowly, outer rim drops steeply — matches reference image physics
+  if (pressed) {
+    const br = dim(r, 0.82), bg_ = dim(g, 0.82), bb_ = dim(b, 0.82)
+    return `radial-gradient(circle at 50% 45%,` +
+      ` rgb(${mix(br,0.24)},${mix(bg_,0.24)},${mix(bb_,0.24)}) 0%,` +
+      ` rgb(${br},${bg_},${bb_}) 42%,` +
+      ` rgb(${dim(br,0.68)},${dim(bg_,0.68)},${dim(bb_,0.68)}) 68%,` +
+      ` rgb(${dim(br,0.36)},${dim(bg_,0.36)},${dim(bb_,0.36)}) 100%)`
+  }
+  return `radial-gradient(circle at 50% 40%,` +
+    ` rgb(${mix(r,0.52)},${mix(g,0.52)},${mix(b,0.52)}) 0%,` +
+    ` rgb(${r},${g},${b}) 38%,` +
+    ` rgb(${dim(r,0.66)},${dim(g,0.66)},${dim(b,0.66)}) 65%,` +
+    ` rgb(${dim(r,0.35)},${dim(g,0.35)},${dim(b,0.35)}) 100%)`
+}
+
+/** CSS background for the physical-style outer frame.
+ *  Layers (top→bottom):
+ *  1. Metallic top-edge highlight — horizontal bright band simulating overhead light on polished surface
+ *  2. Radial vignette — corners/edges significantly darker → strong 3D curvature illusion
+ *  3. Base color (companion color or default grey) */
+export function buildFrameBackground(bgColor: string | undefined, pressed: boolean): string {
+  let r = 210, g = 212, b = 218
+  if (bgColor && /^#[0-9a-fA-F]{6}$/.test(bgColor)) {
+    r = parseInt(bgColor.slice(1, 3), 16)
+    g = parseInt(bgColor.slice(3, 5), 16)
+    b = parseInt(bgColor.slice(5, 7), 16)
+  }
+  // Polished-metal top highlight: bright band at top edge (light source from above),
+  // quick fade + slight bottom shadow = realistic curved-surface reflection
+  const metal = pressed
+    ? `linear-gradient(to bottom, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 28%, rgba(0,0,0,0.10) 100%)`
+    : `linear-gradient(to bottom, rgba(255,255,255,0.52) 0%, rgba(255,255,255,0.08) 18%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.16) 100%)`
+  // Stronger radial vignette: smaller ellipse + higher opacity → darker corners, more curvature depth
+  const vignette = pressed
+    ? `radial-gradient(ellipse 65% 65% at 50% 50%, rgba(0,0,0,0) 24%, rgba(0,0,0,0.58) 100%)`
+    : `radial-gradient(ellipse 65% 65% at 50% 50%, rgba(0,0,0,0) 26%, rgba(0,0,0,0.52) 100%)`
+  return `${metal}, ${vignette}, rgb(${r},${g},${b})`
 }
 
 interface Props {
@@ -122,12 +157,10 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: pressed
-          ? 'linear-gradient(145deg, #a8acb8 0%, #d4d8e0 30%, #ccd0d8 50%, #b0b4c0 75%, #909098 100%)'
-          : 'linear-gradient(145deg, #c0c4ce 0%, #eceef6 30%, #e4e8f0 50%, #c4c8d4 75%, #a0a4b0 100%)',
+        background: buildFrameBackground(bgColor, pressed),
         boxShadow: pressed
-          ? '0 2px 6px rgba(0,0,0,0.7), inset 0 2px 5px rgba(0,0,0,0.35), inset 0 -1px 2px rgba(255,255,255,0.3)'
-          : '0 6px 20px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.9), inset 0 -1px 3px rgba(0,0,0,0.2)',
+          ? '0 1px 4px rgba(0,0,0,0.55), inset 0 1px 3px rgba(0,0,0,0.25)'
+          : '0 4px 14px rgba(0,0,0,0.50), inset 0 1px 2px rgba(255,255,255,0.60)',
         transition: pressed ? 'none' : 'transform 0.08s, box-shadow 0.08s',
         ...(!hasData && { opacity: 0.6 }),
         ...(isStale && { opacity: 0.5, outline: '2px solid #ff8a3d', outlineOffset: '-2px' }),
@@ -205,13 +238,12 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
           aria-hidden="true"
           style={{
             position: 'absolute',
-            inset: '10px',
+            inset: '9%',
             borderRadius: '50%',
             pointerEvents: 'none',
             background: buildDomeBackground(bgColor, pressed),
-            boxShadow: pressed
-              ? 'inset 0 3px 12px rgba(0,0,0,0.25), inset 0 5px 20px rgba(0,0,0,0.15), inset 2px 2px 8px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.3)'
-              : 'inset 0 2px 8px rgba(0,0,0,0.18), inset 0 4px 16px rgba(0,0,0,0.10), inset 2px 2px 6px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.25)',
+            // The gradient itself creates the dome edge; just a hairline ring for separation
+            boxShadow: '0 0 0 1px rgba(0,0,0,0.10)',
             transform: pressed ? 'scale(0.97)' : undefined,
             transition: pressed ? 'none' : 'transform 0.08s',
           }}
