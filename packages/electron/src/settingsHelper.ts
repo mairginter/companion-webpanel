@@ -40,7 +40,8 @@ export function loadSettings(userDataPath: string): Settings {
   }
 
   const raw = fs.readFileSync(filePath, 'utf8')
-  const settings = JSON.parse(raw) as Settings
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const settings = JSON.parse(raw) as any
 
   let migrated = false
 
@@ -74,7 +75,7 @@ export function loadSettings(userDataPath: string): Settings {
     fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), 'utf8')
   }
 
-  return settings
+  return settings as Settings
 }
 
 /** Schreibt Settings in userDataPath/settings.json. */
