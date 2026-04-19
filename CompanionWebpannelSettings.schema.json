@@ -13,7 +13,7 @@
   "properties": {
     "version": {
       "type": "string",
-      "pattern": "^1\\.5\\.0$"
+      "pattern": "^1\\.6\\.0$"
     },
     "server": {
       "type": "object",
@@ -49,6 +49,12 @@
       "items": {
         "$ref": "#/$defs/Panel"
       }
+    },
+    "language": {
+      "type": "string",
+      "description": "UI-Sprache (z.B. 'de', 'en'). Gilt als globaler Default; per-Gerät-Override via localStorage.",
+      "minLength": 2,
+      "maxLength": 10
     }
   },
   "$defs": {

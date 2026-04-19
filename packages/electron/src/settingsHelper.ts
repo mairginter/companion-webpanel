@@ -16,7 +16,7 @@ export function getSettingsPath(userDataPath: string): string {
 /** Gibt leere Default-Settings zurück (keine Hosts, kein Panel). */
 export function getDefaultSettings(): Settings {
   return {
-    version: '1.5.0',
+    version: '1.6.0',
     server: { port: 8080 },
     activeHostId: '',
     hosts: [],
@@ -27,7 +27,7 @@ export function getDefaultSettings(): Settings {
 /**
  * Lädt Settings aus userDataPath/settings.json.
  * Legt Default-Settings an wenn Datei nicht existiert.
- * Migriert v1.2.0-Settings (fehlender server-Block) automatisch.
+ * Migriert ältere Versionen automatisch.
  */
 export function loadSettings(userDataPath: string): Settings {
   const filePath = getSettingsPath(userDataPath)
@@ -60,6 +60,13 @@ export function loadSettings(userDataPath: string): Settings {
   // Migration: v1.4.0 → v1.5.0 (maxPages + pageNames in HostProfile)
   if (settings.version === '1.4.0') {
     settings.version = '1.5.0'
+    migrated = true
+  }
+
+  // Migration: v1.5.0 → v1.6.0 (language field)
+  if (settings.version === '1.5.0') {
+    settings.version = '1.6.0'
+    // language is optional — no default needed, LanguageDetector handles it
     migrated = true
   }
 

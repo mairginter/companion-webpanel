@@ -1,7 +1,9 @@
-// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.5.0) ───
+// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.6.0) ───
 
 export interface Settings {
-  version: '1.5.0'
+  version: '1.6.0'
+  /** UI language code (e.g. 'de', 'en'). Applied to all clients without a per-device override. */
+  language?: string
   activeHostId: string
   hosts: HostProfile[]
   panels: Panel[]
