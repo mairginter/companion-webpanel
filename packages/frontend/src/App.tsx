@@ -5,6 +5,7 @@ import { useAppStore } from './store/useAppStore'
 import { Toolbar } from './components/Toolbar/Toolbar'
 import { Canvas } from './components/Canvas/Canvas'
 import { HostManagerModal } from './components/HostManager/HostManagerModal'
+import { HelpModal } from './components/HelpModal/HelpModal'
 
 const styles: Record<string, React.CSSProperties> = {
   app: {
@@ -30,6 +31,7 @@ export function App() {
   const mode = useAppStore((s) => s.mode)
   const toggleMode = useAppStore((s) => s.toggleMode)
   const [hostManagerOpen, setHostManagerOpen] = useState(false)
+  const [helpModalOpen, setHelpModalOpen] = useState(false)
 
   const handleSave = useCallback(() => {
     const s = useAppStore.getState().settings
@@ -185,7 +187,7 @@ export function App() {
 
   return (
     <div style={styles.app}>
-      <Toolbar mode={mode} onToggleMode={toggleMode} onOpenHostManager={() => setHostManagerOpen(true)} onSave={handleSave} />
+      <Toolbar mode={mode} onToggleMode={toggleMode} onOpenHostManager={() => setHostManagerOpen(true)} onOpenHelp={() => setHelpModalOpen(true)} onSave={handleSave} />
       <div style={styles.body}>
         <Canvas sendPress={sendPress} sendRotate={sendRotate} sendVPress={sendVPress} />
       </div>
@@ -194,6 +196,9 @@ export function App() {
           onClose={() => setHostManagerOpen(false)}
           saveSettings={saveSettings}
         />
+      )}
+      {helpModalOpen && (
+        <HelpModal onClose={() => setHelpModalOpen(false)} />
       )}
     </div>
   )

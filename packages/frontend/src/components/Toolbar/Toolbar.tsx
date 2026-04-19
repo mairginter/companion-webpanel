@@ -9,6 +9,7 @@ interface ToolbarProps {
   mode: 'view' | 'edit'
   onToggleMode: () => void
   onOpenHostManager?: () => void
+  onOpenHelp?: () => void
   onSave?: () => void
 }
 
@@ -71,7 +72,7 @@ const modeButtonStyle = (active: boolean): React.CSSProperties => ({
   height: 32,
 })
 
-export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: ToolbarProps) {
+export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onSave }: ToolbarProps) {
   const { t } = useTranslation()
   const panels = useAppStore((s) => s.settings?.panels ?? [])
   const activePanelId = useAppStore((s) => s.activePanelId)
@@ -469,6 +470,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onSave }: Toolb
       <button
         style={{ ...modeButtonStyle(false), width: 32, padding: 0, textAlign: 'center' }}
         title={t('toolbar.keyboardShortcuts')}
+        onClick={onOpenHelp}
       >
         ?
       </button>
