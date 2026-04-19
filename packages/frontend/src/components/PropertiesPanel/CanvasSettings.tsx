@@ -12,6 +12,7 @@
  *   800 ms Debounce — speichert nur wenn Größe nicht im Fixed-Preset ist.
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Panel } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { ColorPicker } from './ColorPicker'
@@ -43,11 +44,11 @@ function saveToHistory(w: number, h: number): HistoryEntry[] {
 
 type FixedPreset = 'dynamic' | '1920x1080' | '1440x900' | '1280x720' | 'custom'
 
-const FIXED_PRESETS: Array<{ label: string; value: FixedPreset; w?: number; h?: number }> = [
-  { label: 'Dynamisch (Fenster)', value: 'dynamic' },
-  { label: '1920 × 1080', value: '1920x1080', w: 1920, h: 1080 },
-  { label: '1440 × 900',  value: '1440x900',  w: 1440, h: 900  },
-  { label: '1280 × 720',  value: '1280x720',  w: 1280, h: 720  },
+const FIXED_PRESET_DEFS: Array<{ value: FixedPreset; w?: number; h?: number }> = [
+  { value: 'dynamic' },
+  { value: '1920x1080', w: 1920, h: 1080 },
+  { value: '1440x900',  w: 1440, h: 900  },
+  { value: '1280x720',  w: 1280, h: 720  },
 ]
 
 function histKey(w: number, h: number) { return `hist_${w}x${h}` }
@@ -57,7 +58,7 @@ function detectPreset(panel: Panel, history: HistoryEntry[]): string {
   const w = panel.canvas?.width
   const h = panel.canvas?.height
   if (!w || !h) return 'dynamic'
-  const fixed = FIXED_PRESETS.find((p) => p.w === w && p.h === h)
+  const fixed = FIXED_PRESET_DEFS.find((p) => p.w === w && p.h === h)
   if (fixed) return fixed.value
   if (history.some((e) => e.w === w && e.h === h)) return histKey(w, h)
   return 'custom'
@@ -66,6 +67,7 @@ function detectPreset(panel: Panel, history: HistoryEntry[]): string {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function CanvasSettings({ panel, panelId }: Props) {
+  const { t } = useTranslation()
   const setSettings = useAppStore((s) => s.setSettings)
   const settings    = useAppStore((s) => s.settings)
 
@@ -109,7 +111,7 @@ export function CanvasSettings({ panel, panelId }: Props) {
     const w = panel.canvas?.width
     const h = panel.canvas?.height
     if (!w || !h) return
-    if (FIXED_PRESETS.some((p) => p.w === w && p.h === h)) return
+    if (FIXED_PRESET_DEFS.some((p) => p.w === w && p.h === h)) return
     const timer = setTimeout(() => {
       setHistory(saveToHistory(w, h))
     }, 800)
@@ -142,60 +144,61 @@ export function CanvasSettings({ panel, panelId }: Props) {
       if (w && h) updateCanvas({ width: w, height: h })
       return
     }
-    const fixed = FIXED_PRESETS.find((p) => p.value === value)
+    const fixed = FIXED_PRESET_DEFS.find((p) => p.value === value)
     if (fixed?.w && fixed?.h) updateCanvas({ width: fixed.w, height: fixed.h })
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={lbl}>Canvas-Einstellungen</div>
+      <div style={lbl}>{t('propertiesPanel.canvasSettings')}</div>
 
-      {/* Größen-Preset */}
+      {/* Size preset */}
       <div>
-        <div style={lbl}>Größe</div>
+        <div style={lbl}>{t('propertiesPanel.size')}</div>
         <select value={selectValue} style={sel} onChange={(e) => handlePresetChange(e.target.value)}>
-          {FIXED_PRESETS.map((p) => (
-            <option key={p.value} value={p.value}>{p.label}</option>
+          {FIXED_PRESET_DEFS.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.value === 'dynamic' ? t('propertiesPanel.dynamic') : `${p.w} × ${p.h}`}
+            </option>
           ))}
           {history.length > 0 && (
-            <option disabled value="">── Zuletzt verwendet ──</option>
+            <option disabled value="">{t('propertiesPanel.recentSizes')}</option>
           )}
           {history.map((e) => (
             <option key={histKey(e.w, e.h)} value={histKey(e.w, e.h)}>
               {e.w} × {e.h}
             </option>
           ))}
-          <option value="custom">Benutzerdefiniert …</option>
+          <option value="custom">{t('propertiesPanel.custom')}</option>
         </select>
       </div>
 
-      {/* Manuelle W/H-Eingabe — sichtbar bei custom und bei History-Selektion */}
+      {/* Manual W/H inputs — visible for custom and history selections */}
       {isCustom && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-          <NumericInput label="Breite" value={panel.canvas?.width ?? 1600} min={200} compact
+          <NumericInput label={t('propertiesPanel.width')} value={panel.canvas?.width ?? 1600} min={200} compact
             onChange={(v) => updateCanvas({ width: v })} />
-          <NumericInput label="Höhe" value={panel.canvas?.height ?? 900} min={100} compact
+          <NumericInput label={t('propertiesPanel.height')} value={panel.canvas?.height ?? 900} min={100} compact
             onChange={(v) => updateCanvas({ height: v })} />
         </div>
       )}
 
-      {/* Fenstergröße & DPI-Hinweis */}
+      {/* Window size & DPI hint */}
       {(() => {
         const dpr = Math.round(window.devicePixelRatio * 100) / 100
-        const scalePct = Math.round(dpr * 100)
         const physW = Math.round(winSize.w * dpr)
         const physH = Math.round(winSize.h * dpr)
-        const scaled = dpr > 1.01  // Toleranz für 1.0-nahe Werte
+        const scaled = dpr > 1.01  // tolerance for values near 1.0
         return (
           <div style={{ background: '#111827', border: '1px solid #2a3344', borderRadius: 4, padding: '8px 10px', fontSize: 12, color: '#8896aa', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Verfügbarer Bereich</div>
+            <div style={{ color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>{t('propertiesPanel.availableAreaLabel')}</div>
             <div style={{ color: '#e9edf2', fontFamily: "'JetBrains Mono', monospace" }}>
-              {winSize.w} × {winSize.h} <span style={{ color: '#4a5568' }}>CSS-px</span>
+              {winSize.w} × {winSize.h} <span style={{ color: '#4a5568' }}>{t('propertiesPanel.cssPixels')}</span>
             </div>
             {scaled && (
               <div style={{ color: '#f59e0b', fontSize: 11, lineHeight: 1.4 }}>
-                Windows-Skalierung {scalePct}% aktiv.<br />
-                Physisch: {physW}×{physH} px → Canvas in CSS-px eingeben, nicht physisch.
+                {t('propertiesPanel.dpiWarning', { factor: dpr })}<br />
+                {physW}×{physH} px
               </div>
             )}
             <button
@@ -209,32 +212,32 @@ export function CanvasSettings({ panel, panelId }: Props) {
                 cursor: 'pointer', textAlign: 'left',
               }}
             >
-              Verfügbaren Bereich übernehmen ({winSize.w}×{winSize.h})
+              {t('propertiesPanel.useAvailableAreaBtn', { w: winSize.w, h: winSize.h })}
             </button>
           </div>
         )
       })()}
 
-      <ColorPicker label="Hintergrundfarbe" value={panel.canvas?.background ?? '#0f141a'}
+      <ColorPicker label={t('propertiesPanel.backgroundColor')} value={panel.canvas?.background ?? '#0f141a'}
         onChange={(v) => updateCanvas({ background: v })} />
 
-      {/* Textur */}
+      {/* Texture */}
       <div>
-        <div style={lbl}>Textur</div>
+        <div style={lbl}>{t('propertiesPanel.texture')}</div>
         <select
           value={panel.canvas?.texture ?? 'none'}
           style={sel}
           onChange={(e) => updateCanvas({ texture: e.target.value === 'none' ? undefined : e.target.value })}
         >
-          {TEXTURES.map((t) => (
-            <option key={t.id} value={t.id}>{t.label}</option>
+          {TEXTURES.map((tex) => (
+            <option key={tex.id} value={tex.id}>{tex.label}</option>
           ))}
         </select>
       </div>
 
-      {/* Vorschau-Streifen */}
+      {/* Texture preview strip */}
       {panel.canvas?.texture && panel.canvas.texture !== 'none' && (() => {
-        const tex: TextureOption | undefined = TEXTURES.find((t) => t.id === panel.canvas?.texture)
+        const tex: TextureOption | undefined = TEXTURES.find((tx) => tx.id === panel.canvas?.texture)
         return tex ? (
           <div style={{
             height: 28, borderRadius: 4,

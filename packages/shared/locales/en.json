@@ -120,7 +120,18 @@
     "clipThreshold": "Clip threshold (dBFS)",
     "accentColor": "Accent color",
     "channelName": "Channel name",
-    "host": "Host"
+    "host": "Host",
+    "deleteElement": "Delete element",
+    "deleteElements": "Delete {{count}} elements",
+    "lockedCannotDelete": "Locked elements cannot be deleted",
+    "copyStyle": "Copy style (Ctrl+Shift+C)",
+    "pasteStyle": "Paste style (Ctrl+Shift+V)",
+    "flipSide": "Switch side",
+    "collapse": "Collapse",
+    "openProperties": "Open properties",
+    "availableAreaLabel": "Available area",
+    "cssPixels": "CSS-px",
+    "useAvailableAreaBtn": "Use available area ({{w}}×{{h}})"
   },
   "addElement": {
     "companionButton": "Companion Button",

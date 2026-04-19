@@ -120,7 +120,18 @@
     "clipThreshold": "Clip-Schwelle (dBFS)",
     "accentColor": "Akzentfarbe",
     "channelName": "Kanal-Name",
-    "host": "Host"
+    "host": "Host",
+    "deleteElement": "Element löschen",
+    "deleteElements": "{{count}} Elemente löschen",
+    "lockedCannotDelete": "Gesperrte Elemente können nicht gelöscht werden",
+    "copyStyle": "Style kopieren (Ctrl+Shift+C)",
+    "pasteStyle": "Style einfügen (Ctrl+Shift+V)",
+    "flipSide": "Seite wechseln",
+    "collapse": "Einklappen",
+    "openProperties": "Properties öffnen",
+    "availableAreaLabel": "Verfügbarer Bereich",
+    "cssPixels": "CSS-px",
+    "useAvailableAreaBtn": "Verfügbaren Bereich übernehmen ({{w}}×{{h}})"
   },
   "addElement": {
     "companionButton": "Companion Button",

@@ -10,6 +10,7 @@
  * - Mehrere Elemente selektiert → nur GeometryBlock (Multi-Edit)
  */
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../../store/useAppStore'
 import { GeometryBlock } from './GeometryBlock'
 import { CanvasSettings } from './CanvasSettings'
@@ -31,6 +32,7 @@ function loadOpen(): boolean {
 }
 
 export function PropertiesPanel() {
+  const { t } = useTranslation()
   const [side, setSide] = useState<'left' | 'right'>(loadSide)
   const [open, setOpen] = useState<boolean>(loadOpen)
 
@@ -100,7 +102,7 @@ export function PropertiesPanel() {
       minWidth: 32,
     }
     return (
-      <div style={tabStyle} onClick={toggleOpen} title="Properties öffnen">
+      <div style={tabStyle} onClick={toggleOpen} title={t('propertiesPanel.openProperties')}>
         {'›'}
       </div>
     )
@@ -219,7 +221,7 @@ export function PropertiesPanel() {
           {canCopy && (
             <button
               style={collapseBtn}
-              title="Style kopieren (Ctrl+Shift+C)"
+              title={t('propertiesPanel.copyStyle')}
               onClick={() => singleEl && copyElementStyle(panel!.id, singleEl.id)}
             >
               ⎘
@@ -228,14 +230,14 @@ export function PropertiesPanel() {
           {canPaste && (
             <button
               style={{ ...collapseBtn, color: '#4a9eff' }}
-              title="Style einfügen (Ctrl+Shift+V)"
+              title={t('propertiesPanel.pasteStyle')}
               onClick={() => pasteElementStyle(panel!.id, [...selectedIds])}
             >
               ⎗
             </button>
           )}
-          <button style={collapseBtn} onClick={flipSide} title="Seite wechseln">⇄</button>
-          <button style={collapseBtn} onClick={toggleOpen} title="Einklappen">‹</button>
+          <button style={collapseBtn} onClick={flipSide} title={t('propertiesPanel.flipSide')}>⇄</button>
+          <button style={collapseBtn} onClick={toggleOpen} title={t('propertiesPanel.collapse')}>‹</button>
         </div>
       </div>
       <div style={contentStyle}>
@@ -246,7 +248,7 @@ export function PropertiesPanel() {
           <button
             onClick={() => canDelete && deleteElements(panel!.id, [...selectedIds])}
             disabled={!canDelete}
-            title={canDelete ? 'Element(e) löschen' : 'Gesperrte Elemente können nicht gelöscht werden'}
+            title={canDelete ? t('propertiesPanel.deleteElement') : t('propertiesPanel.lockedCannotDelete')}
             style={{
               width: '100%',
               padding: '10px',
@@ -261,7 +263,7 @@ export function PropertiesPanel() {
               fontFamily: 'inherit',
             }}
           >
-            {selectedElements.length > 1 ? `${selectedElements.length} Elemente löschen` : 'Element löschen'}
+            {selectedElements.length > 1 ? t('propertiesPanel.deleteElements', { count: selectedElements.length }) : t('propertiesPanel.deleteElement')}
           </button>
         </div>
       )}
