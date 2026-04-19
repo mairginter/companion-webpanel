@@ -128,7 +128,7 @@ Properties summary per card (small grey text, comma-separated):
     "shortcutColumn": "Shortcut",
     "actionColumn": "Aktion",
     "featuresHeading": "Canvas-Elemente",
-    "appDesc": "Companion Webpanel ist ein frei gestaltbares Touch-Panel für Bitfocus Companion — steuerbar vom Browser oder der Desktop-App.",
+    "appDesc": "Companion Webpanel ist ein frei gestaltbares Touch-Panel für Bitfocus Companion — viele Funktionen lassen sich damit übersichtlich, strukturiert und kategorisiert darstellen und steuern.",
     "appMultiHost": "Mehrere Companion-Instanzen (Hosts) können gleichzeitig verbunden werden.",
     "appVersions": "Verfügbar als Web-App (Browser, mehrere Nutzer gleichzeitig via LAN) und als Electron Desktop-App.",
     "shortcut_save": "Speichern",
