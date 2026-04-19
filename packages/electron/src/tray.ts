@@ -12,6 +12,7 @@
 import { Tray, Menu, shell, nativeImage } from 'electron'
 import * as path from 'path'
 import type { AppStatus, HostStatus } from './types'
+import { t } from './i18n'
 
 export class AppTray {
   private tray: Tray | null = null
@@ -64,33 +65,33 @@ export class AppTray {
   // ─── Private ───────────────────────────────────────────────────────────────
 
   private rebuildMenu(): void {
-    const { port, hosts } = this.currentStatus
+    const { hosts } = this.currentStatus
 
     const hostItems = hosts.length > 0
       ? hosts.map((h) => ({
           label: `${this.statusIcon(h.status)} ${h.name || h.id}`,
           enabled: false,
         }))
-      : [{ label: 'Keine Hosts konfiguriert', enabled: false }]
+      : [{ label: t('tray.noHosts'), enabled: false }]
 
     const menu = Menu.buildFromTemplate([
       {
-        label: 'Open in App',
+        label: t('tray.openInApp'),
         click: () => this.onOpenApp(),
       },
       {
-        label: 'Open in Browser',
+        label: t('tray.openInBrowser'),
         click: () => this.onOpenBrowser(),
       },
       { type: 'separator' },
       ...hostItems,
       { type: 'separator' },
       {
-        label: 'Show Window',
+        label: t('tray.showWindow'),
         click: () => this.onShowWindow(),
       },
       {
-        label: 'Quit',
+        label: t('tray.quit'),
         click: () => this.onQuit(),
       },
     ])

@@ -10,6 +10,7 @@
  *   changePort(port)     → fordert Port-Änderung + Neustart an
  *   openPanel()          → öffnet localhost:<port> im Default-Browser
  *   getVersion()         → App-Version aus package.json (z.B. "1.2.3")
+ *   getI18nStrings()     → übersetzte UI-Strings für startup.html
  *   quit()               → graceful shutdown
  */
 import { contextBridge, ipcRenderer } from 'electron'
@@ -34,6 +35,9 @@ contextBridge.exposeInMainWorld('cwpApi', {
 
   getVersion: (): Promise<string> =>
     ipcRenderer.invoke('get-version'),
+
+  getI18nStrings: (): Promise<Record<string, string>> =>
+    ipcRenderer.invoke('get-i18n-strings'),
 
   quit: (): void => {
     ipcRenderer.send('quit')

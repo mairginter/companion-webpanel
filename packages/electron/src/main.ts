@@ -16,6 +16,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { createBackend } from '@cwp/backend'
 import { loadSettings, saveSettings, getSettingsPath } from './settingsHelper'
+import { initElectronI18n, t } from './i18n'
 import { findFreePort } from './portCheck'
 import { StartupWindow } from './startupWindow'
 import { AppTray } from './tray'
@@ -44,6 +45,10 @@ async function main(): Promise<void> {
 
   const userDataPath = app.getPath('userData')
   const settings = loadSettings(userDataPath)
+
+  // Initialise Electron i18n with the language from settings (fallback: 'de')
+  await initElectronI18n(settings.language ?? 'de')
+
   const settingsPath = getSettingsPath(userDataPath)
   const configuredPort = settings.server?.port ?? 8080
 
@@ -103,12 +108,12 @@ async function main(): Promise<void> {
   async function askQuit(): Promise<void> {
     const { response } = await dialog.showMessageBox({
       type: 'question',
-      buttons: ['Beenden', 'Abbrechen'],
+      buttons: [t('dialog.quitConfirm'), t('dialog.cancel')],
       defaultId: 0,
       cancelId: 1,
       title: 'Companion Webpanel',
-      message: 'Companion Webpanel beenden?',
-      detail: 'Das Panel ist dann nicht mehr erreichbar.',
+      message: t('dialog.quitMessage'),
+      detail: t('dialog.quitDetail'),
     })
     if (response === 0) shutdown()
   }
@@ -127,6 +132,18 @@ async function main(): Promise<void> {
 
   ipcMain.handle('get-status', () => appStatus)
   ipcMain.handle('get-version', () => app.getVersion())
+
+  ipcMain.handle('get-i18n-strings', () => ({
+    panelRunsOn:          t('startup.panelRunsOn'),
+    noPortAvailable:      t('startup.noPortAvailable'),
+    waitingForConnection: t('startup.waitingForConnection'),
+    noHostsConfigured:    t('startup.noHostsConfigured'),
+    openInApp:            t('startup.openInApp'),
+    openInBrowser:        t('startup.openInBrowser'),
+    hide:                 t('startup.hide'),
+    quit:                 t('startup.quit'),
+    apply:                t('startup.apply'),
+  }))
 
   // Fix #4: Fenster beim Open Panel nicht schließen
   ipcMain.handle('open-panel', () => {

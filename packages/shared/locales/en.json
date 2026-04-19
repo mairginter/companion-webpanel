@@ -204,5 +204,11 @@
   "errors": {
     "caps_disabled": "Button subscriptions not enabled",
     "connection_error": "Connection error"
+  },
+  "dialog": {
+    "quitConfirm": "Quit",
+    "cancel": "Cancel",
+    "quitMessage": "Quit Companion Webpanel?",
+    "quitDetail": "The panel will no longer be reachable."
   }
 }

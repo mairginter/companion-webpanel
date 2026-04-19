@@ -216,7 +216,7 @@
   <div class="content">
     <!-- Port-Zeile -->
     <div class="port-row">
-      <span class="port-label">Panel läuft auf:</span>
+      <span class="port-label">…</span>
       <span class="port-url">http://localhost:</span>
       <input
         class="port-input"
@@ -232,13 +232,11 @@
     </div>
 
     <!-- Fehler-Banner (nur sichtbar wenn kein Port gefunden) -->
-    <div class="error-banner" id="errorBanner">
-      ⚠ Kein Port verfügbar (8080–8089). Port manuell eingeben und Enter drücken.
-    </div>
+    <div class="error-banner" id="errorBanner"></div>
 
     <!-- Host-Status -->
     <div class="hosts" id="hosts">
-      <div class="no-hosts">Warte auf Verbindung…</div>
+      <div class="no-hosts" id="initialHostMsg">…</div>
     </div>
 
     <!-- Aktions-Buttons -->
@@ -252,6 +250,19 @@
 
   <script>
     const api = window.cwpApi
+
+    // ─── i18n ────────────────────────────────────────────────────────────────
+
+    api.getI18nStrings().then((s) => {
+      document.querySelector('.port-label').textContent = s.panelRunsOn
+      document.getElementById('errorBanner').textContent = s.noPortAvailable
+      document.getElementById('btnApplyPort').textContent = s.apply
+      document.getElementById('btnOpenApp').textContent = s.openInApp
+      document.getElementById('btnOpen').textContent = s.openInBrowser
+      document.getElementById('btnHide').textContent = s.hide
+      document.getElementById('btnQuit').textContent = s.quit
+      window._i18n = s
+    })
 
     // ─── Status rendern ──────────────────────────────────────────────────────
 
@@ -268,7 +279,8 @@
       // Hosts
       const hostsEl = document.getElementById('hosts')
       if (!status.hosts || status.hosts.length === 0) {
-        hostsEl.innerHTML = '<div class="no-hosts">Keine Hosts konfiguriert</div>'
+        const msg = window._i18n?.noHostsConfigured ?? 'Keine Hosts konfiguriert'
+        hostsEl.innerHTML = `<div class="no-hosts">${msg}</div>`
         return
       }
 
