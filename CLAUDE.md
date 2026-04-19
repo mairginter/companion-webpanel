@@ -171,9 +171,31 @@ CompanionWebpannel/
 - ✅ **Status-Bug gefixt** — initialer `connecting`-Status wird jetzt emittet; neue Frontend-Clients bekommen `vSessionStatus` beim Connect
 - ✅ **PropertiesPanel-Layout** — auf CompanionButtonProps-Niveau (lbl/row/sel-Style, 20px Checkboxen, grote Selects)
 
-### Nächster Sprint — Hilfe & KI-Dokumentation
-- ⬜ **HelpModal** (~2–3h): `?`-Button öffnet Modal mit (1) Download-Link `help-me-KI-by_alex.md` ganz oben prominent, (2) Keyboard-Shortcuts-Tabelle, (3) Feature-Übersicht aller Canvas-Elemente
-- ⬜ **`help-me-KI-by_alex.md`** (~3h): KI-optimierte Komplettbeschreibung aller Features + Konfigurationen — liegt unter `public/` → herunterladbar via `<a href="/help-me-KI-by_alex.md" download>` direkt aus dem Modal; Datei ganz oben im Modal mit Hinweis: "Gib diese Datei einer KI — sie kann dann alle Fragen zur App beantworten"
+### Hilfe & KI-Dokumentation
+- ✅ **HelpModal** — `?`-Button öffnet 3-Tab-Modal (KI / Shortcuts / Features) (Commit 5edc871)
+- ✅ **`help-me-KI-by_alex.md`** — KI-optimierte Komplettbeschreibung als Download im HelpModal (Commit 6948519)
+
+### Code Review v1.3.0 — Umgesetzt (Commit 885c7f4)
+- ✅ **P0 Breaking-Fixes** — Body-Size-Guards auf POST-Endpoints (DoS-Schutz), Keepalive-Timer-Clear vor Überschreiben (SatelliteClient + VirtualSurfaceSession), lineBuffer-Overflow-Guards (10 MB), broadcast try/catch, Backend-Stop-Fehler abgefangen, Cache-Clear fire-and-forget
+- ✅ **P1 Startup + Bundle** — Startup-Fenster sofort + Backend async im Hintergrund (−500…−2000 ms), electron-builder `asar` + `compression: maximum` + `removePackageScripts`, esbuild `minify` + `sourcemap: false` für Release, unused root-deps entfernt (`@esbuild/win32-arm64`, `@rollup/*-arm64-msvc`; `electron` → devDependency), Vite-Build mit `manualChunks` (react-vendor 142 KB, dnd-kit 37 KB, i18n 56 KB)
+- ✅ **P1 Performance** — Bitmap-Cache (500-Entry FIFO + shared Canvas) in `utils/bitmap.ts`, StateStore Sekundär-Index (`hostIndex`/`deviceIndex`) macht `clearHost` O(k) statt O(n), `PARAM_REGEX` als Modul-Konstante, `serveStatic` async (`fs.promises.stat`)
+- ✅ **P2-1 + P3-4** — Kompaktes JSON in `/api/settings` GET (kein pretty-print), Material Icons via `material-icons` npm-Paket lokal gebundled (Offline-fähige PWA, ~128 KB woff2)
+- ✅ **Release v1.3.0** — `CompanionWebpanel-1.3.0.exe` 79 MB portable (Win x64), Tag `v1.3.0` lokal (nicht gepusht)
+
+### Code Review — Noch offen (P2/P3, nach Bedarf)
+- ⬜ **P2-2** i18n-Strings IPC-Handler cachen (Zeile 136-146 `main.ts`), bei `changeLanguage` neu bauen
+- ⬜ **P2-3** Zustand-Store `selectedIds: Set` bricht Shallow-Equality — zu `string[]` oder `useShallow` umstellen
+- ⬜ **P2-4** `PropertiesPanel.selectedElements` per `useMemo` statt inline-Filter
+- ⬜ **P2-5** Canvas-Grid: 4× `repeating-linear-gradient` pro Repaint → SVG-Pattern oder Canvas-PNG als `backgroundImage`
+- ⬜ **P2-6** Undo-Stack unbounded — Limit auf 20-30 Snapshots (`saveUndoSnapshot` in `useAppStore.ts`)
+- ⬜ **P2-7** `icon-512.png` prüfen und ggf. aus `packages/electron/assets/` + `electron-builder.yml` entfernen (~30 KB)
+- ⬜ **P2-8** React.StrictMode nur in DEV (`main.tsx`) — Prod eh kein Effekt, aber sauberer
+- ⬜ **P2-9** `useWebSocket`: `addEventListener`/`removeEventListener` + `useCallback`-Deps stabilisieren
+- ⬜ **P3-1** `process.on('exit')` + async stop: durch `app.on('before-quit', e => { e.preventDefault(); shutdown() })` ersetzen
+- ⬜ **P3-2** SatelliteClient Reconnect-Backoff prüfen — Exponential statt fester Delay
+- ⬜ **P3-3** `@cwp/shared` Alias in `vite.config.ts` auf `dist/types.js` statt TS-Source zeigen lassen
+
+Plan-Datei mit vollständigen Fix-Details: `C:\Users\mairg\.claude\plans\reviewe-den-gesamten-code-wise-kay.md`
 
 ### Zukünftige Features (geplant)
 - **Panel Export/Import** (~2–3h): `.cwp`-Datei (JSON) pro Panel; hostId-Mapping-Dialog beim Import
