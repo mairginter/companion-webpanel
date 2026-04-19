@@ -106,7 +106,6 @@
     "clipThreshold": "Clip threshold (dBFS)",
     "accentColor": "Accent color",
     "channelName": "Channel name",
-    "hostId": "Host",
     "host": "Host"
   },
   "addElement": {
