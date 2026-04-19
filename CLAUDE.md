@@ -171,6 +171,10 @@ CompanionWebpannel/
 - ✅ **Status-Bug gefixt** — initialer `connecting`-Status wird jetzt emittet; neue Frontend-Clients bekommen `vSessionStatus` beim Connect
 - ✅ **PropertiesPanel-Layout** — auf CompanionButtonProps-Niveau (lbl/row/sel-Style, 20px Checkboxen, grote Selects)
 
+### Nächster Sprint — Hilfe & KI-Dokumentation
+- ⬜ **HelpModal** (~2–3h): `?`-Button öffnet Modal mit (1) Download-Link `help-me-KI-by_alex.md` ganz oben prominent, (2) Keyboard-Shortcuts-Tabelle, (3) Feature-Übersicht aller Canvas-Elemente
+- ⬜ **`help-me-KI-by_alex.md`** (~3h): KI-optimierte Komplettbeschreibung aller Features + Konfigurationen — liegt unter `public/` → herunterladbar via `<a href="/help-me-KI-by_alex.md" download>` direkt aus dem Modal; Datei ganz oben im Modal mit Hinweis: "Gib diese Datei einer KI — sie kann dann alle Fragen zur App beantworten"
+
 ### Zukünftige Features (geplant)
 - **Panel Export/Import** (~2–3h): `.cwp`-Datei (JSON) pro Panel; hostId-Mapping-Dialog beim Import
 - **Host-ID Remapping** (~3–5h): alle Button-Referenzen von hostId A → B umschreiben
