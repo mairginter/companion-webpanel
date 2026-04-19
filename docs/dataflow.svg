@@ -1,0 +1,219 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 620" width="1100" height="620" font-family="'Segoe UI', Arial, sans-serif">
+  <!-- Background -->
+  <rect width="1100" height="620" fill="#0f1117" rx="12"/>
+
+  <!-- Title -->
+  <text x="550" y="36" text-anchor="middle" fill="#e2e8f0" font-size="16" font-weight="700" letter-spacing="1">Companion Webpanel — Datenfluss &amp; Protokolle</text>
+
+  <!-- ─── COLUMN 1: External Devices ─── -->
+  <text x="110" y="72" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">EXTERNE GERÄTE / SOFTWARE</text>
+
+  <!-- vMix -->
+  <rect x="20" y="88" width="180" height="44" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="110" y="106" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600">vMix</text>
+  <text x="110" y="122" text-anchor="middle" fill="#64748b" font-size="10">Live Production Software</text>
+
+  <!-- OBS -->
+  <rect x="20" y="148" width="180" height="44" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="110" y="166" text-anchor="middle" fill="#c4b5fd" font-size="12" font-weight="600">OBS Studio</text>
+  <text x="110" y="182" text-anchor="middle" fill="#64748b" font-size="10">Streaming Software</text>
+
+  <!-- Aximmetry -->
+  <rect x="20" y="208" width="180" height="44" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="110" y="226" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="600">Aximmetry</text>
+  <text x="110" y="242" text-anchor="middle" fill="#64748b" font-size="10">Virtual Studio / XR</text>
+
+  <!-- Allen &amp; Heath -->
+  <rect x="20" y="268" width="180" height="44" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+  <text x="110" y="286" text-anchor="middle" fill="#6ee7b7" font-size="12" font-weight="600">Allen &amp; Heath Mixer</text>
+  <text x="110" y="302" text-anchor="middle" fill="#64748b" font-size="10">Audio Mixing Console</text>
+
+  <!-- NDI Tools -->
+  <rect x="20" y="328" width="180" height="44" rx="8" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="110" y="346" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="600">NDI Tools / Monitor</text>
+  <text x="110" y="362" text-anchor="middle" fill="#64748b" font-size="10">Network Video</text>
+
+  <!-- PTZ Camera -->
+  <rect x="20" y="388" width="180" height="44" rx="8" fill="#1e293b" stroke="#f97316" stroke-width="1.5"/>
+  <text x="110" y="406" text-anchor="middle" fill="#fdba74" font-size="12" font-weight="600">PTZ Cameras</text>
+  <text x="110" y="422" text-anchor="middle" fill="#64748b" font-size="10">VISCA / HTTP Control</text>
+
+  <!-- Other -->
+  <rect x="20" y="448" width="180" height="44" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="110" y="466" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="600">DMX / MIDI Devices</text>
+  <text x="110" y="482" text-anchor="middle" fill="#64748b" font-size="10">Lighting, Controllers</text>
+
+  <!-- ─── COLUMN 2: Companion ─── -->
+  <text x="420" y="72" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">BITFOCUS COMPANION</text>
+
+  <rect x="320" y="88" width="200" height="404" rx="12" fill="#1a2035" stroke="#6366f1" stroke-width="2"/>
+  <text x="420" y="116" text-anchor="middle" fill="#a5b4fc" font-size="14" font-weight="700">Bitfocus Companion</text>
+  <text x="420" y="134" text-anchor="middle" fill="#475569" font-size="10">Automation Engine</text>
+
+  <!-- Modules inside Companion -->
+  <rect x="336" y="148" width="168" height="30" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="1"/>
+  <text x="420" y="168" text-anchor="middle" fill="#93c5fd" font-size="10">vMix Module (REST)</text>
+
+  <rect x="336" y="186" width="168" height="30" rx="6" fill="#0f172a" stroke="#8b5cf6" stroke-width="1"/>
+  <text x="420" y="206" text-anchor="middle" fill="#c4b5fd" font-size="10">OBS-WebSocket Module</text>
+
+  <rect x="336" y="224" width="168" height="30" rx="6" fill="#0f172a" stroke="#f59e0b" stroke-width="1"/>
+  <text x="420" y="244" text-anchor="middle" fill="#fcd34d" font-size="10">Aximmetry Module (OSC)</text>
+
+  <rect x="336" y="262" width="168" height="30" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="1"/>
+  <text x="420" y="282" text-anchor="middle" fill="#6ee7b7" font-size="10">A&amp;H Module (MIDI/TCP)</text>
+
+  <rect x="336" y="300" width="168" height="30" rx="6" fill="#0f172a" stroke="#ef4444" stroke-width="1"/>
+  <text x="420" y="320" text-anchor="middle" fill="#fca5a5" font-size="10">NDI Module</text>
+
+  <rect x="336" y="338" width="168" height="30" rx="6" fill="#0f172a" stroke="#f97316" stroke-width="1"/>
+  <text x="420" y="358" text-anchor="middle" fill="#fdba74" font-size="10">PTZ Module (VISCA)</text>
+
+  <rect x="336" y="376" width="168" height="30" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1"/>
+  <text x="420" y="396" text-anchor="middle" fill="#94a3b8" font-size="10">DMX / MIDI Modules</text>
+
+  <!-- Companion Port Label -->
+  <rect x="350" y="418" width="140" height="60" rx="6" fill="#1e293b"/>
+  <text x="420" y="436" text-anchor="middle" fill="#64748b" font-size="9">Satellite API</text>
+  <text x="420" y="452" text-anchor="middle" fill="#6366f1" font-size="11" font-weight="600">WebSocket :16623</text>
+  <text x="420" y="468" text-anchor="middle" fill="#64748b" font-size="9">Button State + Press Events</text>
+
+  <!-- ─── Protocol arrows: devices → Companion ─── -->
+  <!-- vMix REST -->
+  <line x1="200" y1="110" x2="320" y2="163" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="258" y="126" text-anchor="middle" fill="#3b82f6" font-size="9" transform="rotate(-12, 258, 126)">REST API</text>
+
+  <!-- OBS WS -->
+  <line x1="200" y1="170" x2="320" y2="201" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="258" y="176" text-anchor="middle" fill="#8b5cf6" font-size="9" transform="rotate(-5, 258, 176)">WebSocket</text>
+
+  <!-- Aximmetry OSC -->
+  <line x1="200" y1="230" x2="320" y2="239" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="255" y="226" text-anchor="middle" fill="#f59e0b" font-size="9">OSC / UDP</text>
+
+  <!-- A&H MIDI -->
+  <line x1="200" y1="290" x2="320" y2="277" stroke="#10b981" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="255" y="295" text-anchor="middle" fill="#10b981" font-size="9">MIDI / TCP</text>
+
+  <!-- NDI -->
+  <line x1="200" y1="350" x2="320" y2="315" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="255" y="348" text-anchor="middle" fill="#ef4444" font-size="9">NDI SDK</text>
+
+  <!-- PTZ -->
+  <line x1="200" y1="410" x2="320" y2="353" stroke="#f97316" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="252" y="398" text-anchor="middle" fill="#f97316" font-size="9">VISCA / HTTP</text>
+
+  <!-- DMX/MIDI -->
+  <line x1="200" y1="470" x2="320" y2="391" stroke="#475569" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="248" y="445" text-anchor="middle" fill="#475569" font-size="9">MIDI / ArtNet</text>
+
+  <!-- ─── COLUMN 3: Backend ─── -->
+  <text x="680" y="72" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">COMPANION WEBPANEL BACKEND</text>
+
+  <rect x="560" y="88" width="240" height="280" rx="12" fill="#1a2035" stroke="#6366f1" stroke-width="2"/>
+  <text x="680" y="114" text-anchor="middle" fill="#a5b4fc" font-size="13" font-weight="700">Node.js Backend</text>
+
+  <rect x="576" y="126" width="208" height="36" rx="6" fill="#0f172a" stroke="#6366f1" stroke-width="1"/>
+  <text x="680" y="141" text-anchor="middle" fill="#818cf8" font-size="10" font-weight="600">SatelliteClient</text>
+  <text x="680" y="155" text-anchor="middle" fill="#475569" font-size="9">1 WebSocket pro Host · ADD-SUB · PING/PONG</text>
+
+  <rect x="576" y="172" width="208" height="36" rx="6" fill="#0f172a" stroke="#6366f1" stroke-width="1"/>
+  <text x="680" y="187" text-anchor="middle" fill="#818cf8" font-size="10" font-weight="600">HostManager</text>
+  <text x="680" y="201" text-anchor="middle" fill="#475569" font-size="9">Orchestrierung · Subscription-Diff</text>
+
+  <rect x="576" y="218" width="208" height="36" rx="6" fill="#0f172a" stroke="#6366f1" stroke-width="1"/>
+  <text x="680" y="233" text-anchor="middle" fill="#818cf8" font-size="10" font-weight="600">StateStore</text>
+  <text x="680" y="247" text-anchor="middle" fill="#475569" font-size="9">In-Memory · Delta-Updates · Button-State</text>
+
+  <rect x="576" y="264" width="208" height="36" rx="6" fill="#0f172a" stroke="#6366f1" stroke-width="1"/>
+  <text x="680" y="279" text-anchor="middle" fill="#818cf8" font-size="10" font-weight="600">ClientServer</text>
+  <text x="680" y="293" text-anchor="middle" fill="#475569" font-size="9">HTTP :8080 · WebSocket :8080</text>
+
+  <!-- Settings API note -->
+  <rect x="576" y="310" width="208" height="44" rx="6" fill="#0f172a"/>
+  <text x="680" y="328" text-anchor="middle" fill="#64748b" font-size="9">GET /api/settings · POST /api/preview-page</text>
+  <text x="680" y="344" text-anchor="middle" fill="#64748b" font-size="9">Panel-Config · Button-Picker Preview</text>
+
+  <!-- ─── COLUMN 4: Frontend ─── -->
+  <text x="970" y="72" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="2">FRONTEND / CLIENT</text>
+
+  <!-- Browser PWA -->
+  <rect x="840" y="88" width="240" height="130" rx="12" fill="#1a2035" stroke="#22d3ee" stroke-width="2"/>
+  <text x="960" y="112" text-anchor="middle" fill="#67e8f9" font-size="13" font-weight="700">Browser PWA</text>
+  <text x="960" y="128" text-anchor="middle" fill="#475569" font-size="10">React + Zustand · Vite · Canvas</text>
+  <rect x="856" y="138" width="208" height="24" rx="5" fill="#0f172a"/>
+  <text x="960" y="155" text-anchor="middle" fill="#94a3b8" font-size="10">Touch-Panel · Edit-Mode · Zoom</text>
+  <rect x="856" y="170" width="208" height="24" rx="5" fill="#0f172a"/>
+  <text x="960" y="187" text-anchor="middle" fill="#94a3b8" font-size="10">CompanionButton · Shape · Label · Strip</text>
+
+  <!-- Electron -->
+  <rect x="840" y="238" width="240" height="130" rx="12" fill="#1a2035" stroke="#34d399" stroke-width="2"/>
+  <text x="960" y="262" text-anchor="middle" fill="#6ee7b7" font-size="13" font-weight="700">Electron App</text>
+  <text x="960" y="278" text-anchor="middle" fill="#475569" font-size="10">Desktop · Win + Mac · Tray-Icon</text>
+  <rect x="856" y="288" width="208" height="24" rx="5" fill="#0f172a"/>
+  <text x="960" y="305" text-anchor="middle" fill="#94a3b8" font-size="10">Startup-Window · Single Instance</text>
+  <rect x="856" y="320" width="208" height="24" rx="5" fill="#0f172a"/>
+  <text x="960" y="337" text-anchor="middle" fill="#94a3b8" font-size="10">Backend eingebettet (kein Node nötig)</text>
+
+  <!-- Tablet/Touch note -->
+  <rect x="840" y="390" width="240" height="60" rx="12" fill="#1a2035" stroke="#475569" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="960" y="415" text-anchor="middle" fill="#64748b" font-size="12" font-weight="600">Tablet / iPad / Android</text>
+  <text x="960" y="435" text-anchor="middle" fill="#475569" font-size="10">Browser im LAN · kein Install nötig</text>
+
+  <!-- ─── CENTER ARROW: Companion → Backend (Satellite API) ─── -->
+  <!-- Bidirectional arrow -->
+  <line x1="520" y1="248" x2="560" y2="248" stroke="#6366f1" stroke-width="3"/>
+  <polygon points="558,243 568,248 558,253" fill="#6366f1"/>
+  <polygon points="522,243 512,248 522,253" fill="#6366f1"/>
+  <!-- Label box -->
+  <rect x="510" y="270" width="110" height="36" rx="6" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="565" y="285" text-anchor="middle" fill="#a5b4fc" font-size="9" font-weight="700">Satellite API</text>
+  <text x="565" y="298" text-anchor="middle" fill="#818cf8" font-size="9">WS · Port 16623</text>
+
+  <!-- Protocol detail boxes below -->
+  <rect x="495" y="318" width="140" height="54" rx="5" fill="#0f172a" stroke="#6366f1" stroke-width="1"/>
+  <text x="565" y="334" text-anchor="middle" fill="#64748b" font-size="8">→ ADD-SUB / REMOVE-SUB</text>
+  <text x="565" y="347" text-anchor="middle" fill="#64748b" font-size="8">→ SUB-PRESS / SUB-ROTATE</text>
+  <text x="565" y="360" text-anchor="middle" fill="#64748b" font-size="8">← SUB-STATE (Bitmap, Text, Color)</text>
+
+  <!-- ─── RIGHT ARROW: Backend → Frontend (WS :8080) ─── -->
+  <line x1="800" y1="220" x2="840" y2="170" stroke="#22d3ee" stroke-width="2.5"/>
+  <polygon points="833,168 843,163 840,174" fill="#22d3ee"/>
+  <polygon points="807,222 797,227 800,216" fill="#22d3ee"/>
+
+  <line x1="800" y1="280" x2="840" y2="310" stroke="#34d399" stroke-width="2.5"/>
+  <polygon points="833,312 843,317 840,306" fill="#34d399"/>
+  <polygon points="807,278 797,273 800,284" fill="#34d399"/>
+
+  <!-- WS :8080 Label -->
+  <rect x="778" y="230" width="110" height="36" rx="6" fill="#0c2830" stroke="#22d3ee" stroke-width="1.5"/>
+  <text x="833" y="245" text-anchor="middle" fill="#67e8f9" font-size="9" font-weight="700">WebSocket</text>
+  <text x="833" y="258" text-anchor="middle" fill="#22d3ee" font-size="9">Port 8080</text>
+
+  <!-- WS :8080 details -->
+  <rect x="760" y="470" width="200" height="54" rx="5" fill="#0f172a" stroke="#22d3ee" stroke-width="1"/>
+  <text x="860" y="487" text-anchor="middle" fill="#64748b" font-size="8">← button_state (Bitmap/Color/Text)</text>
+  <text x="860" y="500" text-anchor="middle" fill="#64748b" font-size="8">← settings / session_status</text>
+  <text x="860" y="513" text-anchor="middle" fill="#64748b" font-size="8">→ key_press / rotate</text>
+
+  <!-- Legend -->
+  <rect x="20" y="540" width="1060" height="64" rx="8" fill="#1e293b"/>
+  <text x="40" y="558" fill="#64748b" font-size="10" font-weight="600">PROTOKOLL-LEGENDE:</text>
+  <line x1="165" y1="553" x2="200" y2="553" stroke="#3b82f6" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="205" y="557" fill="#93c5fd" font-size="10">REST API (HTTP/JSON)</text>
+  <line x1="335" y1="553" x2="370" y2="553" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="375" y="557" fill="#c4b5fd" font-size="10">WebSocket</text>
+  <line x1="455" y1="553" x2="490" y2="553" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="495" y="557" fill="#fcd34d" font-size="10">OSC / UDP</text>
+  <line x1="565" y1="553" x2="600" y2="553" stroke="#10b981" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="605" y="557" fill="#6ee7b7" font-size="10">MIDI / TCP</text>
+  <line x1="680" y1="553" x2="715" y2="553" stroke="#6366f1" stroke-width="3"/>
+  <polygon points="713,549 722,553 713,557" fill="#6366f1"/>
+  <text x="727" y="557" fill="#a5b4fc" font-size="10">Satellite API WS:16623 (bidirektional)</text>
+  <line x1="900" y1="553" x2="935" y2="553" stroke="#22d3ee" stroke-width="2.5"/>
+  <polygon points="933,549 942,553 933,557" fill="#22d3ee"/>
+  <text x="947" y="557" fill="#67e8f9" font-size="10">Backend WS:8080 (bidirektional)</text>
+
+  <text x="40" y="592" fill="#64748b" font-size="10" font-weight="600">STACK:</text>
+  <text x="85" y="592" fill="#94a3b8" font-size="10">Node.js + TypeScript · React + Zustand · Electron · Bitfocus Companion 4.3+ (Satellite API v1.10)</text>
+</svg>
