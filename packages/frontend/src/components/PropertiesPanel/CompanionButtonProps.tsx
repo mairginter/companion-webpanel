@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CompanionButtonElement } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { NumericInput } from './NumericInput'
@@ -7,6 +8,7 @@ import { CompanionButtonPickerDialog } from '../AddElement/CompanionButtonPicker
 interface Props { element: CompanionButtonElement; panelId: string; side?: 'left' | 'right'; panelWidth?: number }
 
 export function CompanionButtonProps({ element, panelId, side = 'right', panelWidth = 320 }: Props) {
+  const { t } = useTranslation()
   const setSettings = useAppStore((s) => s.setSettings)
   const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
@@ -59,7 +61,7 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
 
       {/* Ref: visueller Picker */}
       <div style={{ background: '#121821', borderRadius: 6, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={lbl}>Companion Ref</div>
+        <div style={lbl}>{t('propertiesPanel.companionRef')}</div>
         <div style={{ fontSize: 12, color: '#8896aa' }}>
           <span style={{ color: '#e9edf2' }}>{hostName}</span>
           {' · '}
@@ -76,41 +78,41 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
             cursor: hostConnected ? 'pointer' : 'not-allowed', textAlign: 'center', touchAction: 'manipulation',
           }}
         >
-          {hostConnected ? 'Ändern…' : 'Host offline'}
+          {hostConnected ? t('propertiesPanel.change') : t('propertiesPanel.hostOffline')}
         </button>
       </div>
 
       <div style={row}>
-        <span style={lbl}>Show Background</span>
+        <span style={lbl}>{t('propertiesPanel.showBgColor')}</span>
         <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showBgColor, true)} onChange={(e) => updateRender({ showBgColor: e.target.checked })} />
       </div>
       <div style={row}>
-        <span style={lbl}>Show Bitmap</span>
+        <span style={lbl}>{t('propertiesPanel.showBitmap')}</span>
         <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showBitmap, false)} onChange={(e) => updateRender({ showBitmap: e.target.checked })} />
       </div>
       {tog(r.showBitmap, false) && (
         <div style={row}>
-          <span style={lbl}>Scale Bitmap</span>
+          <span style={lbl}>{t('propertiesPanel.scaleBitmap')}</span>
           <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.scaleBitmap, true)} onChange={(e) => updateRender({ scaleBitmap: e.target.checked })} />
         </div>
       )}
       <div style={row}>
-        <span style={lbl}>Show Text</span>
+        <span style={lbl}>{t('propertiesPanel.showText')}</span>
         <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showText, true)} onChange={(e) => updateRender({ showText: e.target.checked })} />
       </div>
       <div style={row}>
-        <span style={lbl}>Text-Align</span>
+        <span style={lbl}>{t('propertiesPanel.textAlign')}</span>
         <select value={r.textAlign ?? 'bottom'} style={sel}
           onChange={(e) => updateRender({ textAlign: e.target.value as 'top' | 'center' | 'bottom' })}>
-          <option value="top">Top</option>
-          <option value="center">Center</option>
-          <option value="bottom">Bottom</option>
+          <option value="top">{t('propertiesPanel.top')}</option>
+          <option value="center">{t('propertiesPanel.center')}</option>
+          <option value="bottom">{t('propertiesPanel.bottom')}</option>
         </select>
       </div>
-      <NumericInput label="Border-Radius" value={r.borderRadius ?? 6} min={0}
+      <NumericInput label={t('propertiesPanel.borderRadius')} value={r.borderRadius ?? 6} min={0}
         onChange={(v) => updateRender({ borderRadius: v })} />
       <div style={row}>
-        <span style={lbl}>Physical Style</span>
+        <span style={lbl}>{t('propertiesPanel.physicalStyle')}</span>
         <input
           type="checkbox"
           style={{ width: 20, height: 20, cursor: 'pointer' }}
@@ -119,13 +121,13 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
         />
       </div>
       {tog(r.showText, true) && (
-        <NumericInput label="Font-Size" value={r.fontSize ?? 11} min={6} unit="px"
+        <NumericInput label={t('propertiesPanel.fontSize')} value={r.fontSize ?? 11} min={6} unit="px"
           onChange={(v) => updateRender({ fontSize: v })} />
       )}
 
       {pickerOpen && (
         <CompanionButtonPickerDialog
-          confirmLabel="Übernehmen"
+          confirmLabel={t('propertiesPanel.confirm')}
           initialRef={{ hostId: element.ref.hostId, page: element.ref.page }}
           onConfirm={(refs) => { if (refs.length > 0) updateRef(refs[0]); setPickerOpen(false) }}
           onClose={() => setPickerOpen(false)}

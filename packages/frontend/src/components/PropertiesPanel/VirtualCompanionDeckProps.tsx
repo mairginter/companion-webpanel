@@ -6,6 +6,7 @@
  * Layout angelehnt an CompanionButtonProps.tsx (lbl/row/sel Style-Variablen, kompaktere Checkboxen).
  */
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { VirtualCompanionDeckElement } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { NumericInput } from './NumericInput'
@@ -23,6 +24,7 @@ function generateDeviceId(): string {
 }
 
 export function VirtualCompanionDeckProps({ element, panelId }: Props) {
+  const { t } = useTranslation()
   const updateElement = useAppStore((s) => s.updateElement)
   const settings = useAppStore((s) => s.settings)
   const vStatus = useAppStore((s) => s.getVirtualSessionStatus(element.deviceId))
@@ -51,19 +53,19 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
 
       {/* ── Surface ── */}
-      <div style={lbl}>Surface</div>
+      <div style={lbl}>{t('propertiesPanel.surface')}</div>
 
       {/* Name */}
       <input
         style={{ background: '#1a2030', border: '1px solid #2a3344', borderRadius: 4, padding: '8px 10px', color: '#e9edf2', fontSize: 14, width: '100%', boxSizing: 'border-box' }}
         value={element.surfaceName}
         onChange={e => update({ surfaceName: e.target.value })}
-        placeholder="Surface Name"
+        placeholder={t('propertiesPanel.surfaceName')}
       />
 
       {/* Grid */}
       <div style={row}>
-        <span style={lbl}>Grid</span>
+        <span style={lbl}>{t('propertiesPanel.grid')}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <NumericInput value={element.grid.cols} onChange={v => update({ grid: { ...element.grid, cols: v } })} min={1} max={32} compact />
           <span style={{ color: '#4a5568', fontSize: 12 }}>×</span>
@@ -73,7 +75,7 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {/* Host */}
       <div style={row}>
-        <span style={lbl}>Host</span>
+        <span style={lbl}>{t('propertiesPanel.host')}</span>
         <select
           style={sel}
           value={element.hostId}
@@ -87,13 +89,13 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {/* Status */}
       <div style={row}>
-        <span style={lbl}>Status</span>
+        <span style={lbl}>{t('propertiesPanel.status')}</span>
         <span style={{ fontSize: 13, color: statusColor }}>● {vStatus ?? '…'}</span>
       </div>
 
       {/* Device ID */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={lbl}>Device ID</span>
+        <span style={lbl}>{t('propertiesPanel.deviceId')}</span>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <div style={{
             background: '#1a2030', border: '1px solid #2a3344', borderRadius: 4, padding: '8px 10px',
@@ -107,21 +109,21 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
               onClick={() => setConfirmNewId(true)}
               style={{ padding: '8px 12px', borderRadius: 4, border: '1px solid #2a3344', background: '#1a2030', color: '#4a5568', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
-              ↺ Neu
+              {t('propertiesPanel.newId')}
             </button>
           ) : (
             <button
               onClick={() => { update({ deviceId: generateDeviceId() }); setConfirmNewId(false) }}
               style={{ padding: '8px 12px', borderRadius: 4, border: '1px solid #ff8a3d', background: '#1a2030', color: '#ff8a3d', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
-              Bestätigen
+              {t('propertiesPanel.confirm')}
             </button>
           )}
         </div>
         {confirmNewId && (
           <div style={{ color: '#ff8a3d', fontSize: 11, marginTop: 2 }}>
-            Neue ID setzt die Companion-Surface-Zuweisung zurück.{' '}
-            <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setConfirmNewId(false)}>Abbrechen</span>
+            {t('propertiesPanel.newIdWarning')}{' '}
+            <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setConfirmNewId(false)}>{t('propertiesPanel.cancelAction')}</span>
           </div>
         )}
       </div>
@@ -130,11 +132,11 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
       <div style={{ borderTop: '1px solid #1e2530' }} />
 
       {/* ── Darstellung ── */}
-      <div style={lbl}>Darstellung</div>
+      <div style={lbl}>{t('propertiesPanel.display')}</div>
 
       {/* Hintergrundfarbe */}
       <div style={row}>
-        <span style={lbl}>Hintergrund</span>
+        <span style={lbl}>{t('propertiesPanel.background')}</span>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <input
             type="color"
@@ -152,7 +154,7 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {/* Deckkraft */}
       <NumericInput
-        label="Deckkraft %"
+        label={`${t('propertiesPanel.opacity')} %`}
         value={Math.round(element.style.opacity * 100)}
         onChange={v => updateStyle({ opacity: Math.max(0, Math.min(1, v / 100)) })}
         min={0}
@@ -160,7 +162,7 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {/* Eckenradius */}
       <NumericInput
-        label="Eckenradius"
+        label={t('propertiesPanel.borderRadius')}
         value={element.style.borderRadius}
         onChange={v => updateStyle({ borderRadius: v })}
         min={0}
@@ -168,7 +170,7 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {/* Padding */}
       <NumericInput
-        label="Padding"
+        label={t('propertiesPanel.padding')}
         value={element.style.padding}
         onChange={v => updateStyle({ padding: v })}
         min={0}
@@ -176,7 +178,7 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {/* Gap */}
       <NumericInput
-        label="Gap"
+        label={t('propertiesPanel.gap')}
         value={element.style.gap}
         onChange={v => updateStyle({ gap: v })}
         min={0}
@@ -186,11 +188,11 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
       <div style={{ borderTop: '1px solid #1e2530' }} />
 
       {/* ── Button-Darstellung ── */}
-      <div style={lbl}>Button-Darstellung</div>
+      <div style={lbl}>{t('propertiesPanel.buttonDisplay')}</div>
 
       {/* Bitmap */}
       <div style={row}>
-        <span style={lbl}>Bitmap</span>
+        <span style={lbl}>{t('propertiesPanel.showBitmap')}</span>
         <input
           type="checkbox"
           style={{ width: 20, height: 20, cursor: 'pointer' }}
@@ -201,7 +203,7 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {element.render?.showBitmap === true && (
         <div style={row}>
-          <span style={lbl}>Bitmap skalieren</span>
+          <span style={lbl}>{t('propertiesPanel.scaleBitmap')}</span>
           <input
             type="checkbox"
             style={{ width: 20, height: 20, cursor: 'pointer' }}
@@ -213,7 +215,7 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {/* Hintergrundfarbe */}
       <div style={row}>
-        <span style={lbl}>Hintergrundfarbe</span>
+        <span style={lbl}>{t('propertiesPanel.showBgColor')}</span>
         <input
           type="checkbox"
           style={{ width: 20, height: 20, cursor: 'pointer' }}
@@ -224,7 +226,7 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {/* Text-Overlay */}
       <div style={row}>
-        <span style={lbl}>Text-Overlay</span>
+        <span style={lbl}>{t('propertiesPanel.textOverlay')}</span>
         <input
           type="checkbox"
           style={{ width: 20, height: 20, cursor: 'pointer' }}
@@ -235,22 +237,22 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {element.render?.showText !== false && (
         <div style={row}>
-          <span style={lbl}>Text-Position</span>
+          <span style={lbl}>{t('propertiesPanel.textPosition')}</span>
           <select
             style={sel}
             value={element.render?.textAlign ?? 'bottom'}
             onChange={e => updateRender({ textAlign: e.target.value as 'top' | 'center' | 'bottom' })}
           >
-            <option value="top">Oben</option>
-            <option value="center">Mitte</option>
-            <option value="bottom">Unten</option>
+            <option value="top">{t('propertiesPanel.top')}</option>
+            <option value="center">{t('propertiesPanel.center')}</option>
+            <option value="bottom">{t('propertiesPanel.bottom')}</option>
           </select>
         </div>
       )}
 
       {/* Button-Radius */}
       <NumericInput
-        label="Button-Radius"
+        label={t('propertiesPanel.buttonRadius')}
         value={element.render?.borderRadius ?? 4}
         onChange={v => updateRender({ borderRadius: v })}
         min={0}
@@ -258,7 +260,7 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {/* Schriftgröße */}
       <NumericInput
-        label="Schriftgröße"
+        label={t('propertiesPanel.fontSize')}
         value={element.render?.fontSize ?? 11}
         onChange={v => updateRender({ fontSize: v })}
         min={6}
@@ -267,7 +269,7 @@ export function VirtualCompanionDeckProps({ element, panelId }: Props) {
 
       {/* Leer-Button Farbe */}
       <div style={row}>
-        <span style={lbl}>Leer-Button Farbe</span>
+        <span style={lbl}>{t('propertiesPanel.emptyButtonColor')}</span>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <input
             type="color"

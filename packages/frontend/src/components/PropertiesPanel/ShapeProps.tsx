@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { AnyElement, ShapeElement } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { ColorPicker } from './ColorPicker'
@@ -7,6 +8,7 @@ import { NumericInput } from './NumericInput'
 interface Props { element: ShapeElement; panelId: string }
 
 export function ShapeProps({ element, panelId }: Props) {
+  const { t } = useTranslation()
   const setSettings = useAppStore((s) => s.setSettings)
   const settings = useAppStore((s) => s.settings)
 
@@ -29,11 +31,11 @@ export function ShapeProps({ element, panelId }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={lbl}>Shape</div>
-      <ColorPicker label="Fill" value={element.style.fill ?? ''} onChange={(v) => updateStyle({ fill: v })} />
-      <ColorPicker label="Stroke" value={element.style.stroke ?? ''} onChange={(v) => updateStyle({ stroke: v })} />
-      <NumericInput label="Stroke-Breite" value={element.style.strokeWidth ?? 1} min={0}
+      <ColorPicker label={t('propertiesPanel.fill')} value={element.style.fill ?? ''} onChange={(v) => updateStyle({ fill: v })} />
+      <ColorPicker label={t('propertiesPanel.stroke')} value={element.style.stroke ?? ''} onChange={(v) => updateStyle({ stroke: v })} />
+      <NumericInput label={t('propertiesPanel.strokeWidth')} value={element.style.strokeWidth ?? 1} min={0}
         onChange={(v) => updateStyle({ strokeWidth: v })} />
-      <NumericInput label="Border-Radius" value={element.style.borderRadius ?? 10} min={0}
+      <NumericInput label={t('propertiesPanel.borderRadius')} value={element.style.borderRadius ?? 10} min={0}
         onChange={(v) => updateStyle({ borderRadius: v })} />
     </div>
   )

@@ -5,6 +5,7 @@
  * Sections: Refs (mit Button-Picker), Text-Parsing, Style
  */
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import { ChannelStripElement, CompanionRef } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
@@ -44,6 +45,7 @@ function refLabel(ref: CompanionRef | undefined): string {
 }
 
 export function ChannelStripProps({ element, panelId, side = 'right', panelWidth = 320 }: Props) {
+  const { t } = useTranslation()
   const updateElement = useAppStore((s) => s.updateElement)
   const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
@@ -76,7 +78,7 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
   return (
     <>
       {/* ── Refs ───────────────────────────────────────────── */}
-      <div style={sectionTitle}>Refs</div>
+      <div style={sectionTitle}>{t('propertiesPanel.refs')}</div>
 
       {/* Button (Main) */}
       <div style={{ ...row, flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
@@ -86,7 +88,7 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
           disabled={!buttonConnected}
           onClick={() => buttonConnected && setPickerTarget('button')}
         >
-          {buttonConnected ? 'Ändern…' : 'Host offline'}
+          {buttonConnected ? t('propertiesPanel.change') : t('propertiesPanel.hostOffline')}
         </button>
       </div>
 
@@ -99,14 +101,14 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
             disabled={!buttonConnected}
             onClick={() => buttonConnected && setPickerTarget('solo')}
           >
-            {buttonConnected ? (refs.solo ? 'Ändern…' : 'Wählen…') : 'Host offline'}
+            {buttonConnected ? (refs.solo ? t('propertiesPanel.change') : t('propertiesPanel.selectBtn')) : t('propertiesPanel.hostOffline')}
           </button>
           {refs.solo && (
             <button
               style={{ ...pickerBtn(true), color: '#ff5a5f' }}
               onClick={() => patch({ refs: { ...element.refs, solo: undefined } })}
             >
-              Entfernen
+              {t('propertiesPanel.remove')}
             </button>
           )}
         </div>
@@ -121,21 +123,21 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
             disabled={!buttonConnected}
             onClick={() => buttonConnected && setPickerTarget('pan')}
           >
-            {buttonConnected ? (refs.pan ? 'Ändern…' : 'Wählen…') : 'Host offline'}
+            {buttonConnected ? (refs.pan ? t('propertiesPanel.change') : t('propertiesPanel.selectBtn')) : t('propertiesPanel.hostOffline')}
           </button>
           {refs.pan && (
             <button
               style={{ ...pickerBtn(true), color: '#ff5a5f' }}
               onClick={() => patch({ refs: { ...element.refs, pan: undefined } })}
             >
-              Entfernen
+              {t('propertiesPanel.remove')}
             </button>
           )}
         </div>
       </div>
 
       {/* ── Text-Parsing ────────────────────────────────────── */}
-      <div style={sectionTitle}>Text-Parsing</div>
+      <div style={sectionTitle}>{t('propertiesPanel.textParsing')}</div>
 
       {/* Index explanation */}
       <div style={{ padding: '2px 14px 6px', fontSize: 11, color: '#4a9eff', fontFamily: "'JetBrains Mono', monospace" }}>
@@ -204,15 +206,15 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       {/* ── Style ───────────────────────────────────────────── */}
-      <div style={sectionTitle}>Style</div>
+      <div style={sectionTitle}>{t('propertiesPanel.style')}</div>
 
       <div style={row}>
-        <span style={lbl}>Stripe Color</span>
+        <span style={lbl}>{t('propertiesPanel.accentColor')}</span>
         <ColorPicker value={style.color} onChange={(c) => patchStyle({ color: c })} />
       </div>
 
       <div style={row}>
-        <span style={lbl}>Name (Override)</span>
+        <span style={lbl}>{t('propertiesPanel.channelName')}</span>
         <input
           style={inputStyle}
           value={style.name ?? ''}
@@ -222,7 +224,7 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       <div style={row}>
-        <span style={lbl}>Mono</span>
+        <span style={lbl}>{t('propertiesPanel.monoMode')}</span>
         <input
           type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }}
           checked={style.mono === true}
@@ -231,7 +233,7 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       <div style={row}>
-        <span style={lbl}>Mute invertieren</span>
+        <span style={lbl}>{t('propertiesPanel.invertMute')}</span>
         <input
           type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }}
           checked={style.invertMute === true}
@@ -240,7 +242,7 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       <div style={row}>
-        <span style={lbl}>Clip Threshold (dBFS)</span>
+        <span style={lbl}>{t('propertiesPanel.clipThreshold')}</span>
         <input
           key={`clip-${element.id}`}
           type="number"
@@ -254,7 +256,7 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       <div style={row}>
-        <span style={lbl}>Coarse Multiplier</span>
+        <span style={lbl}>{t('propertiesPanel.coarseMultiplier')}</span>
         <input
           type="number" min={1} max={100}
           style={inputNum}
@@ -264,7 +266,7 @@ export function ChannelStripProps({ element, panelId, side = 'right', panelWidth
       </div>
 
       <div style={row}>
-        <span style={lbl}>Drum Wheel anzeigen</span>
+        <span style={lbl}>{t('propertiesPanel.showWheel')}</span>
         <input
           type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }}
           checked={style.showWheel !== false}
