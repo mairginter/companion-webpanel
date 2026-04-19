@@ -85,7 +85,14 @@ Two-column table (`Shortcut | Aktion`). `<kbd>` elements for key display. All sh
 | `Esc` | Auswahl aufheben / Deselect |
 
 ### Tab 3 — Features
-Scrollable list of cards. Each card: colored left border, element type name + icon, one-line description, key properties in small grey text.
+**App description block at the top of the tab** (above the element cards): a short grey info box with three facts:
+- One-sentence app description (e.g. "Companion Webpanel ist ein frei gestaltbares Touch-Panel für Bitfocus Companion.")
+- Multiple hosts can be connected simultaneously (each host is one Companion instance)
+- Available as web app (browser, multi-user via LAN) and as Electron desktop app
+
+All three facts are i18n keys (`helpModal.appDesc`, `helpModal.appMultiHost`, `helpModal.appVersions`).
+
+Scrollable list of cards below. Each card: colored left border, element type name + icon, one-line description, key properties in small grey text.
 
 | Element | Color | Description |
 |---------|-------|-------------|
@@ -121,6 +128,9 @@ Properties summary per card (small grey text, comma-separated):
     "shortcutColumn": "Shortcut",
     "actionColumn": "Aktion",
     "featuresHeading": "Canvas-Elemente",
+    "appDesc": "Companion Webpanel ist ein frei gestaltbares Touch-Panel für Bitfocus Companion — steuerbar vom Browser oder der Desktop-App.",
+    "appMultiHost": "Mehrere Companion-Instanzen (Hosts) können gleichzeitig verbunden werden.",
+    "appVersions": "Verfügbar als Web-App (Browser, mehrere Nutzer gleichzeitig via LAN) und als Electron Desktop-App.",
     "shortcut_save": "Speichern",
     "shortcut_undo": "Rückgängig",
     "shortcut_redo": "Wiederholen",
