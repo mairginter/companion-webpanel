@@ -47,7 +47,7 @@ Ein Panel ist eine konfigurierbare Arbeitsfläche mit Elementen. Es können mehr
 Canvas-Konfiguration:
 - Breite und Höhe in Pixeln (Preset-Dropdown oder manuelle Eingabe, z.B. 1920×1080)
 - Die letzten 5 verwendeten Canvas-Größen werden gespeichert
-- Zoom: Ctrl+Scroll oder Zoom-Control in der Toolbar (10%–200%)
+- Zoom: Ctrl+Scroll oder Zoom-Control in der Toolbar (20%–200%)
 - Grid: visuelle Rasterlinien (Major + Minor), ein/aus mit G-Taste
 - Snap: Elemente rasten am Raster ein, ein/aus mit S-Taste (nur im Edit-Modus)
 
@@ -109,11 +109,11 @@ Ein Audio-Mixer-Kanal-Element. Stellt Pegelanzeige (Meter L/R), Fader, Mute-Butt
 
 Funktionsweise: Jedes Steuerelement (Meter, Fader, Mute etc.) ist mit einem Companion-Button verknüpft. Der Button-Text des Companion-Buttons wird via Text-Parsing interpretiert — ein spezielles Format teilt die Datenwerte auf.
 
-Text-Parsing-Format: Die Werte im Button-Text sind durch ein Trennzeichen (Standard: |) separiert. Die Reihenfolge wird über Index-Einstellungen konfiguriert:
-- Index 0: Meter L (Pegel links, 0–100)
-- Index 1: Meter R (Pegel rechts, 0–100)
-- Index 2: Fader-Position (0–100)
-- Index 3: Kanalname
+Text-Parsing-Format: Die Werte im Button-Text sind durch ein Trennzeichen (Standard: |) separiert. Die Reihenfolge wird über Index-Einstellungen konfiguriert. Es gibt keine automatischen Standardwerte — jeder Index muss explizit gesetzt werden. Beispiel-Konfiguration (wenn alle vier Werte im Button-Text vorkommen):
+- meterLIndex = 0 → Meter L (Pegel links, 0–100)
+- meterRIndex = 1 → Meter R (Pegel rechts, 0–100)
+- levelIndex = 2 → Fader-Position (0–100)
+- nameIndex = 3 → Kanalname
 
 Fader-Bedienung: vertikales Drag mit Maus oder Touch sendet SUB-ROTATE an Companion.
 Drum-Wheel: alternatives Scrollrad-Element, ein/ausblendbar.
