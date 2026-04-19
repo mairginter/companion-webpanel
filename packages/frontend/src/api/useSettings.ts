@@ -13,6 +13,7 @@
 import { useEffect, useCallback } from 'react'
 import { Settings } from '@cwp/shared'
 import { useAppStore } from '../store/useAppStore'
+import i18n from '../i18n'
 
 const SETTINGS_URL = import.meta.env.DEV
   ? 'http://localhost:8080/api/settings'
@@ -24,7 +25,13 @@ export function useSettings(): { saveSettings: (s: Settings) => Promise<void> } 
   useEffect(() => {
     fetch(SETTINGS_URL)
       .then((r) => r.json())
-      .then((data: Settings) => setSettings(data))
+      .then((data: Settings) => {
+        setSettings(data)
+        // Apply global language from settings only if no per-device override exists
+        if (data.language && !localStorage.getItem('cwp-language')) {
+          void i18n.changeLanguage(data.language)
+        }
+      })
       .catch((err) => console.error('[Settings] Fehler beim Laden:', err))
   }, [setSettings])
 
