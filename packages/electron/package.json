@@ -16,5 +16,8 @@
     "sharp": "^0.33.5",
     "typescript": "^5.4.5",
     "vitest": "^4.1.2"
+  },
+  "dependencies": {
+    "i18next": "^26.0.6"
   }
 }
