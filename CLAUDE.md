@@ -149,6 +149,12 @@ CompanionWebpannel/
 
 ### CompanionButton
 - ✅ **Physical Style** — opt-in `physicalStyle?: boolean` in render; aktiviert silber-metallischen Rahmen + kreisförmige konkave Dom-Fläche (CSS radial-gradients); Companion bgColor tönst Dom; Pressed-State skaliert Dom auf 0.97; `lightenHex`/`darkenHex`/`buildDomeBackground` als testbare Exports; Toggle-Checkbox in PropertiesPanel nach Border-Radius (Commits 0c0dafe–92b3373, Settings v1.5.0 — kein Bump nötig)
+- ⬜ **Host-Verbindungsfehler-Text anpassen** — Fehlermeldung bei nicht erreichbarer Satellite API soll Hinweis zeigen: "Enable Button Subscriptions API under Settings / Protocols in Companion"
+- ⬜ **Multi-Button Badge-Editing** — mehrere Buttons auswählen und folgende Eigenschaften gleichzeitig setzen: Größe (w/h), Host, Companion bgColor, showBgColor, showBitmap, showText, textAlign, borderRadius, physicalStyle, fontSize — nur geänderte Felder überschreiben (mixed-state anzeigen wenn Werte unterschiedlich)
+
+### Panel-Workflow / Show-Vorbereitung
+- ⬜ **Buttons zwischen Panels kopieren** — schnelles Kopieren von Buttons aus einem Panel in ein anderes (inkl. Mehrfach-Kopieren für verschiedene Show-Layouts); Optionen: Einzel-Copy via Kontextmenü, Multi-Select-Copy, Paste in Ziel-Panel mit +75px Offset oder Grid-Einrasten
+- ⬜ **Panel duplizieren in Panel-Liste** — "Duplicate Panel"-Option in der Panel-Liste (Kontextmenü oder Button); erzeugt Kopie mit allen Elementen unter neuem Namen (z.B. "ShowA Copy") als Basis für neues Show-Layout
 
 ### CompanionButton-Picker
 - ⬜ Page-Name anzeigen — Companion sendet Page-Namen via Satellite API (prüfen ob `PAGE-NAME` verfügbar)
