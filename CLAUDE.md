@@ -135,6 +135,7 @@ CompanionWebpannel/
 
 ### Electron
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
+- ⬜ **HostManagerModal UI-Überarbeitung** — Root Cause: Host-Card hat `overflow: 'hidden'` ([HostManagerModal.tsx:484](packages/frontend/src/components/HostManager/HostManagerModal.tsx#L484)) → Edit-Formular wird hart geclipt, Seitennamen-Bereich nicht sichtbar; Vorschlag: Side-Panel-Pattern (Edit-Form rechts neben Liste aufklappen, Modal dann z.B. `width: 900`, Form-Seite scrollbar) → mehr Höhe + kein Clipping; Host-Liste: Body hat `overflowY: auto` → scrollt sobald Inhalt > 85vh, kein festes Max
 - ✅ macOS .icns Icon: `generate-app-icon.mjs` erzeugt `icon.icns` direkt (6 Größen, pure Node.js)
 - ✅ Tray-Icons im Release-Build sichtbar — `assets/tray-*.png` fehlten in `electron-builder.yml` `files`-Liste (war nur in `buildResources`, nicht im App-Package)
 - ✅ Version im Startup-Fenster — war hardcoded `v1.0.0`; jetzt `get-version` IPC → `app.getVersion()` → dynamisch aus `package.json` (Commit 4447d2d, v1.2.3)
@@ -169,6 +170,7 @@ CompanionWebpannel/
 - ✅ **Fader-Knob gerippte 3D-Textur** — `repeating-linear-gradient` + weiße Mittellinie
 - ✅ **Drum Wheel Mausrad-Optik** — `borderRadius:10`, dunkle Gummirippen, zylindrischer Lichtreflex
 - ✅ **VirtualCompanionDeck Opacity-Fix** — `hexToRgba()` — Opacity gilt nur für Hintergrund, nicht Buttons
+- ⬜ **Mute → Meter in Blautönen** — wenn Channel gemuted, Meter-Balken statt Grün/Gelb/Rot in verschiedenen Blautönen anzeigen (visuelles Feedback dass Channel stumm ist)
 
 ### Virtual Companion Deck (nächste Iteration)
 - ✅ **Grid editierbar in PropertiesPanel** — cols + rows als NumericInput; Grid-Änderung triggert Backend-Session-Restart (Companion bekommt neue Dimensionen)
