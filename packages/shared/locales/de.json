@@ -70,7 +70,9 @@
     "pageNamePlaceholder": "(kein Name)",
     "autoConnectOff": "(Auto-Connect aus)",
     "deleteWarning": "⚠ {{count}} Button-Element(e) referenzieren diesen Host und werden mit ⛔ markiert (kein Companion-Zugriff mehr).",
-    "deleteLinkedButtons": "Verknüpfte Buttons ebenfalls löschen ({{count}} Element(e))"
+    "deleteLinkedButtons": "Verknüpfte Buttons ebenfalls löschen ({{count}} Element(e))",
+    "capsDisabledTitle": "Button Subscriptions API nicht aktiv.",
+    "capsDisabledPath": "Aktivieren unter: Companion → Settings → Protocols → „Button Subscriptions API“"
   },
   "propertiesPanel": {
     "geometry": "Geometrie",

@@ -576,9 +576,8 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                     color: '#ff8a3d',
                     lineHeight: 1.5,
                   }}>
-                    <strong>Button Subscriptions API nicht aktiv.</strong>
-                    {' '}Aktivieren unter:{' '}
-                    <strong>Companion → Settings → Protocols → „Button Subscriptions API"</strong>
+                    <strong>{t('hostManager.capsDisabledTitle')}</strong>
+                    {' '}{t('hostManager.capsDisabledPath')}
                   </div>
                 )}
                 </React.Fragment>
