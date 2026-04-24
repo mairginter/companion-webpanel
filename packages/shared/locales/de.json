@@ -20,7 +20,9 @@
     "language": "Sprache",
     "viewMode": "Ansichtsmodus (V)",
     "editMode": "Bearbeitungsmodus (E)",
-    "notes": "Notizen"
+    "notes": "Notizen",
+    "copyToPanel": "In Panel kopieren",
+    "noOtherPanels": "Kein anderes Panel vorhanden"
   },
   "status": {
     "connected": "Verbunden",

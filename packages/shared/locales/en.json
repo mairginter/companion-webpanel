@@ -20,7 +20,9 @@
     "language": "Language",
     "viewMode": "View Mode (V)",
     "editMode": "Edit Mode (E)",
-    "notes": "Notes"
+    "notes": "Notes",
+    "copyToPanel": "Copy to panel",
+    "noOtherPanels": "No other panels available"
   },
   "status": {
     "connected": "Connected",
