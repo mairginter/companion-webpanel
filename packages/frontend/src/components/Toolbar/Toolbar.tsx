@@ -80,6 +80,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
   const createPanel = useAppStore((s) => s.createPanel)
   const renamePanel = useAppStore((s) => s.renamePanel)
   const deletePanel = useAppStore((s) => s.deletePanel)
+  const duplicatePanel = useAppStore((s) => s.duplicatePanel)
   const hosts = useAppStore((s) => s.settings?.hosts ?? [])
   const sessionStatus = useAppStore((s) => s.sessionStatus)
   const hostInfo = useAppStore((s) => s.hostInfo)
@@ -222,6 +223,13 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
                         style={{ background: 'none', border: 'none', color: '#4a5568', cursor: 'pointer', fontSize: 13, padding: '2px 4px', borderRadius: 3 }}
                       >
                         ✎
+                      </button>
+                      <button
+                        title={t('toolbar.duplicatePanel')}
+                        onClick={(e) => { e.stopPropagation(); duplicatePanel(panel.id); onSave?.(); setDropdownOpen(false) }}
+                        style={{ background: 'none', border: 'none', color: '#4a5568', cursor: 'pointer', fontSize: 13, padding: '2px 4px', borderRadius: 3 }}
+                      >
+                        ⧉
                       </button>
                       <button
                         title={panels.length <= 1 ? t('toolbar.cannotDeleteLast') : t('toolbar.deletePanel')}

@@ -5,6 +5,7 @@
     "switchPanel": "Panel wechseln",
     "rename": "Umbenennen",
     "deletePanel": "Panel löschen",
+    "duplicatePanel": "Panel duplizieren",
     "cannotDeleteLast": "Letztes Panel kann nicht gelöscht werden",
     "panelNamePlaceholder": "Panel-Name…",
     "createPanel": "Erstellen (Enter)",
