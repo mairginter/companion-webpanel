@@ -15,9 +15,9 @@ afterEach(() => {
 })
 
 describe('getDefaultSettings', () => {
-  it('returns valid settings with version 1.3.0 and port 8080', () => {
+  it('returns valid settings with version 1.6.0 and port 8080', () => {
     const s = getDefaultSettings()
-    expect(s.version).toBe('1.3.0')
+    expect(s.version).toBe('1.6.0')
     expect(s.server?.port).toBe(8080)
     expect(s.hosts).toHaveLength(0)
     expect(s.panels).toHaveLength(0)
@@ -27,7 +27,7 @@ describe('getDefaultSettings', () => {
 describe('loadSettings', () => {
   it('creates default settings if file does not exist', () => {
     const s = loadSettings(tmpDir)
-    expect(s.version).toBe('1.3.0')
+    expect(s.version).toBe('1.6.0')
     expect(fs.existsSync(path.join(tmpDir, 'settings.json'))).toBe(true)
   })
 
