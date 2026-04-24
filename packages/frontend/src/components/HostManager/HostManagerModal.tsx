@@ -350,7 +350,10 @@ function HostEditModal({ host, onSave, onCancel }: HostEditModalProps) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300 }}>
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300 }}
+    >
       <div style={{
         background: '#1a2030', border: '1px solid #2a3344', borderRadius: 12,
         width: 560, maxWidth: '90vw', maxHeight: '85vh',
@@ -471,12 +474,10 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
   function openEdit(host: HostProfile) { setEditTarget(host) }
 
   function handleEditSave(savedHost: HostProfile) {
-    let next: Settings
-    if (editTarget === 'new') {
-      next = { ...s, hosts: [...s.hosts, savedHost] }
-    } else {
-      next = { ...s, hosts: s.hosts.map((h) => h.id === savedHost.id ? savedHost : h) }
-    }
+    const isNew = !s.hosts.some((h) => h.id === savedHost.id)
+    const next: Settings = isNew
+      ? { ...s, hosts: [...s.hosts, savedHost] }
+      : { ...s, hosts: s.hosts.map((h) => (h.id === savedHost.id ? savedHost : h)) }
     saveSettings(next)
     setEditTarget(null)
   }
