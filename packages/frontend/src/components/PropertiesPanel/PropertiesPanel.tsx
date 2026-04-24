@@ -19,6 +19,8 @@ import { ShapeProps } from './ShapeProps'
 import { LabelProps } from './LabelProps'
 import { ChannelStripProps } from './ChannelStripProps'
 import { VirtualCompanionDeckProps } from './VirtualCompanionDeckProps'
+import { CompanionButtonMultiProps } from './CompanionButtonMultiProps'
+import { CompanionButtonElement } from '@cwp/shared'
 
 const LS_SIDE = 'cwp:propsPanelSide'
 const LS_OPEN = 'cwp:propsPanelOpen'
@@ -157,7 +159,23 @@ export function PropertiesPanel() {
     specificContent = (
       <GeometryBlock elements={selectedElements} panelId={panel!.id} />
     )
-    if (singleEl) {
+    // Multi-select: all CompanionButtons → batch edit
+    if (
+      selectedElements.length >= 2 &&
+      selectedElements.every((el) => el.type === 'companionButton')
+    ) {
+      specificContent = (
+        <>
+          {specificContent}
+          <div style={{ borderTop: '1px solid #2a3344', paddingTop: 12 }}>
+            <CompanionButtonMultiProps
+              elements={selectedElements as CompanionButtonElement[]}
+              panelId={panel!.id}
+            />
+          </div>
+        </>
+      )
+    } else if (singleEl) {
       if (singleEl.type === 'companionButton') {
         specificContent = (
           <>

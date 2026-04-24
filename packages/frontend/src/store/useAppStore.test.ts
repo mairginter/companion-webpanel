@@ -423,3 +423,70 @@ describe('copyElementStyle / pasteElementStyle', () => {
     expect(el.ref.col).toBe(1)
   })
 })
+
+describe('duplicatePanel', () => {
+  it('erstellt eine Kopie mit neuem Namen und neuen Element-IDs', () => {
+    const store = useAppStore.getState()
+    const original = store.settings!.panels[0]
+    const copy = store.duplicatePanel(original.id)
+
+    const panels = useAppStore.getState().settings!.panels
+    expect(panels).toHaveLength(2)
+    expect(copy.name).toBe(`${original.name} Copy`)
+    expect(copy.id).not.toBe(original.id)
+    expect(copy.elements).toHaveLength(original.elements.length)
+    copy.elements.forEach((el, i) => {
+      expect(el.id).not.toBe(original.elements[i].id)
+    })
+  })
+
+  it('wechselt zum neuen Panel', () => {
+    const store = useAppStore.getState()
+    const original = store.settings!.panels[0]
+    const copy = store.duplicatePanel(original.id)
+    expect(useAppStore.getState().activePanelId).toBe(copy.id)
+  })
+})
+
+describe('copyElementsToPanel', () => {
+  beforeEach(() => {
+    // Zweites Panel anlegen
+    useAppStore.getState().createPanel('Target')
+  })
+
+  it('kopiert Elemente mit +75px Offset und neuen IDs ins Ziel-Panel', () => {
+    const state = useAppStore.getState()
+    const sourcePanel = state.settings!.panels[0]
+    const targetPanel = state.settings!.panels[1]
+    const sourceEl = sourcePanel.elements[0]
+
+    state.copyElementsToPanel(sourcePanel.id, targetPanel.id, [sourceEl.id])
+
+    const updated = useAppStore.getState().settings!
+    const targetEls = updated.panels.find(p => p.id === targetPanel.id)!.elements
+    expect(targetEls).toHaveLength(1)
+    expect(targetEls[0].id).not.toBe(sourceEl.id)
+    expect(targetEls[0].x).toBe(sourceEl.x + 75)
+    expect(targetEls[0].y).toBe(sourceEl.y + 75)
+  })
+
+  it('lässt das Quell-Panel unverändert', () => {
+    const state = useAppStore.getState()
+    const sourcePanel = state.settings!.panels[0]
+    const targetPanel = state.settings!.panels[1]
+    const originalCount = sourcePanel.elements.length
+
+    state.copyElementsToPanel(sourcePanel.id, targetPanel.id, [sourcePanel.elements[0].id])
+
+    const after = useAppStore.getState().settings!.panels.find(p => p.id === sourcePanel.id)!
+    expect(after.elements).toHaveLength(originalCount)
+  })
+
+  it('wechselt nicht das aktive Panel', () => {
+    const state = useAppStore.getState()
+    const panels = state.settings!.panels
+    const activeBefore = useAppStore.getState().activePanelId
+    state.copyElementsToPanel(panels[0].id, panels[1].id, [panels[0].elements[0].id])
+    expect(useAppStore.getState().activePanelId).toBe(activeBefore)
+  })
+})

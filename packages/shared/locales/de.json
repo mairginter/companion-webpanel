@@ -5,6 +5,7 @@
     "switchPanel": "Panel wechseln",
     "rename": "Umbenennen",
     "deletePanel": "Panel löschen",
+    "duplicatePanel": "Panel duplizieren",
     "cannotDeleteLast": "Letztes Panel kann nicht gelöscht werden",
     "panelNamePlaceholder": "Panel-Name…",
     "createPanel": "Erstellen (Enter)",
@@ -19,7 +20,9 @@
     "language": "Sprache",
     "viewMode": "Ansichtsmodus (V)",
     "editMode": "Bearbeitungsmodus (E)",
-    "notes": "Notizen"
+    "notes": "Notizen",
+    "copyToPanel": "In Panel kopieren",
+    "noOtherPanels": "Kein anderes Panel vorhanden"
   },
   "status": {
     "connected": "Verbunden",
@@ -67,7 +70,9 @@
     "pageNamePlaceholder": "(kein Name)",
     "autoConnectOff": "(Auto-Connect aus)",
     "deleteWarning": "⚠ {{count}} Button-Element(e) referenzieren diesen Host und werden mit ⛔ markiert (kein Companion-Zugriff mehr).",
-    "deleteLinkedButtons": "Verknüpfte Buttons ebenfalls löschen ({{count}} Element(e))"
+    "deleteLinkedButtons": "Verknüpfte Buttons ebenfalls löschen ({{count}} Element(e))",
+    "capsDisabledTitle": "Button Subscriptions API nicht aktiv.",
+    "capsDisabledPath": "Aktivieren unter: Companion → Settings → Protocols → „Button Subscriptions API“"
   },
   "propertiesPanel": {
     "geometry": "Geometrie",
@@ -104,6 +109,9 @@
     "top": "Oben",
     "center": "Mitte",
     "bottom": "Unten",
+    "alignTop": "Oben",
+    "alignCenter": "Mitte",
+    "alignBottom": "Unten",
     "left": "Links",
     "right": "Rechts",
     "noTexture": "Keine",

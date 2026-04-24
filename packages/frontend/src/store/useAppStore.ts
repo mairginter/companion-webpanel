@@ -74,6 +74,10 @@ interface AppStore {
   deletePanel: (panelId: string) => boolean
   /** Setzt den Zoom-Faktor eines Panels. Klemmt auf [0.2, 2.0]. */
   setZoom: (panelId: string, zoom: number) => void
+  /** Dupliziert ein Panel mit allen Elementen (neue IDs), wechselt dazu. */
+  duplicatePanel: (panelId: string) => Panel
+  /** Kopiert Elemente aus sourcePanelId nach targetPanelId mit +75px Offset und neuen IDs. */
+  copyElementsToPanel: (sourcePanelId: string, targetPanelId: string, elementIds: string[]) => void
 
   // ─── Edit Mode ────────────────────────────────────────────────────────────
   selectedIds: Set<string>
@@ -346,6 +350,42 @@ export const useAppStore = create<AppStore>((set, get) => ({
         },
       }
     }),
+
+  duplicatePanel: (panelId) => {
+    const { settings } = get()
+    if (!settings) return null as unknown as Panel
+    const source = settings.panels.find((p) => p.id === panelId)
+    if (!source) return null as unknown as Panel
+    const newPanel: Panel = {
+      ...source,
+      id: crypto.randomUUID(),
+      name: `${source.name} Copy`,
+      elements: source.elements.map((el) => ({ ...el, id: crypto.randomUUID() })),
+    }
+    set((s) => ({
+      settings: { ...s.settings!, panels: [...s.settings!.panels, newPanel] },
+      activePanelId: newPanel.id,
+    }))
+    return newPanel
+  },
+
+  copyElementsToPanel: (sourcePanelId, targetPanelId, elementIds) => {
+    const { settings } = get()
+    if (!settings) return
+    const sourcePanel = settings.panels.find((p) => p.id === sourcePanelId)
+    if (!sourcePanel) return
+    const copies = sourcePanel.elements
+      .filter((el) => elementIds.includes(el.id))
+      .map((el) => ({ ...el, id: crypto.randomUUID(), x: el.x + 75, y: el.y + 75 }))
+    set((s) => ({
+      settings: {
+        ...s.settings!,
+        panels: s.settings!.panels.map((p) =>
+          p.id !== targetPanelId ? p : { ...p, elements: [...p.elements, ...copies] },
+        ),
+      },
+    }))
+  },
 
   // ─── Edit Mode ────────────────────────────────────────────────────────────
   selectedIds: new Set<string>(),

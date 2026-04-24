@@ -323,6 +323,74 @@ function HostForm({ value, onChange }: HostFormProps) {
   )
 }
 
+// ─── Host-Edit-Modal ─────────────────────────────────────────────────────────
+
+interface HostEditModalProps {
+  host: HostProfile | null        // null = neuer Host
+  onSave: (host: HostProfile) => void
+  onCancel: () => void
+}
+
+function HostEditModal({ host, onSave, onCancel }: HostEditModalProps) {
+  const { t } = useTranslation()
+  const [formValue, setFormValue] = useState<Omit<HostProfile, 'id'>>(
+    host
+      ? { name: host.name, host: host.host, satellite: host.satellite, notes: host.notes ?? '',
+          autoConnect: host.autoConnect, showInToolbar: host.showInToolbar,
+          gridCols: host.gridCols, gridRows: host.gridRows, maxPages: host.maxPages, pageNames: host.pageNames }
+      : emptyHost()
+  )
+
+  const isNew = host === null
+  const canSave = formValue.name.trim() !== '' && formValue.host.trim() !== ''
+
+  function handleSave() {
+    if (!canSave) return
+    onSave({ id: host?.id ?? crypto.randomUUID(), ...formValue })
+  }
+
+  return (
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300 }}
+    >
+      <div style={{
+        background: '#1a2030', border: '1px solid #2a3344', borderRadius: 12,
+        width: 560, maxWidth: '90vw', maxHeight: '85vh',
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #2a3344', flexShrink: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#e9edf2' }}>
+            {isNew ? t('hostManager.addHost') : t('hostManager.editHost')}
+          </span>
+          <button style={{ background: 'none', border: 'none', color: '#8896aa', fontSize: 18, cursor: 'pointer', lineHeight: 1 }} onClick={onCancel}>
+            ✕
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+          <HostForm value={formValue} onChange={setFormValue} />
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '1px solid #2a3344', flexShrink: 0 }}>
+          <button style={btnSecondary} onClick={onCancel}>{t('hostManager.cancel')}</button>
+          <button
+            style={{ ...btnPrimary, opacity: canSave ? 1 : 0.5 }}
+            disabled={!canSave}
+            onClick={handleSave}
+          >
+            {isNew ? t('hostManager.addHost') : t('hostManager.save')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Warn-Dialog (löschen) ───────────────────────────────────────────────────
 
 interface DeleteDialogProps {
@@ -382,9 +450,8 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
   const sessionStatus = useAppStore((s) => s.sessionStatus)
   const hostInfo = useAppStore((s) => s.hostInfo)
 
-  // Welcher Host wird gerade bearbeitet (null = keiner, 'new' = neuer Host)
-  const [editing, setEditing] = useState<string | 'new' | null>(null)
-  const [formValue, setFormValue] = useState<Omit<HostProfile, 'id'>>(emptyHost())
+  // Welcher Host wird gerade bearbeitet (null = keiner, 'new' = neuer Host, HostProfile = vorhandener Host)
+  const [editTarget, setEditTarget] = useState<HostProfile | null | 'new'>(null)
   const [deleteTarget, setDeleteTarget] = useState<HostProfile | null>(null)
 
   if (!settings) return null
@@ -403,33 +470,16 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
     )
   }
 
-  function startAdd() {
-    setFormValue(emptyHost())
-    setEditing('new')
-  }
+  function openAdd() { setEditTarget('new') }
+  function openEdit(host: HostProfile) { setEditTarget(host) }
 
-  function startEdit(host: HostProfile) {
-    setFormValue({ name: host.name, host: host.host, satellite: host.satellite, notes: host.notes ?? '', autoConnect: host.autoConnect, showInToolbar: host.showInToolbar, gridCols: host.gridCols, gridRows: host.gridRows, maxPages: host.maxPages, pageNames: host.pageNames })
-    setEditing(host.id)
-  }
-
-  function cancelEdit() {
-    setEditing(null)
-  }
-
-  function saveEdit() {
-    if (!formValue.name.trim() || !formValue.host.trim()) return
-
-    let next: Settings
-    if (editing === 'new') {
-      const newHost: HostProfile = { id: crypto.randomUUID(), ...formValue }
-      next = { ...s, hosts: [...s.hosts, newHost] }
-    } else {
-      const updated: HostProfile = { id: editing!, ...formValue }
-      next = { ...s, hosts: s.hosts.map((h) => h.id === editing ? updated : h) }
-    }
+  function handleEditSave(savedHost: HostProfile) {
+    const isNew = !s.hosts.some((h) => h.id === savedHost.id)
+    const next: Settings = isNew
+      ? { ...s, hosts: [...s.hosts, savedHost] }
+      : { ...s, hosts: s.hosts.map((h) => (h.id === savedHost.id ? savedHost : h)) }
     saveSettings(next)
-    setEditing(null)
+    setEditTarget(null)
   }
 
   function confirmDelete(host: HostProfile) {
@@ -474,12 +524,12 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
               const status = sessionStatus[host.id] as SessionStatus | undefined
               const info = hostInfo[host.id]
               const dotColor = statusDotColor(status)
-              const isEditing = editing === host.id
 
               return (
-                <div key={host.id} style={{
+                <React.Fragment key={host.id}>
+                <div style={{
                   background: '#121821',
-                  border: `1px solid ${isEditing ? '#4a9eff' : '#2a3344'}`,
+                  border: '1px solid #2a3344',
                   borderRadius: 8,
                   overflow: 'hidden',
                 }}>
@@ -522,53 +572,51 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                     </div>
 
                     {/* Aktionen — vertikal gestapelt rechts */}
-                    {!isEditing && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0, justifyContent: 'center' }}>
-                        {(status === 'connected' || status === 'connecting') ? (
-                          <button
-                            style={{ ...btnDisconnect, padding: '5px 12px' }}
-                            title={t('hostManager.disconnect')}
-                            onClick={() => saveSettings({ ...s, hosts: s.hosts.map((h) => h.id === host.id ? { ...h, autoConnect: false } : h) })}
-                          >
-                            {t('hostManager.disconnect')}
-                          </button>
-                        ) : (
-                          <button
-                            style={{ ...btnConnect, padding: '5px 12px' }}
-                            title={t('hostManager.connect')}
-                            onClick={() => saveSettings({ ...s, hosts: s.hosts.map((h) => h.id === host.id ? { ...h, autoConnect: true } : h) })}
-                          >
-                            {t('hostManager.connect')}
-                          </button>
-                        )}
-                        <button style={{ ...btnSecondary, padding: '5px 12px' }} onClick={() => startEdit(host)}>{t('hostManager.edit')}</button>
-                        <button style={{ ...btnDanger, padding: '5px 12px' }} onClick={() => confirmDelete(host)}>{t('hostManager.delete')}</button>
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0, justifyContent: 'center' }}>
+                      {(status === 'connected' || status === 'connecting') ? (
+                        <button
+                          style={{ ...btnDisconnect, padding: '5px 12px' }}
+                          title={t('hostManager.disconnect')}
+                          onClick={() => saveSettings({ ...s, hosts: s.hosts.map((h) => h.id === host.id ? { ...h, autoConnect: false } : h) })}
+                        >
+                          {t('hostManager.disconnect')}
+                        </button>
+                      ) : (
+                        <button
+                          style={{ ...btnConnect, padding: '5px 12px' }}
+                          title={t('hostManager.connect')}
+                          onClick={() => saveSettings({ ...s, hosts: s.hosts.map((h) => h.id === host.id ? { ...h, autoConnect: true } : h) })}
+                        >
+                          {t('hostManager.connect')}
+                        </button>
+                      )}
+                      <button style={{ ...btnSecondary, padding: '5px 12px' }} onClick={() => openEdit(host)}>{t('hostManager.edit')}</button>
+                      <button style={{ ...btnDanger, padding: '5px 12px' }} onClick={() => confirmDelete(host)}>{t('hostManager.delete')}</button>
+                    </div>
                   </div>
 
-                  {/* Inline-Edit-Form */}
-                  {isEditing && (
-                    <div style={{ padding: '0 14px 14px', borderTop: '1px solid #2a3344', paddingTop: 14 }}>
-                      <HostForm value={formValue} onChange={setFormValue} />
-                      <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-                        <button style={btnSecondary} onClick={cancelEdit}>{t('hostManager.cancel')}</button>
-                        <button
-                          style={{ ...btnPrimary, opacity: (!formValue.name.trim() || !formValue.host.trim()) ? 0.5 : 1 }}
-                          onClick={saveEdit}
-                          disabled={!formValue.name.trim() || !formValue.host.trim()}
-                        >
-                          {t('hostManager.save')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
+                {status === 'caps-disabled' && (
+                  <div style={{
+                    marginTop: 4,
+                    background: 'rgba(255,138,61,0.08)',
+                    border: '1px solid #ff8a3d',
+                    borderRadius: 6,
+                    padding: '8px 12px',
+                    fontSize: 12,
+                    color: '#ff8a3d',
+                    lineHeight: 1.5,
+                  }}>
+                    <strong>{t('hostManager.capsDisabledTitle')}</strong>
+                    {' '}{t('hostManager.capsDisabledPath')}
+                  </div>
+                )}
+                </React.Fragment>
               )
             })}
 
             {/* Kein Host */}
-            {hosts.length === 0 && editing !== 'new' && (
+            {hosts.length === 0 && (
               <div style={{
                 padding: '24px', textAlign: 'center',
                 color: '#4a5568', fontSize: 14,
@@ -577,39 +625,13 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                 {t('hostManager.noHosts')}
               </div>
             )}
-
-            {/* Neuer Host Form */}
-            {editing === 'new' && (
-              <div style={{
-                background: '#121821',
-                border: '1px solid #4a9eff',
-                borderRadius: 8,
-                padding: 14,
-              }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#4a9eff', marginBottom: 12 }}>
-                  {t('hostManager.addHost')}
-                </div>
-                <HostForm value={formValue} onChange={setFormValue} />
-                <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-                  <button style={btnSecondary} onClick={cancelEdit}>{t('hostManager.cancel')}</button>
-                  <button
-                    style={{ ...btnPrimary, opacity: (!formValue.name.trim() || !formValue.host.trim()) ? 0.5 : 1 }}
-                    onClick={saveEdit}
-                    disabled={!formValue.name.trim() || !formValue.host.trim()}
-                  >
-                    {t('hostManager.addHost')}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Footer */}
           <div style={FOOTER}>
             <button
               style={{ ...btnPrimary, marginRight: 'auto' }}
-              onClick={startAdd}
-              disabled={editing !== null}
+              onClick={openAdd}
             >
               + {t('hostManager.addHost')}
             </button>
@@ -625,6 +647,15 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
           refCount={refCount(deleteTarget.id)}
           onConfirm={doDelete}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {/* Host-Edit-Modal */}
+      {editTarget !== null && (
+        <HostEditModal
+          host={editTarget === 'new' ? null : editTarget}
+          onSave={handleEditSave}
+          onCancel={() => setEditTarget(null)}
         />
       )}
     </>
