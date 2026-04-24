@@ -102,7 +102,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
   const [addMenuOpen, setAddMenuOpen] = useState(false)
   const addBtnRef = useRef<HTMLButtonElement>(null)
   const [copyMenuOpen, setCopyMenuOpen] = useState(false)
-  const copyBtnRef = useRef<HTMLButtonElement>(null)
+  const copyWrapRef = useRef<HTMLDivElement>(null)
 
   const handleAddClick = useCallback(() => {
     setAddMenuOpen((o) => !o)
@@ -139,7 +139,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
   useEffect(() => {
     if (!copyMenuOpen) return
     const handler = (e: MouseEvent) => {
-      if (!(e.target as Element).closest?.('[data-copy-dropdown]')) {
+      if (copyWrapRef.current && !copyWrapRef.current.contains(e.target as Node)) {
         setCopyMenuOpen(false)
       }
     }
@@ -387,9 +387,8 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
           </button>
 
           {selectedIds.size > 0 && (
-            <div style={{ position: 'relative' }} data-copy-dropdown>
+            <div ref={copyWrapRef} style={{ position: 'relative' }}>
               <button
-                ref={copyBtnRef}
                 style={{
                   ...modeButtonStyle(copyMenuOpen),
                   display: 'flex', alignItems: 'center', gap: 4,
