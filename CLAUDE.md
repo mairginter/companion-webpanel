@@ -114,9 +114,10 @@ CompanionWebpannel/
     │   ├── utils/channelStrip.ts                 ← parseChannelStripText(), parsePanValue()
     │   ├── App.tsx + main.tsx                    ← App-Shell mit Keyboard-Shortcuts
     │   └── components/
-    │       ├── Toolbar/                          ← Mode-Toggle, Panel-CRUD, ZoomControl, Status-Dots
-    │       ├── HostManager/HostManagerModal.tsx  ← Host Add/Edit/Delete/Connect
+    │       ├── Toolbar/                          ← Mode-Toggle, Panel-CRUD, ZoomControl, Status-Dots, Copy-to-Panel
+    │       ├── HostManager/HostManagerModal.tsx  ← Host Add/Edit/Delete/Connect + HostEditModal (dediziertes Edit-Overlay)
     │       ├── Canvas/Canvas.tsx                 ← Element-Rendering + Textur-Layering + Zoom
+    │       ├── PropertiesPanel/CompanionButtonMultiProps.tsx ← Batch-Edit für ≥2 selektierte CompanionButtons
     │       └── Elements/                         ← CompanionButtonElement, ShapeElement, LabelElement, ChannelStripElement, VirtualCompanionDeckElement
     └── electron/
         ├── src/main.ts                           ← Entry Point + IPC-Handler
@@ -135,7 +136,7 @@ CompanionWebpannel/
 
 ### Electron
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
-- ⬜ **HostManagerModal UI-Überarbeitung** — Root Cause: Host-Card hat `overflow: 'hidden'` ([HostManagerModal.tsx:484](packages/frontend/src/components/HostManager/HostManagerModal.tsx#L484)) → Edit-Formular wird hart geclipt, Seitennamen-Bereich nicht sichtbar; Vorschlag: Side-Panel-Pattern (Edit-Form rechts neben Liste aufklappen, Modal dann z.B. `width: 900`, Form-Seite scrollbar) → mehr Höhe + kein Clipping; Host-Liste: Body hat `overflowY: auto` → scrollt sobald Inhalt > 85vh, kein festes Max
+- ✅ **HostManagerModal UI-Überarbeitung** — Inline-Edit durch dediziertes `HostEditModal` ersetzt (560px, `maxHeight: 85vh`, scrollbar, z-Index 1300); kein Clipping mehr; Backdrop-Click schließt Modal; `editTarget: HostProfile | null | 'new'` State; handleEditSave via `s.hosts.some()` statt stale closure (Commit 1f5238e + c9b9bec, v1.3.1)
 - ✅ macOS .icns Icon: `generate-app-icon.mjs` erzeugt `icon.icns` direkt (6 Größen, pure Node.js)
 - ✅ Tray-Icons im Release-Build sichtbar — `assets/tray-*.png` fehlten in `electron-builder.yml` `files`-Liste (war nur in `buildResources`, nicht im App-Package)
 - ✅ Version im Startup-Fenster — war hardcoded `v1.0.0`; jetzt `get-version` IPC → `app.getVersion()` → dynamisch aus `package.json` (Commit 4447d2d, v1.2.3)
@@ -150,12 +151,12 @@ CompanionWebpannel/
 
 ### CompanionButton
 - ✅ **Physical Style** — opt-in `physicalStyle?: boolean` in render; aktiviert silber-metallischen Rahmen + kreisförmige konkave Dom-Fläche (CSS radial-gradients); Companion bgColor tönst Dom; Pressed-State skaliert Dom auf 0.97; `lightenHex`/`darkenHex`/`buildDomeBackground` als testbare Exports; Toggle-Checkbox in PropertiesPanel nach Border-Radius (Commits 0c0dafe–92b3373, Settings v1.5.0 — kein Bump nötig)
-- ⬜ **Host-Verbindungsfehler-Text anpassen** — Fehlermeldung bei nicht erreichbarer Satellite API soll Hinweis zeigen: "Enable Button Subscriptions API under Settings / Protocols in Companion"
-- ⬜ **Multi-Button Badge-Editing** — mehrere Buttons auswählen und folgende Eigenschaften gleichzeitig setzen: Größe (w/h), Host, Companion bgColor, showBgColor, showBitmap, showText, textAlign, borderRadius, physicalStyle, fontSize — nur geänderte Felder überschreiben (mixed-state anzeigen wenn Werte unterschiedlich)
+- ✅ **Host-Verbindungsfehler-Hinweis (caps-disabled)** — orangene Info-Box direkt unter Host-Card wenn `sessionStatus === 'caps-disabled'`; zeigt Companion-Pfad zur Einstellung; i18n-Keys `capsDisabledTitle` / `capsDisabledPath` (Commit 9d13acd + 0b3181c, v1.3.1)
+- ✅ **Multi-Button Badge-Editing** — `CompanionButtonMultiProps` erscheint bei ≥2 selektierten CompanionButtons; Felder: hostId, showBgColor, showBitmap, showText, textAlign, borderRadius, physicalStyle, fontSize; mixed-state via `indeterminate` Checkbox + "—" Placeholder; `patchRender()` / `patchHostId()` überschreiben nur geänderte Felder (Commits 8d79165 + 6b206d9, v1.3.1)
 
 ### Panel-Workflow / Show-Vorbereitung
-- ⬜ **Buttons zwischen Panels kopieren** — schnelles Kopieren von Buttons aus einem Panel in ein anderes (inkl. Mehrfach-Kopieren für verschiedene Show-Layouts); Optionen: Einzel-Copy via Kontextmenü, Multi-Select-Copy, Paste in Ziel-Panel mit +75px Offset oder Grid-Einrasten
-- ⬜ **Panel duplizieren in Panel-Liste** — "Duplicate Panel"-Option in der Panel-Liste (Kontextmenü oder Button); erzeugt Kopie mit allen Elementen unter neuem Namen (z.B. "ShowA Copy") als Basis für neues Show-Layout
+- ✅ **Buttons zwischen Panels kopieren** — Toolbar-Button (content_copy Icon) im Edit-Mode bei ≥1 Selektion; Dropdown listet alle anderen Panels; `copyElementsToPanel(src, tgt, ids)` kopiert mit neuen UUIDs + +75px Offset; `onSave?.()` danach (Commit 206d58e + 5f267ae, v1.3.1)
+- ✅ **Panel duplizieren in Panel-Liste** — ⧉-Icon (content_copy) in Panel-Dropdown-Zeile zwischen ✎ und ✕; `duplicatePanel(id)` klont Panel + alle Elemente mit neuen UUIDs, Name `"<Name> Copy"`, wechselt automatisch zum neuen Panel (Commit 2d8cdde, v1.3.1)
 
 ### CompanionButton-Picker
 - ⬜ Page-Name anzeigen — Companion sendet Page-Namen via Satellite API (prüfen ob `PAGE-NAME` verfügbar)
@@ -189,6 +190,7 @@ CompanionWebpannel/
 - ✅ **P1 Performance** — Bitmap-Cache (500-Entry FIFO + shared Canvas) in `utils/bitmap.ts`, StateStore Sekundär-Index (`hostIndex`/`deviceIndex`) macht `clearHost` O(k) statt O(n), `PARAM_REGEX` als Modul-Konstante, `serveStatic` async (`fs.promises.stat`)
 - ✅ **P2-1 + P3-4** — Kompaktes JSON in `/api/settings` GET (kein pretty-print), Material Icons via `material-icons` npm-Paket lokal gebundled (Offline-fähige PWA, ~128 KB woff2)
 - ✅ **Release v1.3.0** — `CompanionWebpanel-1.3.0.exe` 79 MB portable (Win x64), Tag `v1.3.0` lokal (nicht gepusht)
+- ✅ **Release v1.3.1** — HostEditModal, caps-disabled Hinweis, Copy-to-Panel, Panel Duplicate, Multi-Button Editing; `CompanionWebpanel-1.3.1.exe` portable (Win x64), Tag `v1.3.1` lokal (nicht gepusht)
 
 ### Code Review — Noch offen (P2/P3, nach Bedarf)
 - ⬜ **P2-2** i18n-Strings IPC-Handler cachen (Zeile 136-146 `main.ts`), bei `changeLanguage` neu bauen
