@@ -477,7 +477,8 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
               const isEditing = editing === host.id
 
               return (
-                <div key={host.id} style={{
+                <React.Fragment key={host.id}>
+                <div style={{
                   background: '#121821',
                   border: `1px solid ${isEditing ? '#4a9eff' : '#2a3344'}`,
                   borderRadius: 8,
@@ -564,6 +565,23 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                     </div>
                   )}
                 </div>
+                {status === 'caps-disabled' && (
+                  <div style={{
+                    marginTop: 4,
+                    background: 'rgba(255,138,61,0.08)',
+                    border: '1px solid #ff8a3d',
+                    borderRadius: 6,
+                    padding: '8px 12px',
+                    fontSize: 12,
+                    color: '#ff8a3d',
+                    lineHeight: 1.5,
+                  }}>
+                    <strong>Button Subscriptions API nicht aktiv.</strong>
+                    {' '}Aktivieren unter:{' '}
+                    <strong>Companion → Settings → Protocols → „Button Subscriptions API"</strong>
+                  </div>
+                )}
+                </React.Fragment>
               )
             })}
 
