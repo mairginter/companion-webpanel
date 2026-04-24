@@ -20,6 +20,7 @@ interface Props {
 
 // Returns the common value if all elements share it, or null if mixed.
 function common<T>(elements: CompanionButtonElement[], getter: (el: CompanionButtonElement) => T): T | null {
+  if (elements.length === 0) return null
   const vals = elements.map(getter)
   return vals.every((v) => v === vals[0]) ? vals[0] : null
 }
