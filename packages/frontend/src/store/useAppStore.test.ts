@@ -443,8 +443,8 @@ describe('duplicatePanel', () => {
   it('wechselt zum neuen Panel', () => {
     const store = useAppStore.getState()
     const original = store.settings!.panels[0]
-    store.duplicatePanel(original.id)
-    expect(useAppStore.getState().activePanelId).not.toBe(original.id)
+    const copy = store.duplicatePanel(original.id)
+    expect(useAppStore.getState().activePanelId).toBe(copy.id)
   })
 })
 
