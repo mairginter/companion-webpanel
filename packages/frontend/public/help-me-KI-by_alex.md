@@ -105,26 +105,59 @@ Label-Elemente reagieren nicht auf Klicks im View-Modus.
 
 ### ChannelStrip
 
-Ein Audio-Mixer-Kanal-Element. Stellt Pegelanzeige (Meter L/R), Fader, Mute-Button, Solo-Button, Pan-Regler und Kanalname dar. Alle Werte werden über Companion-Button-Referenzen gesteuert.
+Ein Audio-Mixer-Kanal-Element. Stellt Pegelanzeige (Meter L/R), Fader, Mute-Button, Solo/PFL-Button, Pan-Regler und Kanalname dar. Alle Werte werden über Companion-Button-Referenzen gesteuert. Jede Funktion kann einzeln aktiviert oder weggelassen werden.
 
-Funktionsweise: Jedes Steuerelement (Meter, Fader, Mute etc.) ist mit einem Companion-Button verknüpft. Der Button-Text des Companion-Buttons wird via Text-Parsing interpretiert — ein spezielles Format teilt die Datenwerte auf.
+#### Button 1 (Basisfunktion — reicht für Fader + Mute + Meter + Name)
 
-Text-Parsing-Format: Die Werte im Button-Text sind durch ein Trennzeichen (Standard: |) separiert. Die Reihenfolge wird über Index-Einstellungen konfiguriert. Es gibt keine automatischen Standardwerte — jeder Index muss explizit gesetzt werden. Beispiel-Konfiguration (wenn alle vier Werte im Button-Text vorkommen):
-- meterLIndex = 0 → Meter L (Pegel links, 0–100)
-- meterRIndex = 1 → Meter R (Pegel rechts, 0–100)
-- levelIndex = 2 → Fader-Position (0–100)
-- nameIndex = 3 → Kanalname
+Für die Grundfunktion des ChannelStrips genügt **ein einziger Companion-Button** (Ref: Fader):
 
-Fader-Bedienung: vertikales Drag mit Maus oder Touch sendet SUB-ROTATE an Companion.
+- **Push (KEY-PRESS):** Mute ein/aus — die Hintergrundfarbe des Companion-Buttons gibt den Mute-Status zurück (z.B. rot = gemuted, grau = aktiv)
+- **Links/Rechts drehen (SUB-ROTATE):** Lautstärke lauter/leiser — der Fader-Wert im Button-Text aktualisiert sich
+- **Button-Text mit Variablen:** Der Text des Companion-Buttons wird geparst und liefert Meteranzeige und Kanalname
+
+Text-Format: Die Werte im Button-Text sind durch ein Trennzeichen (Standard: `|`) getrennt. Die Reihenfolge ist frei konfigurierbar über Index-Einstellungen.
+
+Die Werte stammen nicht aus Companion selbst, sondern aus **Companion-Variablen** — also aus Daten, die ein angebundenes Gerät oder eine Software live an Companion liefert. Typische Quellen sind Hardware-Audiomixer (z.B. Behringer X32, Midas M32, Allen & Heath), Software-Mixer (z.B. vMix Audio, OBS, REAPER) oder andere Broadcast-Geräte mit Companion-Modul.
+
+Der Companion-Button-Text wird als Template konfiguriert (mit `$(modul:variable)`-Syntax). Zur Laufzeit ersetzt Companion die Variablen durch aktuelle Werte — das Ergebnis sendet er als fertigen Text an das Webpanel.
+
+Beispiel Button-Text-Template (so konfiguriert man den Companion-Button):
+```
+$(x32:ch01_meterL)|$(x32:ch01_meterR)|$(x32:ch01_fader)|$(x32:ch01_name)
+```
+
+Beispiel Button-Text zur Laufzeit (so kommt er beim Webpanel an, mit aktuellen Werten):
+```
+67|71|82|Kanal 1
+```
+
+Interpretation bei Konfiguration meterLIndex=0, meterRIndex=1, levelIndex=2, nameIndex=3:
+- Index 0 → `67` = Meter L (Pegel links, 0–100)
+- Index 1 → `71` = Meter R (Pegel rechts, 0–100)
+- Index 2 → `82` = Fader-Position (0–100)
+- Index 3 → `Kanal 1` = Kanalname
+
+Nicht benötigte Werte einfach weglassen (Index auf -1 setzen oder Variable im Template nicht mitsenden).
+
+Fader-Bedienung: vertikales Drag mit Maus oder Touch sendet ebenfalls SUB-ROTATE an Companion.
 Drum-Wheel: alternatives Scrollrad-Element, ein/ausblendbar.
-Mute-Button: löst KEY-PRESS auf dem konfigurierten Mute-Companion-Button aus.
-Solo-Button: wird nur angezeigt wenn ein Solo-Companion-Button konfiguriert ist.
-Pan-Regler: wird nur angezeigt wenn ein Pan-Companion-Button konfiguriert ist.
+
+#### Button 2 (optional — für Solo/PFL und Pan)
+
+Für Solo/PFL und Pan wird ein **zweiter Companion-Button** (Ref: Solo/Pan) benötigt:
+
+- **Push (KEY-PRESS):** Solo/PFL ein/aus — Hintergrundfarbe des Buttons zeigt Solo-Status
+- **Links/Rechts drehen (SUB-ROTATE):** Pan-Position steuern (links/rechts)
+
+Solo-Button wird im ChannelStrip nur angezeigt, wenn dieser zweite Button konfiguriert ist.
+Pan-Regler wird ebenfalls nur angezeigt, wenn dieser zweite Button konfiguriert ist.
+
+Beide Funktionen (Solo und Pan) teilen sich den gleichen Button — Push = Solo, Drehen = Pan.
 
 Konfigurierbare Properties:
-- Refs: Companion-Button-Referenz für jedes Steuerelement (Meter L, Meter R, Fader, Mute, Solo, Pan, Name)
+- Refs: Companion-Button-Referenz für Fader (Button 1) und Solo/Pan (Button 2)
 - Trennzeichen (Separator)
-- Index pro Wert
+- Index pro Wert (meterLIndex, meterRIndex, levelIndex, nameIndex)
 - Wheel anzeigen (showWheel)
 
 ### VirtualCompanionDeck
