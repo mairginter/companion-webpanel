@@ -31,4 +31,6 @@ Thumbs.db
 .vscode/
 .idea/
 .worktrees/
-.worktrees/
+
+# Research / Referenz-Material (lokale Repos, Notizen, etc.)
+_research/
