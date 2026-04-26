@@ -142,6 +142,13 @@ CompanionWebpannel/
 - ✅ Version im Startup-Fenster — war hardcoded `v1.0.0`; jetzt `get-version` IPC → `app.getVersion()` → dynamisch aus `package.json` (Commit 4447d2d, v1.2.3)
 - ✅ App-Icon im Startup-Fenster — `assets/icon-256.png` fehlte in `electron-builder.yml` `files`-Liste (Commit 4447d2d, v1.2.3)
 
+### Toolbar / UI
+- ⬜ **"Copy to Panel" aus Toolbar ins PropertiesPanel** — Menüpunkt in die Toolbar-Menüleiste entfernen; stattdessen im PropertiesPanel neben "Copy Style" (Ctrl+Shift+C) platzieren
+- ⬜ **App-Namen "Companion Webpanel" aus Toolbar entfernen** — nimmt unnötig Platz ein; steht bereits im Browser-Tab und Fensterrahmen
+- ⬜ **KI-Antworten mit `help-me-KI-by_alex.md` testen** — prüfen ob ein KI-Agent mit dieser Datei als Kontext das Panel korrekt konfigurieren kann (ChannelStrip, Button-Mapping, Variablen etc.)
+- ⬜ **Copy/Paste-Style Icons vergrößern und verbessern** — aktuelle Icons für Ctrl+Shift+C / Ctrl+Shift+V sind zu klein und schwer erkennbar; bessere Material Icons wählen und Größe erhöhen
+- ⬜ **Link zur `settings.json` in HelpModal ergänzen** — in `help-me-KI-by_alex.md` und/oder im HelpModal einen direkten Hinweis/Link auf die Konfigurationsdatei `CompanionWebpannelSettings.json` einfügen
+
 ### Edit-Mode
 - ⬜ Ctrl+C / Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
 - ✅ Canvas-Größe manuell: Preset-Dropdown + custom W/H-Inputs + letzte 5 Größen in localStorage; DPI-Warnung + "Verfügbaren Bereich übernehmen"-Button
