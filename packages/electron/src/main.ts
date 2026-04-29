@@ -161,6 +161,10 @@ async function main(): Promise<void> {
   }))
 
   // Fix #4: Fenster beim Open Panel nicht schließen
+  ipcMain.handle('open-settings-folder', () => {
+    shell.openPath(userDataPath)
+  })
+
   ipcMain.handle('open-panel', () => {
     shell.openExternal(`http://localhost:${appStatus.port}`)
   })

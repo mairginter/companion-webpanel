@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react'
-import { CompanionButtonElement as CompanionButtonElementType } from '@cwp/shared'
+import { CompanionButtonElement as CompanionButtonElementType, defaultLayerFor } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { rawRgbBase64ToDataUrl } from '../../utils/bitmap'
 
@@ -105,6 +105,8 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   const sessionStatus = useAppStore((s) => s.getSessionStatus(ref.hostId))
   // Prüfen ob der Host noch in den Settings existiert
   const hostMissing = useAppStore((s) => !s.hostExists(ref.hostId))
+  const showHostLabels = useAppStore((s) => s.showHostLabels)
+  const hostName = useAppStore((s) => s.settings?.hosts.find((h) => h.id === ref.hostId)?.name ?? ref.hostId)
 
   const isStale = sessionStatus === 'stale' || sessionStatus === 'error'
   const hasData = !!keyState?.bgColor || !!keyState?.bitmap || !!keyState?.text
@@ -143,7 +145,7 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   const positionBase: React.CSSProperties = isContained
     ? { position: 'relative' as const, width: '100%', height: '100%' }
     : { position: 'absolute' as const, left: element.x, top: element.y,
-        width: element.w, height: element.h, zIndex: element.z }
+        width: element.w, height: element.h, zIndex: (element.layer ?? defaultLayerFor(element.type)) * 1000 + (element.z ?? 0) + 100 }
 
   const containerStyle: React.CSSProperties = physicalStyle
     ? {
@@ -190,6 +192,9 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
       }
 
   // ─── Text-Positionierung ──────────────────────────────────────────────────
+  // Cap font size so text doesn't overflow small buttons
+  const effectiveFontSize = Math.min(fontSize, Math.max(7, Math.floor(element.h * 0.22)))
+
   const textPos: React.CSSProperties =
     textAlign === 'top'
       ? { top: 4 }
@@ -202,12 +207,13 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
     left: 4,
     right: 4,
     color: textColor,
-    fontSize,
+    fontSize: effectiveFontSize,
     fontWeight: 600,
     fontFamily: "'Inter', system-ui, sans-serif",
     textAlign: 'center',
     lineHeight: 1.3,
     pointerEvents: 'none',
+    overflow: 'hidden',
     textShadow: bgColor ? '0 1px 3px rgba(0,0,0,0.6)' : 'none',
     ...textPos,
   }
@@ -285,6 +291,16 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
       {!hostMissing && isStale && (
         <div style={{ position: 'absolute', top: 2, right: 4, fontSize: 10, color: '#ff8a3d', pointerEvents: 'none' }}>
           ⚠
+        </div>
+      )}
+      {mode === 'edit' && showHostLabels && (
+        <div style={{
+          position: 'absolute', bottom: 2, left: 2, right: 2,
+          fontSize: 8, color: 'rgba(255,255,255,0.75)', textAlign: 'center',
+          background: 'rgba(0,0,0,0.55)', borderRadius: 2, padding: '1px 2px',
+          pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {hostName}
         </div>
       )}
     </div>

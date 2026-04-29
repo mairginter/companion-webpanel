@@ -48,7 +48,16 @@ export interface BaseElement {
   w: number
   h: number
   z: number
+  /** Named layer group: 0=Background, 1=Lower, 2=Main, 3=Overlay. Optional — defaults by type. */
+  layer?: number
   locked?: boolean
+}
+
+/** Default layer for each element type (0=Background … 3=Overlay) */
+export function defaultLayerFor(type: string): number {
+  if (type === 'shape') return 0
+  if (type === 'label') return 3
+  return 2 // companionButton, channelStrip, virtualCompanionDeck
 }
 
 export interface CompanionButtonElement extends BaseElement {

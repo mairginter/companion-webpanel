@@ -8,7 +8,7 @@
  * View-Mode: Klick → sendVPress(deviceId, keyIndex, true/false)
  */
 import React, { useState, useCallback, useMemo } from 'react'
-import { VirtualCompanionDeckElement as VirtualCompanionDeckElementType } from '@cwp/shared'
+import { VirtualCompanionDeckElement as VirtualCompanionDeckElementType, defaultLayerFor } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { rawRgbBase64ToDataUrl } from '../../utils/bitmap'
 
@@ -189,7 +189,7 @@ export const VirtualCompanionDeckElement = React.memo(function VirtualCompanionD
     ...(isContained
       ? { position: 'relative' as const, width: '100%', height: '100%' }
       : { position: 'absolute' as const, left: element.x, top: element.y,
-          width: element.w, height: element.h, zIndex: element.z }
+          width: element.w, height: element.h, zIndex: (element.layer ?? defaultLayerFor(element.type)) * 1000 + (element.z ?? 0) + 100 }
     ),
     background: hexToRgba(fill, opacity),
     borderRadius,

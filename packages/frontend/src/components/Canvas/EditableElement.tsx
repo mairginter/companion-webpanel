@@ -9,7 +9,7 @@
 import React, { useCallback } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { AnyElement } from '@cwp/shared'
+import { AnyElement, defaultLayerFor } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { useDragDelta } from '../../context/DragDeltaContext'
 import { ResizeHandles } from '../Elements/ResizeHandles'
@@ -64,7 +64,7 @@ export function EditableElement({ element, panelId, children }: Props) {
         top: element.y,
         width: element.w,
         height: element.h,
-        zIndex: element.z + (isDragging ? 1000 : 0),
+        zIndex: (element.layer ?? defaultLayerFor(element.type)) * 1000 + (element.z ?? 0) + 100 + (isDragging ? 10000 : 0),
         transform: activeTransform ? CSS.Transform.toString(activeTransform) : undefined,
         cursor: element.locked ? 'default' : isDragging ? 'grabbing' : 'grab',
         outline: isSelected ? '2px solid #ff8a3d' : undefined,

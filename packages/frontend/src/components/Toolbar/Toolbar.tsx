@@ -81,8 +81,8 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
   const renamePanel = useAppStore((s) => s.renamePanel)
   const deletePanel = useAppStore((s) => s.deletePanel)
   const duplicatePanel = useAppStore((s) => s.duplicatePanel)
-  const copyElementsToPanel = useAppStore((s) => s.copyElementsToPanel)
-  const selectedIds = useAppStore((s) => s.selectedIds)
+  const showHostLabels = useAppStore((s) => s.showHostLabels)
+  const setShowHostLabels = useAppStore((s) => s.setShowHostLabels)
   const hosts = useAppStore((s) => s.settings?.hosts ?? [])
   const sessionStatus = useAppStore((s) => s.sessionStatus)
   const hostInfo = useAppStore((s) => s.hostInfo)
@@ -101,8 +101,6 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
   const [newPanelName, setNewPanelName] = useState('')
   const [addMenuOpen, setAddMenuOpen] = useState(false)
   const addBtnRef = useRef<HTMLButtonElement>(null)
-  const [copyMenuOpen, setCopyMenuOpen] = useState(false)
-  const copyWrapRef = useRef<HTMLDivElement>(null)
 
   const handleAddClick = useCallback(() => {
     setAddMenuOpen((o) => !o)
@@ -136,24 +134,8 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
     return () => document.removeEventListener('mousedown', handler)
   }, [dropdownOpen])
 
-  useEffect(() => {
-    if (!copyMenuOpen) return
-    const handler = (e: MouseEvent) => {
-      if (copyWrapRef.current && !copyWrapRef.current.contains(e.target as Node)) {
-        setCopyMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [copyMenuOpen])
-
   return (
     <div style={s}>
-      <span style={{ fontSize: 15, fontWeight: 600, color: '#e9edf2', letterSpacing: '0.02em', marginRight: 8 }}>
-        Companion Webpanel
-      </span>
-      <div style={dividerStyle} />
-
       {/* Panel-Auswahl Dropdown */}
       <div ref={dropdownRef} style={{ position: 'relative' }}>
         <button
@@ -386,58 +368,17 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
             +
           </button>
 
-          {selectedIds.size > 0 && (
-            <div ref={copyWrapRef} style={{ position: 'relative' }}>
-              <button
-                style={{
-                  ...modeButtonStyle(copyMenuOpen),
-                  display: 'flex', alignItems: 'center', gap: 4,
-                  padding: '0 10px', height: 32, fontSize: 13,
-                }}
-                onClick={() => setCopyMenuOpen((o) => !o)}
-                title={t('toolbar.copyToPanel')}
-              >
-                <span className="material-icons" style={{ fontSize: 16 }}>content_copy</span>
-                <span style={{ fontSize: 10, color: '#4a5568' }}>{copyMenuOpen ? '▲' : '▼'}</span>
-              </button>
-
-              {copyMenuOpen && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: 0, marginTop: 4,
-                  background: '#1a2030', border: '1px solid #2a3344', borderRadius: 6,
-                  minWidth: 180, zIndex: 500, boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-                  overflow: 'hidden',
-                }}>
-                  {panels.filter((p) => p.id !== activePanelId).length === 0 ? (
-                    <div style={{ padding: '10px 14px', color: '#4a5568', fontSize: 13 }}>
-                      {t('toolbar.noOtherPanels')}
-                    </div>
-                  ) : (
-                    panels
-                      .filter((p) => p.id !== activePanelId)
-                      .map((p) => (
-                        <div
-                          key={p.id}
-                          onClick={() => {
-                            copyElementsToPanel(activePanelId!, p.id, [...selectedIds])
-                            onSave?.()
-                            setCopyMenuOpen(false)
-                          }}
-                          style={{
-                            padding: '9px 14px', fontSize: 13, color: '#e9edf2',
-                            cursor: 'pointer', borderBottom: '1px solid #1a2030',
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(74,158,255,0.08)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                        >
-                          {p.name}
-                        </div>
-                      ))
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          <button
+            style={{
+              ...modeButtonStyle(showHostLabels),
+              width: 32, padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            onClick={() => setShowHostLabels(!showHostLabels)}
+            title={showHostLabels ? t('toolbar.hideHostLabels') : t('toolbar.showHostLabels')}
+          >
+            <span className="material-icons" style={{ fontSize: 16 }}>label</span>
+          </button>
         </>
       )}
 

@@ -180,9 +180,47 @@ export function HelpModal({ onClose }: HelpModalProps) {
                   ⬇ {t('helpModal.kiDownloadButton')}
                 </a>
               </div>
-              <p style={{ color: '#666', fontSize: 11, textAlign: 'center', margin: 0 }}>
+              <p style={{ color: '#666', fontSize: 11, textAlign: 'center', margin: '0 0 16px 0' }}>
                 {t('helpModal.kiFootnote')}
               </p>
+
+              {/* Settings folder / file link */}
+              <div style={{
+                background: '#1a2a3d', border: '1px solid #2a4a6a',
+                borderRadius: 8, padding: '14px 16px',
+              }}>
+                <div style={{ color: '#7db9e8', fontSize: 13, fontWeight: 600, marginBottom: 5 }}>
+                  {t('helpModal.kiSettingsTitle')}
+                </div>
+                <div style={{ color: '#8aafcc', fontSize: 11, marginBottom: 12 }}>
+                  {t('helpModal.kiSettingsDesc')}
+                </div>
+                {(window as any).cwpApi?.openSettingsFolder ? (
+                  <button
+                    onClick={() => (window as any).cwpApi.openSettingsFolder()}
+                    style={{
+                      background: '#2a4a6a', borderRadius: 5, padding: '7px 14px',
+                      color: '#7db9e8', fontSize: 12, fontWeight: 500,
+                      border: 'none', cursor: 'pointer', display: 'inline-block',
+                    }}
+                  >
+                    ↗ {t('helpModal.kiSettingsOpenFolder')}
+                  </button>
+                ) : (
+                  <a
+                    href="/api/settings"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      background: '#2a4a6a', borderRadius: 5, padding: '7px 14px',
+                      color: '#7db9e8', fontSize: 12, fontWeight: 500,
+                      textDecoration: 'none', display: 'inline-block',
+                    }}
+                  >
+                    ↗ {t('helpModal.kiSettingsDownload')}
+                  </a>
+                )}
+              </div>
             </div>
           )}
 

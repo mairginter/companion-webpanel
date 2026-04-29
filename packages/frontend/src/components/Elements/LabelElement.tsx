@@ -1,5 +1,5 @@
 import React from 'react'
-import { LabelElement as LabelElementType } from '@cwp/shared'
+import { LabelElement as LabelElementType, defaultLayerFor } from '@cwp/shared'
 
 interface Props {
   element: LabelElementType
@@ -14,7 +14,7 @@ export const LabelElement = React.memo(function LabelElement({ element, isContai
         ...(isContained
           ? { position: 'relative' as const, width: '100%', height: '100%' }
           : { position: 'absolute' as const, left: element.x, top: element.y,
-              width: element.w, height: element.h, zIndex: element.z }
+              width: element.w, height: element.h, zIndex: (element.layer ?? defaultLayerFor(element.type)) * 1000 + (element.z ?? 0) + 100 }
         ),
         display: 'flex',
         alignItems: 'center',

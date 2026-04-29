@@ -17,7 +17,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import { AnyElement } from '@cwp/shared'
+import { AnyElement, defaultLayerFor } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { getTextureCss, getTextureBackgroundSize } from '../../utils/textures'
 import { DragDeltaContext } from '../../context/DragDeltaContext'
@@ -37,12 +37,13 @@ interface CanvasProps {
   sendPress: (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
   sendRotate: (hostId: string, page: number, row: number, col: number, direction: 1 | -1) => void
   sendVPress: (deviceId: string, keyIndex: number, pressed: boolean) => void
+  onSave?: () => void
 }
 
 // Dezentes Dot-Grid als permanenter Canvas-Hintergrund (View + Edit)
 const DOT_GRID = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='0' cy='0' r='1.2' fill='rgba(255,255,255,0.06)'/%3E%3C/svg%3E")`
 
-export function Canvas({ sendPress, sendRotate, sendVPress }: CanvasProps) {
+export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProps) {
   const mode = useAppStore((s) => s.mode)
   const panel = useAppStore((s) => s.getActivePanel())
   const clearSelection = useAppStore((s) => s.clearSelection)
@@ -327,7 +328,7 @@ export function Canvas({ sendPress, sendRotate, sendVPress }: CanvasProps) {
         />
       )}
       {/* Properties-Panel als Overlay im Edit-Mode */}
-      {mode === 'edit' && <PropertiesPanel />}
+      {mode === 'edit' && <PropertiesPanel onSave={onSave} />}
     </div>
   )
 
@@ -358,9 +359,9 @@ function renderElements(
   sendVPress: CanvasProps['sendVPress'],
 ) {
   const sorted = [...elements].sort((a, b) => {
-    if (a.type === 'shape' && b.type !== 'shape') return -1
-    if (a.type !== 'shape' && b.type === 'shape') return 1
-    return (a.z ?? 0) - (b.z ?? 0)
+    const zA = (a.layer ?? defaultLayerFor(a.type)) * 1000 + (a.z ?? 0)
+    const zB = (b.layer ?? defaultLayerFor(b.type)) * 1000 + (b.z ?? 0)
+    return zA - zB
   })
   return sorted.map((el) => {
     const inner = renderInner(el, mode, sendPress, sendRotate, sendVPress)

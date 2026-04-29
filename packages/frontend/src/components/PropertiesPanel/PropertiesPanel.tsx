@@ -9,7 +9,7 @@
  * - Ein Element selektiert → GeometryBlock + element-spezifische Props
  * - Mehrere Elemente selektiert → nur GeometryBlock (Multi-Edit)
  */
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../../store/useAppStore'
 import { GeometryBlock } from './GeometryBlock'
@@ -20,7 +20,7 @@ import { LabelProps } from './LabelProps'
 import { ChannelStripProps } from './ChannelStripProps'
 import { VirtualCompanionDeckProps } from './VirtualCompanionDeckProps'
 import { CompanionButtonMultiProps } from './CompanionButtonMultiProps'
-import { CompanionButtonElement } from '@cwp/shared'
+import { CompanionButtonElement, defaultLayerFor } from '@cwp/shared'
 
 const LS_SIDE = 'cwp:propsPanelSide'
 const LS_OPEN = 'cwp:propsPanelOpen'
@@ -33,17 +33,40 @@ function loadOpen(): boolean {
   return v === null ? true : v === 'true'
 }
 
-export function PropertiesPanel() {
+interface PropsPanelProps {
+  onSave?: () => void
+}
+
+export function PropertiesPanel({ onSave }: PropsPanelProps) {
   const { t } = useTranslation()
   const [side, setSide] = useState<'left' | 'right'>(loadSide)
   const [open, setOpen] = useState<boolean>(loadOpen)
+  const [copyPanelOpen, setCopyPanelOpen] = useState(false)
+  const copyPanelRef = useRef<HTMLDivElement>(null)
 
   const panel = useAppStore((s) => s.getActivePanel())
+  const activePanelId = useAppStore((s) => s.activePanelId)
+  const panels = useAppStore((s) => s.settings?.panels ?? [])
   const selectedIds = useAppStore((s) => s.selectedIds)
   const deleteElements = useAppStore((s) => s.deleteElements)
   const copiedStyle = useAppStore((s) => s.copiedStyle)
   const copyElementStyle = useAppStore((s) => s.copyElementStyle)
   const pasteElementStyle = useAppStore((s) => s.pasteElementStyle)
+  const copyElementsToPanel = useAppStore((s) => s.copyElementsToPanel)
+  const moveToLayer = useAppStore((s) => s.moveToLayer)
+  const bringForward = useAppStore((s) => s.bringForward)
+  const sendBackward = useAppStore((s) => s.sendBackward)
+
+  useEffect(() => {
+    if (!copyPanelOpen) return
+    const handler = (e: MouseEvent) => {
+      if (copyPanelRef.current && !copyPanelRef.current.contains(e.target as Node)) {
+        setCopyPanelOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [copyPanelOpen])
 
   const flipSide = () => {
     const next = side === 'right' ? 'left' : 'right'
@@ -242,7 +265,7 @@ export function PropertiesPanel() {
               title={t('propertiesPanel.copyStyle')}
               onClick={() => singleEl && copyElementStyle(panel!.id, singleEl.id)}
             >
-              ⎘
+              <span className="material-icons" style={{ fontSize: 20 }}>content_copy</span>
             </button>
           )}
           {canPaste && (
@@ -251,7 +274,7 @@ export function PropertiesPanel() {
               title={t('propertiesPanel.pasteStyle')}
               onClick={() => pasteElementStyle(panel!.id, [...selectedIds])}
             >
-              ⎗
+              <span className="material-icons" style={{ fontSize: 20 }}>content_paste</span>
             </button>
           )}
           <button style={collapseBtn} onClick={flipSide} title={t('propertiesPanel.flipSide')}>⇄</button>
@@ -262,7 +285,128 @@ export function PropertiesPanel() {
         {specificContent}
       </div>
       {selectedElements.length > 0 && (
-        <div style={{ padding: '10px 12px', borderTop: '1px solid #2a3344', flexShrink: 0 }}>
+        <div style={{ padding: '10px 12px', borderTop: '1px solid #2a3344', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+          {/* Layer-Zuweisung (für Einzel- und Mehrfach-Selektion) */}
+          {(() => {
+            const LAYERS = [
+              { id: 0, labelKey: 'propertiesPanel.layerBackground' },
+              { id: 1, labelKey: 'propertiesPanel.layerLower' },
+              { id: 2, labelKey: 'propertiesPanel.layerMain' },
+              { id: 3, labelKey: 'propertiesPanel.layerOverlay' },
+            ]
+            // Current layer: only highlight if all selected elements share the same layer
+            const layers = selectedElements.map((el) => el.layer ?? defaultLayerFor(el.type))
+            const currentLayer = layers.every((l) => l === layers[0]) ? layers[0] : null
+            return (
+              <div>
+                <div style={{ fontSize: 11, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 5 }}>
+                  {t('propertiesPanel.layer')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4, marginBottom: 6 }}>
+                  {LAYERS.map(({ id, labelKey }) => {
+                    const active = currentLayer === id
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => moveToLayer(panel!.id, [...selectedIds], id)}
+                        title={t(labelKey)}
+                        style={{
+                          background: active ? 'rgba(74,158,255,0.15)' : '#1a2030',
+                          border: `1px solid ${active ? '#4a9eff' : '#2a3344'}`,
+                          color: active ? '#4a9eff' : '#8896aa',
+                          borderRadius: 4, padding: '5px 2px', cursor: 'pointer',
+                          fontSize: 10, fontFamily: 'inherit', textAlign: 'center',
+                          lineHeight: 1.2,
+                        }}
+                        onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = '#e9edf2' }}
+                        onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = '#8896aa' }}
+                      >
+                        {t(labelKey)}
+                      </button>
+                    )
+                  })}
+                </div>
+                {/* Within-layer ordering — only for single element */}
+                {singleEl && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                    {[
+                      { icon: 'expand_less', action: () => bringForward(panel!.id, singleEl.id), title: t('propertiesPanel.bringForward') },
+                      { icon: 'expand_more', action: () => sendBackward(panel!.id, singleEl.id), title: t('propertiesPanel.sendBackward') },
+                    ].map(({ icon, action, title }) => (
+                      <button
+                        key={icon}
+                        onClick={action}
+                        title={title}
+                        style={{
+                          background: '#1a2030', border: '1px solid #2a3344', color: '#8896aa',
+                          borderRadius: 4, padding: '5px 0', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: 'inherit',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = '#e9edf2')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = '#8896aa')}
+                      >
+                        <span className="material-icons" style={{ fontSize: 18 }}>{icon}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* Copy to Panel */}
+          <div ref={copyPanelRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setCopyPanelOpen((o) => !o)}
+              title={t('propertiesPanel.copyToPanel')}
+              style={{
+                width: '100%', padding: '8px 10px', borderRadius: 6,
+                border: `1px solid ${copyPanelOpen ? '#4a9eff' : '#2a3344'}`,
+                background: copyPanelOpen ? 'rgba(74,158,255,0.08)' : '#1a2030',
+                color: copyPanelOpen ? '#4a9eff' : '#8896aa', fontSize: 13,
+                cursor: 'pointer', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="material-icons" style={{ fontSize: 16 }}>content_copy</span>
+                {t('propertiesPanel.copyToPanel')}
+              </span>
+              <span style={{ fontSize: 10, color: '#4a5568' }}>{copyPanelOpen ? '▲' : '▼'}</span>
+            </button>
+            {copyPanelOpen && (
+              <div style={{
+                position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: 4,
+                background: '#1a2030', border: '1px solid #2a3344', borderRadius: 6,
+                zIndex: 300, boxShadow: '0 -8px 24px rgba(0,0,0,0.4)', overflow: 'hidden',
+              }}>
+                {panels.filter((p) => p.id !== activePanelId).length === 0 ? (
+                  <div style={{ padding: '10px 14px', color: '#4a5568', fontSize: 13 }}>
+                    {t('propertiesPanel.noOtherPanels')}
+                  </div>
+                ) : (
+                  panels.filter((p) => p.id !== activePanelId).map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        copyElementsToPanel(activePanelId!, p.id, [...selectedIds])
+                        onSave?.()
+                        setCopyPanelOpen(false)
+                      }}
+                      style={{ padding: '9px 14px', fontSize: 13, color: '#e9edf2', cursor: 'pointer', borderBottom: '1px solid #1a2030' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(74,158,255,0.08)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      {p.name}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => canDelete && deleteElements(panel!.id, [...selectedIds])}
             disabled={!canDelete}

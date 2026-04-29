@@ -189,7 +189,7 @@ export function App() {
     <div style={styles.app}>
       <Toolbar mode={mode} onToggleMode={toggleMode} onOpenHostManager={() => setHostManagerOpen(true)} onOpenHelp={() => setHelpModalOpen(true)} onSave={handleSave} />
       <div style={styles.body}>
-        <Canvas sendPress={sendPress} sendRotate={sendRotate} sendVPress={sendVPress} />
+        <Canvas sendPress={sendPress} sendRotate={sendRotate} sendVPress={sendVPress} onSave={handleSave} />
       </div>
       {hostManagerOpen && (
         <HostManagerModal

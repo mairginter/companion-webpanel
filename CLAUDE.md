@@ -143,14 +143,18 @@ CompanionWebpannel/
 - ✅ App-Icon im Startup-Fenster — `assets/icon-256.png` fehlte in `electron-builder.yml` `files`-Liste (Commit 4447d2d, v1.2.3)
 
 ### Toolbar / UI
-- ⬜ **"Copy to Panel" aus Toolbar ins PropertiesPanel** — Menüpunkt in die Toolbar-Menüleiste entfernen; stattdessen im PropertiesPanel neben "Copy Style" (Ctrl+Shift+C) platzieren
-- ⬜ **App-Namen "Companion Webpanel" aus Toolbar entfernen** — nimmt unnötig Platz ein; steht bereits im Browser-Tab und Fensterrahmen
+- ✅ **"Copy to Panel" aus Toolbar ins PropertiesPanel** — Dropdown-Menü aus Toolbar entfernt; stattdessen im PropertiesPanel (unten, über Delete-Button) als aufklappbares Dropdown implementiert; `onSave` Callback via Canvas→App weitergereicht
+- ✅ **App-Namen "Companion Webpanel" aus Toolbar entfernen** — `<span>` + nachfolgender Divider aus Toolbar entfernt
 - ⬜ **KI-Antworten mit `help-me-KI-by_alex.md` testen** — prüfen ob ein KI-Agent mit dieser Datei als Kontext das Panel korrekt konfigurieren kann (ChannelStrip, Button-Mapping, Variablen etc.)
-- ⬜ **Copy/Paste-Style Icons vergrößern und verbessern** — aktuelle Icons für Ctrl+Shift+C / Ctrl+Shift+V sind zu klein und schwer erkennbar; bessere Material Icons wählen und Größe erhöhen
-- ⬜ **Link zur `settings.json` in HelpModal ergänzen** — in `help-me-KI-by_alex.md` und/oder im HelpModal einen direkten Hinweis/Link auf die Konfigurationsdatei `CompanionWebpannelSettings.json` einfügen
+- ✅ **Copy/Paste-Style Icons vergrößern und verbessern** — ⎘/⎗ ersetzt durch `content_copy` / `content_paste` Material Icons (fontSize 20) im PropertiesPanel-Header
+- ✅ **Link zur `settings.json` in HelpModal ergänzen** — neuer Abschnitt im KI-Tab: Titel + Beschreibung + `↗`-Link auf `/api/settings` (öffnet in neuem Tab)
+- ✅ **HelpModal Settings → Ordner öffnen (Electron)** — `ipcMain.handle('open-settings-folder', () => shell.openPath(userDataPath))`; `openSettingsFolder` in `preload.ts` contextBridge; HelpModal zeigt Button wenn `cwpApi.openSettingsFolder` vorhanden (Electron), sonst `/api/settings`-Link (Browser) (v1.3.2)
 
 ### Edit-Mode
 - ⬜ Ctrl+C / Ctrl+V (Copy/Paste wie Duplicate mit +75px Versatz)
+- ✅ **Host-Label im Edit-Mode einblendbar** — `label`-Icon-Button in Toolbar (Edit-Mode); `showHostLabels` im Store (transient); CompanionButtonElement zeigt semi-transparentes Label (Host-Name, 8px, unten) wenn aktiv
+- ✅ **Schrift-Skalierung bei kleinen Buttons** — `effectiveFontSize = Math.min(fontSize, Math.max(7, Math.floor(element.h * 0.22)))` in CompanionButtonElement; `overflow: 'hidden'` auf textStyle
+- ✅ **Named Layer System** — 4 feste Layer: 0=Background, 1=Lower, 2=Main, 3=Overlay; `layer?: number` auf `BaseElement`; `defaultLayerFor(type)` exported aus `@cwp/shared`; PropertiesPanel zeigt 4 Layer-Buttons (Einzel- + Mehrfach-Selektion) + 2 Within-Layer-Pfeile (nur Einzel); `moveToLayer()` im Store; `EditableElement` zIndex-Formel korrigiert (`layer*1000+z+100`); Canvas-Sort auf Layer-Formel umgestellt (v1.3.2)
 - ✅ Canvas-Größe manuell: Preset-Dropdown + custom W/H-Inputs + letzte 5 Größen in localStorage; DPI-Warnung + "Verfügbaren Bereich übernehmen"-Button
 - ✅ Canvas Grid Snap für alle Elemente: Drag + Resize snappen auf `gridSize/4` (feines Raster)
 - ✅ Resize Snap: `snapResizeGeo()` in `geometry.ts`, angewandt in `ResizeHandles.tsx` (nur gezogene Kante snappt)
@@ -198,6 +202,7 @@ CompanionWebpannel/
 - ✅ **P2-1 + P3-4** — Kompaktes JSON in `/api/settings` GET (kein pretty-print), Material Icons via `material-icons` npm-Paket lokal gebundled (Offline-fähige PWA, ~128 KB woff2)
 - ✅ **Release v1.3.0** — `CompanionWebpanel-1.3.0.exe` 79 MB portable (Win x64), Tag `v1.3.0` lokal (nicht gepusht)
 - ✅ **Release v1.3.1** — HostEditModal, caps-disabled Hinweis, Copy-to-Panel, Panel Duplicate, Multi-Button Editing; `CompanionWebpanel-1.3.1.exe` portable (Win x64), Tag `v1.3.1` lokal (nicht gepusht)
+- ✅ **Release v1.3.2** — Named Layer System (4 Layer, Multi-Select, EditableElement/Canvas-Sort-Fix), HelpModal Settings-Ordner öffnen (Electron IPC); `CompanionWebpanel-1.3.2.exe` portable (Win x64), Tag `v1.3.2` lokal (nicht gepusht)
 
 ### Code Review — Noch offen (P2/P3, nach Bedarf)
 - ⬜ **P2-2** i18n-Strings IPC-Handler cachen (Zeile 136-146 `main.ts`), bei `changeLanguage` neu bauen

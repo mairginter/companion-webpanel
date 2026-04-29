@@ -8,6 +8,7 @@
  *   getStatus()          → AppStatus (einmalig beim Laden)
  *   onStatusUpdate(cb)   → registriert einen Listener für Push-Updates
  *   changePort(port)     → fordert Port-Änderung + Neustart an
+ *   openSettingsFolder() → öffnet AppData/CompanionWebpanel im Datei-Explorer
  *   openPanel()          → öffnet localhost:<port> im Default-Browser
  *   getVersion()         → App-Version aus package.json (z.B. "1.2.3")
  *   getI18nStrings()     → übersetzte UI-Strings für startup.html
@@ -26,6 +27,9 @@ contextBridge.exposeInMainWorld('cwpApi', {
 
   changePort: (port: number): Promise<void> =>
     ipcRenderer.invoke('change-port', port),
+
+  openSettingsFolder: (): Promise<void> =>
+    ipcRenderer.invoke('open-settings-folder'),
 
   openPanel: (): Promise<void> =>
     ipcRenderer.invoke('open-panel'),

@@ -14,7 +14,7 @@
  *  - Solo-Button: SUB-PRESS auf soloRef (nur sichtbar wenn refs.solo konfiguriert)
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { ChannelStripElement as ChannelStripElementType } from '@cwp/shared'
+import { ChannelStripElement as ChannelStripElementType, defaultLayerFor } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { parseChannelStripText, parsePanValue, isMuted } from '../../utils/channelStrip'
 
@@ -237,7 +237,7 @@ export const ChannelStripElement = React.memo(function ChannelStripElement({
   const containerStyle: React.CSSProperties = {
     ...(isContained
       ? { position: 'relative' as const, width: '100%', height: '100%' }
-      : { position: 'absolute' as const, left: element.x, top: element.y, width: element.w, height: element.h }
+      : { position: 'absolute' as const, left: element.x, top: element.y, width: element.w, height: element.h, zIndex: (element.layer ?? defaultLayerFor(element.type)) * 1000 + (element.z ?? 0) + 100 }
     ),
     overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 6,
     // Neutrales Dunkelgrau — klar unterscheidbar von blauen/grünen Panel-Farben

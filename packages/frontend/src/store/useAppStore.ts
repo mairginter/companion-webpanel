@@ -13,6 +13,7 @@ import {
   VSnapshotMessage,
   VSessionStatusMessage,
   pageKey,
+  defaultLayerFor,
 } from '@cwp/shared'
 
 type SessionStatus = SessionStatusMessage['status']
@@ -102,6 +103,18 @@ interface AppStore {
   duplicateElements: (panelId: string, ids: string[]) => void
   deleteElements: (panelId: string, ids: string[]) => void
   addElement: (panelId: string, element: AnyElement) => void
+
+  // ─── Edit UI State ────────────────────────────────────────────────────────
+  showHostLabels: boolean
+  setShowHostLabels: (v: boolean) => void
+
+  // ─── Layer System ─────────────────────────────────────────────────────────
+  /** Move one or more elements to a named layer (0=Background … 3=Overlay). Works for multi-select. */
+  moveToLayer: (panelId: string, elementIds: string[], layer: number) => void
+  /** Move one element one step forward within its layer */
+  bringForward: (panelId: string, elementId: string) => void
+  /** Move one element one step backward within its layer */
+  sendBackward: (panelId: string, elementId: string) => void
 
   // ─── Style Copy/Paste ─────────────────────────────────────────────────────
   copiedStyle: {
@@ -560,6 +573,94 @@ export const useAppStore = create<AppStore>((set, get) => ({
           ...s.settings,
           panels: s.settings.panels.map((p) =>
             p.id !== panelId ? p : { ...p, elements: [...p.elements, withZ] },
+          ),
+        },
+      }
+    }),
+
+  // ─── Edit UI State ────────────────────────────────────────────────────────
+  showHostLabels: false,
+  setShowHostLabels: (v) => set({ showHostLabels: v }),
+
+  // ─── Layer System ─────────────────────────────────────────────────────────
+  moveToLayer: (panelId, elementIds, layer) =>
+    set((s) => {
+      if (!s.settings) return s
+      const idSet = new Set(elementIds)
+      return {
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) =>
+            p.id !== panelId ? p : {
+              ...p,
+              elements: p.elements.map((el) =>
+                idSet.has(el.id) ? { ...el, layer } : el,
+              ),
+            },
+          ),
+        },
+      }
+    }),
+
+  bringForward: (panelId, elementId) =>
+    set((s) => {
+      if (!s.settings) return s
+      const panel = s.settings.panels.find((p) => p.id === panelId)
+      if (!panel) return s
+      const el = panel.elements.find((e) => e.id === elementId)
+      if (!el) return s
+      const elLayer = el.layer ?? defaultLayerFor(el.type)
+      const currentZ = el.z ?? 0
+      // Only swap with elements in the same layer
+      const above = panel.elements
+        .filter((e) => e.id !== elementId && (e.layer ?? defaultLayerFor(e.type)) === elLayer && (e.z ?? 0) > currentZ)
+        .sort((a, b) => (a.z ?? 0) - (b.z ?? 0))[0]
+      if (!above) return s
+      const aboveZ = above.z ?? 0
+      return {
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) =>
+            p.id !== panelId ? p : {
+              ...p,
+              elements: p.elements.map((e) => {
+                if (e.id === elementId) return { ...e, z: aboveZ }
+                if (e.id === above.id) return { ...e, z: currentZ }
+                return e
+              }),
+            },
+          ),
+        },
+      }
+    }),
+
+  sendBackward: (panelId, elementId) =>
+    set((s) => {
+      if (!s.settings) return s
+      const panel = s.settings.panels.find((p) => p.id === panelId)
+      if (!panel) return s
+      const el = panel.elements.find((e) => e.id === elementId)
+      if (!el) return s
+      const elLayer = el.layer ?? defaultLayerFor(el.type)
+      const currentZ = el.z ?? 0
+      // Only swap with elements in the same layer
+      const below = panel.elements
+        .filter((e) => e.id !== elementId && (e.layer ?? defaultLayerFor(e.type)) === elLayer && (e.z ?? 0) < currentZ)
+        .sort((a, b) => (b.z ?? 0) - (a.z ?? 0))[0]
+      if (!below) return s
+      const belowZ = below.z ?? 0
+      return {
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) =>
+            p.id !== panelId ? p : {
+              ...p,
+              elements: p.elements.map((e) => {
+                if (e.id === elementId) return { ...e, z: belowZ }
+                if (e.id === below.id) return { ...e, z: currentZ }
+                return e
+              }),
+            },
           ),
         },
       }

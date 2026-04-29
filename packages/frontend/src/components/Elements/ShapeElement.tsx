@@ -1,5 +1,5 @@
 import React from 'react'
-import { ShapeElement as ShapeElementType } from '@cwp/shared'
+import { ShapeElement as ShapeElementType, defaultLayerFor } from '@cwp/shared'
 
 interface Props {
   element: ShapeElementType
@@ -17,7 +17,7 @@ export const ShapeElement = React.memo(function ShapeElement({ element, isContai
         ...(isContained
           ? { position: 'relative' as const, width: '100%', height: '100%' }
           : { position: 'absolute' as const, left: element.x, top: element.y,
-              width: element.w, height: element.h, zIndex: element.z }
+              width: element.w, height: element.h, zIndex: (element.layer ?? defaultLayerFor(element.type)) * 1000 + (element.z ?? 0) + 100 }
         ),
         borderRadius,
         background: style.fill,
