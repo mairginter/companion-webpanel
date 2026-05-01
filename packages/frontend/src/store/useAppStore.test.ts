@@ -334,20 +334,27 @@ describe('setZoom', () => {
 })
 
 describe('setAutoZoom', () => {
-  it('setzt autoZoom auf true für ein Panel', () => {
+  it('setzt autoZoom auf true', () => {
     useAppStore.getState().setAutoZoom('panel-1', true)
     expect(useAppStore.getState().getActivePanel()?.autoZoom).toBe(true)
   })
 
-  it('setzt autoZoom auf false für ein Panel', () => {
+  it('setzt autoZoom auf false', () => {
     useAppStore.getState().setAutoZoom('panel-1', true)
     useAppStore.getState().setAutoZoom('panel-1', false)
     expect(useAppStore.getState().getActivePanel()?.autoZoom).toBe(false)
   })
 
-  it('verändert anderen Panels autoZoom nicht', () => {
-    useAppStore.getState().setAutoZoom('other-panel', true)
+  it('verändert andere Panels autoZoom nicht', () => {
+    const panel2 = useAppStore.getState().createPanel('Panel 2')
+    useAppStore.getState().setAutoZoom(panel2.id, true)
+    useAppStore.getState().setActivePanelId('panel-1')
     expect(useAppStore.getState().getActivePanel()?.autoZoom).toBeUndefined()
+  })
+
+  it('ignoriert unbekannte Panel-ID (kein Crash)', () => {
+    expect(() => useAppStore.getState().setAutoZoom('no-such-panel', true)).not.toThrow()
+    expect(useAppStore.getState().settings?.panels.length).toBe(1)
   })
 })
 
