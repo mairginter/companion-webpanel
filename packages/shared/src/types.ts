@@ -1,9 +1,11 @@
-// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.6.0) ───
+// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.7.0) ───
 
 export interface Settings {
-  version: '1.6.0'
+  version: '1.7.0'
   /** UI language code (e.g. 'de', 'en'). Applied to all clients without a per-device override. */
   language?: string
+  /** Custom path to this settings file (~-normalized). Stored so cloud-synced copies can self-identify. */
+  settingsPath?: string
   activeHostId: string
   hosts: HostProfile[]
   panels: Panel[]
@@ -209,6 +211,8 @@ export interface Panel {
   id: string
   name: string
   zoom: number
+  /** When true, zoom is auto-calculated to fit the window. Stored per-panel. */
+  autoZoom?: boolean
   defaultMode: 'view' | 'edit'
   grid: { enabled: boolean; size: number; snap: boolean }
   canvas?: { width?: number; height?: number; background?: string; texture?: string }

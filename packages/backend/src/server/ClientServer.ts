@@ -133,7 +133,7 @@ export class ClientServer {
           try {
             const incoming = JSON.parse(body) as Settings
 
-            if (incoming.version !== '1.6.0') {
+            if (incoming.version !== '1.7.0') {
               res.writeHead(400, { 'Content-Type': 'application/json' })
               res.end(JSON.stringify({ error: `Ungültige Schema-Version: ${incoming.version}` }))
               return

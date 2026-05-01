@@ -13,7 +13,7 @@
   "properties": {
     "version": {
       "type": "string",
-      "pattern": "^1\\.6\\.0$"
+      "pattern": "^1\\.7\\.0$"
     },
     "server": {
       "type": "object",
@@ -55,6 +55,10 @@
       "description": "UI-Sprache (z.B. 'de', 'en'). Gilt als globaler Default; per-Gerät-Override via localStorage.",
       "minLength": 2,
       "maxLength": 10
+    },
+    "settingsPath": {
+      "type": "string",
+      "description": "Custom path to this file (~-normalized). Machine-specific; set by main process."
     }
   },
   "$defs": {
@@ -195,6 +199,10 @@
           "minimum": 0.1,
           "maximum": 4.0,
           "default": 1.0
+        },
+        "autoZoom": {
+          "type": "boolean",
+          "description": "When true, zoom is auto-calculated to fit the window."
         },
         "defaultMode": {
           "type": "string",
