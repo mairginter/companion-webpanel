@@ -55,10 +55,16 @@ async function main(): Promise<void> {
     activeSettingsPath = defaultSettingsPath
   }
 
-  let settings = loadSettingsFile(activeSettingsPath)
+  // Wenn ein benutzerdefinierter Pfad konfiguriert ist aber die Datei fehlt (verschoben/gelöscht):
+  // KEIN Auto-Create — stattdessen configMissing-Flag setzen und User in Startup-Fenster informieren.
+  const configMissing = !!meta.settingsPath && !fs.existsSync(activeSettingsPath)
+
+  let settings = configMissing
+    ? getDefaultSettings()
+    : loadSettingsFile(activeSettingsPath)
 
   // Settings-Vorrang: wenn settings.settingsPath auf anderen Pfad zeigt → redirect
-  if (settings.settingsPath) {
+  if (!configMissing && settings.settingsPath) {
     const fromSettings = expandPath(settings.settingsPath)
     if (fromSettings !== activeSettingsPath) {
       activeSettingsPath = fromSettings
@@ -84,13 +90,16 @@ async function main(): Promise<void> {
   const appStatus: AppStatus = {
     port: actualPort ?? 0,
     portAuto,
-    hosts: settings.hosts
-      .filter((h) => h.showInToolbar !== false && h.autoConnect !== false)
-      .map((h) => ({
-        id: h.id,
-        name: h.name,
-        status: 'connecting',
-      })),
+    configMissing: configMissing || undefined,
+    hosts: configMissing
+      ? []
+      : settings.hosts
+          .filter((h) => h.showInToolbar !== false && h.autoConnect !== false)
+          .map((h) => ({
+            id: h.id,
+            name: h.name,
+            status: 'connecting',
+          })),
   }
 
   // ─── Startup-Fenster (sofort anzeigen) ────────────────────────────────────
@@ -133,7 +142,8 @@ async function main(): Promise<void> {
 
   // Backend-Start ohne await — Startup-Fenster + Tray sollen sofort da sein.
   // Sobald Backend läuft wird ein Status-Update geschickt.
-  if (actualPort !== null) {
+  // Bei fehlendem Config-File kein Backend starten — User muss erst Datei wählen.
+  if (actualPort !== null && !configMissing) {
     createBackend(settings, actualPort, settingsPath, onHostStatus, staticDir)
       .then((instance) => {
         backendInstance = instance
@@ -190,6 +200,7 @@ async function main(): Promise<void> {
     newConfig:            t('startup.newConfig'),
     newConfigDesc:        t('startup.newConfigDesc'),
     configFile:           t('startup.configFile'),
+    configMissing:        t('startup.configMissing'),
   }))
 
   // Fix #4: Fenster beim Open Panel nicht schließen

@@ -19,4 +19,6 @@ export interface AppStatus {
   portAuto: boolean
   /** Status pro Host */
   hosts: HostStatus[]
+  /** true wenn die konfigurierte Settings-Datei nicht gefunden wurde (verschoben/gelöscht) */
+  configMissing?: boolean
 }

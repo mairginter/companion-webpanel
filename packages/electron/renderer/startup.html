@@ -294,6 +294,16 @@
       text-align: center;
       padding: 8px 0;
     }
+
+    /* Config-Missing-Warnung */
+    .config-missing-hint {
+      font-size: 12px;
+      color: #ff8a3d;
+      text-align: left;
+      padding: 8px 0;
+      white-space: pre-line;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -405,8 +415,19 @@
       const errorBanner = document.getElementById('errorBanner')
       errorBanner.style.display = status.port === 0 ? 'block' : 'none'
 
+      // Config-Missing: Dateiname rot einfärben
+      const prefFileEl = document.getElementById('prefFileName')
+      if (prefFileEl) prefFileEl.style.color = status.configMissing ? '#ff5a5f' : ''
+
       // Hosts
       const hostsEl = document.getElementById('hosts')
+
+      if (status.configMissing) {
+        const msg = window._i18n?.configMissing ?? '⚠ Config file not found.\nChoose a file (⋯) or create a new one.'
+        hostsEl.innerHTML = `<div class="config-missing-hint">${esc(msg)}</div>`
+        return
+      }
+
       if (!status.hosts || status.hosts.length === 0) {
         const msg = window._i18n?.noHostsConfigured ?? 'Keine Hosts konfiguriert'
         hostsEl.innerHTML = `<div class="no-hosts">${msg}</div>`

@@ -225,7 +225,8 @@
     "preferenceFile": "Preference File",
     "newConfig": "Neue leere Konfiguration",
     "newConfigDesc": "Leere Konfigurationsdatei erstellen",
-    "configFile": "Konfigurationsdatei"
+    "configFile": "Konfigurationsdatei",
+    "configMissing": "⚠ Konfigurationsdatei nicht gefunden.\nDatei oben auswählen (⋯) oder neue erstellen."
   },
   "errors": {
     "caps_disabled": "Button Subscriptions nicht aktiviert",

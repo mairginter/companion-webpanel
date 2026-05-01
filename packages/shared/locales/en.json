@@ -225,7 +225,8 @@
     "preferenceFile": "Preference File",
     "newConfig": "New Empty Config",
     "newConfigDesc": "Start with empty settings",
-    "configFile": "Config File"
+    "configFile": "Config File",
+    "configMissing": "⚠ Config file not found.\nChoose a file (⋯) or create a new one."
   },
   "errors": {
     "caps_disabled": "Button subscriptions not enabled",
