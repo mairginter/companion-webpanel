@@ -13,6 +13,8 @@ Das Panel kommuniziert mit Bitfocus Companion über die Satellite API (WebSocket
 
 Mindestanforderung: Bitfocus Companion 4.3.0 oder neuer, mit aktivierter Option "satellite_subscriptions_enabled" in den Companion-Einstellungen.
 
+Settings-Schema-Version: **1.7.0**
+
 Verfügbar als:
 - Web-App: läuft als Node.js-Prozess, erreichbar im Browser unter http://localhost:PORT
 - Electron Desktop-App: eigenständige Anwendung mit Tray-Icon, Startup-Fenster und eingebettetem Browser
@@ -31,25 +33,38 @@ Felder pro Host:
 - Port: WebSocket-Port der Satellite API (Standard: 16623)
 - Automatisch verbinden (autoConnect): wenn deaktiviert, wird dieser Host beim Start nicht verbunden
 - In Toolbar anzeigen (showInToolbar): wenn deaktiviert, erscheint der Status-Punkt dieses Hosts nicht in der Toolbar
+- Notizen: freies Textfeld
+- Button-Grid: Spalten und Zeilen für den Button-Picker (Standard: 8×4)
+- Max. Pages: maximale Seiten-Anzahl im Picker-Dropdown
 
 Der Verbindungsstatus wird in der Toolbar als farbiger Punkt pro Host angezeigt:
-- Blau: verbindet
+- Blau/Orange (animiert): verbindet
 - Grün: verbunden
 - Orange: Verbindung verloren, Wiederverbindung läuft
 - Rot: Fehler
+
+Wenn ein Host im Companion die "Button Subscriptions API" nicht aktiviert hat, erscheint eine orangene Warnung mit dem Pfad zur Einstellung.
 
 ---
 
 ## Panel-Canvas
 
-Ein Panel ist eine konfigurierbare Arbeitsfläche mit Elementen. Es können mehrere Panels angelegt werden (über das Panel-Dropdown in der Toolbar).
+Ein Panel ist eine konfigurierbare Arbeitsfläche mit Elementen. Es können mehrere Panels angelegt werden (Panel-Dropdown in der Toolbar: + Neu, Umbenennen, Duplizieren, Löschen).
 
 Canvas-Konfiguration:
 - Breite und Höhe in Pixeln (Preset-Dropdown oder manuelle Eingabe, z.B. 1920×1080)
 - Die letzten 5 verwendeten Canvas-Größen werden gespeichert
-- Zoom: Ctrl+Scroll oder Zoom-Control in der Toolbar (20%–200%)
-- Grid: visuelle Rasterlinien (Major + Minor), ein/aus mit G-Taste
-- Snap: Elemente rasten am Raster ein, ein/aus mit S-Taste (nur im Edit-Modus)
+- "Verfügbaren Bereich übernehmen": setzt Canvas auf die aktuelle Fenstergröße minus Toolbar
+- Hintergrundfarbe des Canvas
+- DPI-Hinweis bei Windows-Skalierung: Canvas-Größe in logischen CSS-px eingeben, nicht physischen Pixeln
+
+Zoom:
+- Ctrl+Scroll oder Zoom-Control in der Toolbar (20%–200%)
+- **Auto-Zoom (Fit to Window):** "Fit"-Button im Zoom-Flyout der Toolbar. Wenn aktiv, berechnet der Canvas den Zoom automatisch so, dass der gesamte Canvas ins Fenster passt. Der Zoom passt sich bei jeder Fenstergrößenänderung neu an. Ctrl+Scroll deaktiviert Auto-Zoom und übernimmt den aktuellen Zoom-Wert für manuelles Zoomen. Auto-Zoom ist pro Panel gespeichert.
+
+Grid:
+- Visuelle Rasterlinien (Major + Minor), ein/aus mit G-Taste
+- Snap: Elemente rasten beim Drag und Resize am Raster ein, ein/aus mit S-Taste (nur Edit-Modus)
 
 Modi:
 - View-Modus (V): Buttons lösen Companion-Aktionen aus, kein Drag
@@ -58,6 +73,20 @@ Modi:
 ---
 
 ## Canvas-Elemente
+
+### Ebenen (Named Layers)
+
+Alle Elemente sind einer von vier benannten Ebenen zugewiesen. Die Ebene bestimmt die Zeichenreihenfolge (Stacking Order). Innerhalb einer Ebene gibt es zusätzlich eine Z-Reihenfolge.
+
+Ebenen (von unten nach oben):
+- **Background** (0): Hintergrundelemente (Shapes, Bilder)
+- **Lower** (1): zweite Ebene
+- **Main** (2): Standard für neue Elemente
+- **Overlay** (3): oberste Ebene (für Beschriftungen, Status-Overlays)
+
+Ebene im PropertiesPanel ändern: 4 Buttons (Background / Lower / Main / Overlay).
+Reihenfolge innerhalb einer Ebene: "Eine Ebene nach vorne" / "Eine Ebene nach hinten" (bei Einzel-Selektion).
+Ganz nach vorne / Ganz nach hinten: verschiebt innerhalb der aktuellen Ebene an den Rand.
 
 ### CompanionButton
 
@@ -69,12 +98,18 @@ Konfigurierbare Properties:
 - Row: Zeile auf der Companion-Seite
 - Col: Spalte auf der Companion-Seite
 - Border-Radius: abgerundete Ecken (px)
-- Physical Style: aktiviert einen silber-metallischen Rahmen mit konkaver Dom-Fläche (3D-Optik)
+- Physical Style: aktiviert einen silber-metallischen Rahmen mit konkaver Dom-Fläche (3D-Optik). Im View-Modus skaliert die Dom beim Drücken leicht ein.
 - Text-Align: Textausrichtung (left, center, right)
 - Bitmap skalieren (scaleBitmap): Companion-Bitmap füllt den Button, auch wenn er größer als 72×72px ist
 - Hintergrundfarbe anzeigen (showBgColor): Companion-Hintergrundfarbe als Button-Hintergrund verwenden
+- Text anzeigen (showText): Companion-Button-Text einblenden
+- Schriftgröße: wird bei kleinen Buttons automatisch auf min. 7px begrenzt
 
 Im View-Modus: Klick/Touch löst KEY-PRESS in Companion aus.
+
+**Multi-Button-Editing:** Wenn ≥2 CompanionButtons selektiert sind, erscheint im PropertiesPanel ein Batch-Edit-Panel. Felder mit gemischten Werten zeigen "—" (indeterminate). Nur geänderte Felder werden auf alle selektierten Buttons angewendet.
+
+**Host-Labels im Edit-Modus:** Label-Icon-Button in der Toolbar (Edit-Modus) blendet semi-transparente Host-Name-Labels (8px, unten) auf allen CompanionButtons ein. Nützlich zur Kontrolle welcher Button zu welchem Host gehört.
 
 ### Shape
 
@@ -99,6 +134,7 @@ Konfigurierbare Properties:
 - Textfarbe
 - Schriftgröße (px)
 - Schriftfamilie
+- Schriftstärke (Normal, Semi-Bold, Bold)
 - Textausrichtung (left, center, right)
 
 Label-Elemente reagieren nicht auf Klicks im View-Modus.
@@ -140,7 +176,7 @@ Interpretation bei Konfiguration meterLIndex=0, meterRIndex=1, levelIndex=2, nam
 Nicht benötigte Werte einfach weglassen (Index auf -1 setzen oder Variable im Template nicht mitsenden).
 
 Fader-Bedienung: vertikales Drag mit Maus oder Touch sendet ebenfalls SUB-ROTATE an Companion.
-Drum-Wheel: alternatives Scrollrad-Element, ein/ausblendbar.
+Drum-Wheel: alternatives Scrollrad-Element, ein/ausblendbar mit `showWheel`-Option.
 
 #### Button 2 (optional — für Solo/PFL und Pan)
 
@@ -159,6 +195,7 @@ Konfigurierbare Properties:
 - Trennzeichen (Separator)
 - Index pro Wert (meterLIndex, meterRIndex, levelIndex, nameIndex)
 - Wheel anzeigen (showWheel)
+- Coarse Multiplier: Multiplikator für SUB-ROTATE-Schrittweite (Fader-Empfindlichkeit)
 
 ### VirtualCompanionDeck
 
@@ -195,6 +232,10 @@ Im Edit-Modus (E-Taste) können Elemente bearbeitet werden:
 - Element sperren (Lock): gesperrte Elemente können nicht verschoben oder gelöscht werden
 - Properties Panel: rechts eingeblendet wenn ein Element selektiert ist — zeigt alle konfigurierbaren Eigenschaften
 
+**Elemente zwischen Panels kopieren:** Im Edit-Modus mit ≥1 selektierten Elementen → PropertiesPanel (unten) → "In Panel kopieren" → Dropdown mit allen anderen Panels. Die kopierten Elemente erhalten neue UUIDs und +75px Versatz.
+
+**Panel duplizieren:** Im Panel-Dropdown (Toolbar) → ⧉-Icon neben dem Panel-Namen. Erstellt ein vollständiges Duplikat mit allen Elementen und neuen UUIDs, Name = "…Copy".
+
 ---
 
 ## Keyboard Shortcuts
@@ -215,18 +256,22 @@ Im Edit-Modus (E-Taste) können Elemente bearbeitet werden:
 | ↑ ↓ ← →          | Element verschieben (1 px)          |
 | Shift + ↑ ↓ ← →  | Element verschieben (10 px)         |
 | Escape            | Auswahl aufheben                    |
+| Ctrl+Scroll       | Zoom ändern (deaktiviert Auto-Zoom) |
 
 ---
 
 ## Einstellungen (Settings)
 
-Einstellungen werden über die Settings-API gespeichert (POST /api/settings). Die Konfigurationsdatei liegt im userData-Verzeichnis der Electron-App bzw. als JSON-Datei neben dem Backend-Prozess.
+Einstellungen werden in einer JSON-Datei gespeichert. Standardpfad in der Electron-App: `userData/companionwebpanel.json` (neue Installationen) bzw. `userData/settings.json` (Upgrade von älteren Versionen). In der Web-App liegt die Datei neben dem Backend-Prozess.
 
 Konfigurierbare Einstellungen:
 - Server-Port (Standard: 8080): auf welchem Port das Backend läuft
 - Sprache (language): de (Deutsch) oder en (Englisch) — gilt für alle UI-Strings
-- Hosts: Liste aller Companion-Verbindungen (siehe Abschnitt "Verbindung einrichten")
+- Hosts: Liste aller Companion-Verbindungen (siehe "Verbindung einrichten")
 - Panels: alle Canvas-Panels mit ihren Elementen und Canvas-Einstellungen
+- settingsPath: optionaler ~-normalisierter Pfad zur Settings-Datei (für Custom Settings Path, wird in die Datei selbst geschrieben für Cross-Device-Sync)
+
+**Custom Settings Path:** Die Einstellungsdatei kann in einem beliebigen Ordner liegen — z.B. OneDrive oder iCloud für automatische Synchronisation zwischen Geräten. Der Pfad wird maschinenlokal in `userData/meta.json` gespeichert (nicht in der Cloud-Datei selbst). Beim Start liest die App zuerst `meta.json`, um den Pfad zur eigentlichen Settings-Datei zu ermitteln.
 
 ---
 
@@ -235,10 +280,13 @@ Konfigurierbare Einstellungen:
 Die Electron-Version läuft als Desktop-Anwendung:
 
 - Tray-Icon in der Taskleiste: Rechtsklick öffnet das Kontextmenü mit Schnellzugriff
-- Startup-Fenster (400×240px): zeigt Verbindungsstatus, Port und Schnellzugriff-Buttons
-  - "Im Browser öffnen": öffnet das Panel im Standard-Browser
+- Startup-Fenster (400×350px): zeigt Verbindungsstatus, Port und Schnellzugriff-Buttons
+  - Port-Feld: Port ändern → Apply → App startet mit neuem Port
+  - **Abschnitt "Config File":** zeigt die aktive Einstellungsdatei
+    - Dateiname-Feld mit `⋯`-Button (Hover: "Load Config File…"): öffnet Datei-Dialog, wählt eine vorhandene `.json`-Datei → App startet automatisch neu mit der neuen Datei
+    - **"New Empty Config"-Button** (Dokument+Plus-Icon): öffnet Speichern-Dialog, erstellt eine leere Einstellungsdatei am gewählten Ort → App startet automatisch neu mit der neuen leeren Konfiguration
   - "In App öffnen": öffnet das Panel in einem eingebetteten Fenster (1280×720px)
-  - Port-Feld: Port ändern → App neu starten mit neuem Port
+  - "Im Browser öffnen": öffnet das Panel im Standard-Browser
 - Single-Instance: nur eine Instanz gleichzeitig möglich; zweite Instanz bringt das Startup-Fenster in den Vordergrund
 - Beim Schließen aller Fenster bleibt die App aktiv (Tray-App)
 - Beenden: über Tray-Menü → Bestätigungsdialog
