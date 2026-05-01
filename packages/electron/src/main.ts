@@ -15,7 +15,7 @@ import { app, ipcMain, shell, dialog, session } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import { createBackend } from '@cwp/backend'
-import { loadSettingsFile, saveSettingsFile, getSettingsPath, getDefaultSettings } from './settingsHelper'
+import { loadSettingsFile, saveSettingsFile, getSettingsPath } from './settingsHelper'
 import { loadMeta, saveMeta, normalizePath, expandPath } from './metaConfig'
 import { initElectronI18n, t } from './i18n'
 import { findFreePort } from './portCheck'
@@ -44,13 +44,12 @@ async function main(): Promise<void> {
   const meta = loadMeta(userDataPath)
   const defaultSettingsPath = getSettingsPath(userDataPath)
   // Backwards-Compat: bestehende settings.json beim Upgrade erhalten
-  const legacyPath = require('path').join(userDataPath, 'settings.json')
-  const fs_mod = require('fs')
+  const legacyPath = path.join(userDataPath, 'settings.json')
 
   let activeSettingsPath: string
   if (meta.settingsPath) {
     activeSettingsPath = expandPath(meta.settingsPath)
-  } else if (fs_mod.existsSync(legacyPath)) {
+  } else if (fs.existsSync(legacyPath)) {
     activeSettingsPath = legacyPath
   } else {
     activeSettingsPath = defaultSettingsPath
