@@ -141,6 +141,8 @@ CompanionWebpannel/
 - ✅ Tray-Icons im Release-Build sichtbar — `assets/tray-*.png` fehlten in `electron-builder.yml` `files`-Liste (war nur in `buildResources`, nicht im App-Package)
 - ✅ Version im Startup-Fenster — war hardcoded `v1.0.0`; jetzt `get-version` IPC → `app.getVersion()` → dynamisch aus `package.json` (Commit 4447d2d, v1.2.3)
 - ✅ App-Icon im Startup-Fenster — `assets/icon-256.png` fehlte in `electron-builder.yml` `files`-Liste (Commit 4447d2d, v1.2.3)
+- ✅ **Konfigurationsdatei nie auto-erstellen** — `configMissing = !fs.existsSync(activeSettingsPath)` deckt First-Run + verschobene Datei ab; kein Backend-Start wenn Missing; Startup-UI zeigt orangene Warnung; `apply-settings-path` schreibt nur meta.json + restartet (kein File-Copy mehr) (Commits f0205d4, 089eadb, v1.3.3)
+- ✅ **Auto-Zoom springt auf 20% bei Wechsel View→Edit** — ResizeObserver Guard `if (width <= 0 || height <= 0) return` + `mode` in Deps-Array verhindert Phantom-Resize beim DndContext-Remount (Commit 15e8a26, v1.3.3)
 
 ### Toolbar / UI
 - ✅ **"Copy to Panel" aus Toolbar ins PropertiesPanel** — Dropdown-Menü aus Toolbar entfernt; stattdessen im PropertiesPanel (unten, über Delete-Button) als aufklappbares Dropdown implementiert; `onSave` Callback via Canvas→App weitergereicht
@@ -203,6 +205,7 @@ CompanionWebpannel/
 - ✅ **Release v1.3.0** — `CompanionWebpanel-1.3.0.exe` 79 MB portable (Win x64), Tag `v1.3.0` lokal (nicht gepusht)
 - ✅ **Release v1.3.1** — HostEditModal, caps-disabled Hinweis, Copy-to-Panel, Panel Duplicate, Multi-Button Editing; `CompanionWebpanel-1.3.1.exe` portable (Win x64), Tag `v1.3.1` lokal (nicht gepusht)
 - ✅ **Release v1.3.2** — Named Layer System (4 Layer, Multi-Select, EditableElement/Canvas-Sort-Fix), HelpModal Settings-Ordner öffnen (Electron IPC); `CompanionWebpanel-1.3.2.exe` portable (Win x64), Tag `v1.3.2` lokal (nicht gepusht)
+- ✅ **Release v1.3.3** — Config-file never auto-create (First-Run + verschobene Datei), Startup-UI Warnung, Auto-Zoom Fix (View→Edit); `CompanionWebpanel-1.3.3.exe` portable (Win x64), Tag `v1.3.3` lokal (nicht gepusht)
 
 ### Code Review — Noch offen (P2/P3, nach Bedarf)
 - ⬜ **P2-2** i18n-Strings IPC-Handler cachen (Zeile 136-146 `main.ts`), bei `changeLanguage` neu bauen
