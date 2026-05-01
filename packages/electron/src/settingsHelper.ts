@@ -16,7 +16,7 @@ export function getSettingsPath(userDataPath: string): string {
 /** Gibt leere Default-Settings zurück (keine Hosts, kein Panel). */
 export function getDefaultSettings(): Settings {
   return {
-    version: '1.6.0',
+    version: '1.7.0',
     server: { port: 8080 },
     activeHostId: '',
     hosts: [],
@@ -70,6 +70,9 @@ export function loadSettings(userDataPath: string): Settings {
     // language is optional — no default needed, LanguageDetector handles it
     migrated = true
   }
+
+  // Migration: v1.6.0 → v1.7.0 (both new fields are optional, no defaults needed)
+  if (settings.version === '1.6.0') { settings.version = '1.7.0'; migrated = true }
 
   if (migrated) {
     fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), 'utf8')
