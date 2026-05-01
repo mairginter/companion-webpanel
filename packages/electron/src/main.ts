@@ -55,18 +55,19 @@ async function main(): Promise<void> {
     activeSettingsPath = defaultSettingsPath
   }
 
-  // Wenn ein benutzerdefinierter Pfad konfiguriert ist aber die Datei fehlt (verschoben/gelöscht):
-  // KEIN Auto-Create — stattdessen configMissing-Flag setzen und User in Startup-Fenster informieren.
-  const configMissing = !!meta.settingsPath && !fs.existsSync(activeSettingsPath)
+  // Datei fehlt (erster Start, verschoben oder gelöscht)?
+  // KEIN Auto-Create — User wählt im Startup-Fenster eine Datei oder erstellt eine neue.
+  const configMissing = !fs.existsSync(activeSettingsPath)
 
   let settings = configMissing
     ? getDefaultSettings()
     : loadSettingsFile(activeSettingsPath)
 
-  // Settings-Vorrang: wenn settings.settingsPath auf anderen Pfad zeigt → redirect
+  // Backwards-Compat: settings.settingsPath — Pointer auf anderen Pfad folgen.
+  // Nur wenn Zieldatei tatsächlich existiert (kein Auto-Create).
   if (!configMissing && settings.settingsPath) {
     const fromSettings = expandPath(settings.settingsPath)
-    if (fromSettings !== activeSettingsPath) {
+    if (fromSettings !== activeSettingsPath && fs.existsSync(fromSettings)) {
       activeSettingsPath = fromSettings
       settings = loadSettingsFile(activeSettingsPath)
       saveMeta(userDataPath, { settingsPath: normalizePath(activeSettingsPath) })
@@ -221,18 +222,9 @@ async function main(): Promise<void> {
   })
 
   ipcMain.handle('apply-settings-path', async (_event, normalizedNewPath: string) => {
-    const newAbsPath = expandPath(normalizedNewPath)
-    // Aktuellen Settings-Inhalt in neue Datei kopieren wenn dort noch nicht vorhanden
-    if (!fs.existsSync(newAbsPath)) {
-      saveSettingsFile(newAbsPath, settings)
-    }
-    // settingsPath-Feld in aktuelle Settings-Datei schreiben
-    settings.settingsPath = normalizedNewPath
-    saveSettingsFile(activeSettingsPath, settings)
-    // meta.json auf neuen Pfad setzen
+    // Nur meta.json aktualisieren — keine Dateien anlegen oder überschreiben.
+    // showOpenDialog liefert nur existierende Dateien, daher kein Copy nötig.
     saveMeta(userDataPath, { settingsPath: normalizedNewPath })
-    // App neu starten — app.exit() statt app.quit() damit der close-Handler
-    // des Startup-Fensters (e.preventDefault) den Quit nicht blockiert
     app.relaunch()
     app.exit(0)
   })

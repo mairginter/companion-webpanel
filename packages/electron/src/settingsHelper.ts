@@ -5,9 +5,8 @@
  * userDataPath wird von außen injiziert (app.getPath('userData')) —
  * dadurch ohne Electron vollständig testbar.
  *
- * Zwei Ladewege:
- *   loadSettings(userDataPath)       — lädt aus <userDataPath>/companionwebpanel.json
- *   loadSettingsFile(filePath)       — lädt aus explizitem Pfad (Custom Settings Path Feature)
+ * loadSettingsFile(filePath) — lädt aus explizitem Pfad; Datei muss existieren.
+ * Nie auto-create: fehlt die Datei, muss der Aufrufer das behandeln.
  */
 import * as fs from 'fs'
 import * as path from 'path'
@@ -57,17 +56,10 @@ function migrateSettings(settings: Record<string, unknown>): boolean {
 
 /**
  * Lädt Settings aus einem expliziten Dateipfad.
- * Legt Default-Settings an wenn Datei nicht existiert.
+ * Datei muss existieren — kein Auto-Create.
  * Migriert ältere Versionen automatisch.
  */
 export function loadSettingsFile(filePath: string): Settings {
-  if (!fs.existsSync(filePath)) {
-    const defaults = getDefaultSettings()
-    fs.mkdirSync(path.dirname(filePath), { recursive: true })
-    fs.writeFileSync(filePath, JSON.stringify(defaults, null, 2), 'utf8')
-    return defaults
-  }
-
   const raw = fs.readFileSync(filePath, 'utf8')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const settings = JSON.parse(raw) as any
@@ -77,14 +69,6 @@ export function loadSettingsFile(filePath: string): Settings {
   }
 
   return settings as Settings
-}
-
-/**
- * Lädt Settings aus <userDataPath>/companionwebpanel.json.
- * Legt Default-Settings an wenn Datei nicht existiert.
- */
-export function loadSettings(userDataPath: string): Settings {
-  return loadSettingsFile(getSettingsPath(userDataPath))
 }
 
 /** Schreibt Settings in einen expliziten Dateipfad. */
