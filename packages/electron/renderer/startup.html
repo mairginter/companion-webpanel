@@ -115,11 +115,18 @@
     }
     .port-apply:hover { opacity: 0.8; }
 
+    /* Visuelle Trennlinie */
+    .separator {
+      border: none;
+      border-top: 1px solid #1e2535;
+      margin: 0;
+    }
+
     /* Preference-File-Zeile */
     .preffile-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .preffile-label {
@@ -255,12 +262,17 @@
       <button class="port-apply" id="btnApplyPort">Apply</button>
     </div>
 
+    <hr class="separator" />
+
     <!-- Preference-File-Zeile -->
     <div class="preffile-row">
       <span class="preffile-label" id="prefFileLabel">…</span>
       <span class="preffile-name" id="prefFileName">…</span>
+      <button class="port-apply" id="btnNewConfig">…</button>
       <button class="port-apply" id="btnLoadPref">…</button>
     </div>
+
+    <hr class="separator" />
 
     <!-- Fehler-Banner (nur sichtbar wenn kein Port gefunden) -->
     <div class="error-banner" id="errorBanner"></div>
@@ -300,6 +312,7 @@
       document.getElementById('btnQuit').textContent = s.quit
       document.getElementById('initialHostMsg').textContent = s.waitingForConnection
       document.getElementById('prefFileLabel').textContent = s.preferenceFile + ':'
+      document.getElementById('btnNewConfig').textContent = s.newConfig
       document.getElementById('btnLoadPref').textContent = s.loadPreferenceFile
       window._i18n = s
     })
@@ -366,6 +379,11 @@
       const el = document.getElementById('prefFileName')
       el.textContent = filename
       el.title = normalizedPath
+    })
+
+    document.getElementById('btnNewConfig').addEventListener('click', async () => {
+      await api.newSettingsFile()
+      // newSettingsFile löst app.relaunch() aus wenn Datei gewählt — kein weiterer Code nötig
     })
 
     document.getElementById('btnLoadPref').addEventListener('click', async () => {

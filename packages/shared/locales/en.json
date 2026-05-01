@@ -222,7 +222,8 @@
     "quit": "Quit",
     "apply": "Apply",
     "loadPreferenceFile": "Load Preference File…",
-    "preferenceFile": "Preference File"
+    "preferenceFile": "Preference File",
+    "newConfig": "New Config"
   },
   "errors": {
     "caps_disabled": "Button subscriptions not enabled",

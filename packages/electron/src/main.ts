@@ -15,7 +15,7 @@ import { app, ipcMain, shell, dialog, session } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import { createBackend } from '@cwp/backend'
-import { loadSettingsFile, saveSettingsFile, getSettingsPath } from './settingsHelper'
+import { loadSettingsFile, saveSettingsFile, getSettingsPath, getDefaultSettings } from './settingsHelper'
 import { loadMeta, saveMeta, normalizePath, expandPath } from './metaConfig'
 import { initElectronI18n, t } from './i18n'
 import { findFreePort } from './portCheck'
@@ -187,6 +187,7 @@ async function main(): Promise<void> {
     apply:                t('startup.apply'),
     loadPreferenceFile:   t('startup.loadPreferenceFile'),
     preferenceFile:       t('startup.preferenceFile'),
+    newConfig:            t('startup.newConfig'),
   }))
 
   // Fix #4: Fenster beim Open Panel nicht schließen
@@ -221,6 +222,20 @@ async function main(): Promise<void> {
     // des Startup-Fensters (e.preventDefault) den Quit nicht blockiert
     app.relaunch()
     app.exit(0)
+  })
+
+  ipcMain.handle('new-settings-file', async () => {
+    const result = await dialog.showSaveDialog({
+      defaultPath: path.join(path.dirname(activeSettingsPath), 'companionwebpanel.json'),
+      filters: [{ name: 'JSON Settings', extensions: ['json'] }],
+    })
+    if (result.canceled || !result.filePath) return null
+    const newAbsPath = result.filePath
+    saveSettingsFile(newAbsPath, getDefaultSettings())
+    saveMeta(userDataPath, { settingsPath: normalizePath(newAbsPath) })
+    app.relaunch()
+    app.exit(0)
+    return normalizePath(newAbsPath)
   })
 
   ipcMain.handle('open-panel', () => {

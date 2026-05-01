@@ -62,4 +62,7 @@ contextBridge.exposeInMainWorld('cwpApi', {
 
   applySettingsPath: (settingsPath: string): Promise<void> =>
     ipcRenderer.invoke('apply-settings-path', settingsPath),
+
+  newSettingsFile: (): Promise<string | null> =>
+    ipcRenderer.invoke('new-settings-file'),
 })
