@@ -217,9 +217,10 @@ async function main(): Promise<void> {
     saveSettingsFile(activeSettingsPath, settings)
     // meta.json auf neuen Pfad setzen
     saveMeta(userDataPath, { settingsPath: normalizedNewPath })
-    // App neu starten
+    // App neu starten — app.exit() statt app.quit() damit der close-Handler
+    // des Startup-Fensters (e.preventDefault) den Quit nicht blockiert
     app.relaunch()
-    app.quit()
+    app.exit(0)
   })
 
   ipcMain.handle('open-panel', () => {
