@@ -113,7 +113,9 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
 
   const activePanel = panels.find((p) => p.id === activePanelId)
   const setZoom = useAppStore((s) => s.setZoom)
+  const setAutoZoom = useAppStore((s) => s.setAutoZoom)
   const zoom = activePanel?.zoom ?? 1
+  const autoZoom = activePanel?.autoZoom ?? false
   const [saveFlash, setSaveFlash] = useState(false)
 
   const handleSaveClick = useCallback(() => {
@@ -387,6 +389,10 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
         zoom={zoom}
         onZoomChange={(z) => {
           if (activePanel) setZoom(activePanel.id, z)
+        }}
+        autoZoom={autoZoom}
+        onAutoZoomChange={(v) => {
+          if (activePanel) setAutoZoom(activePanel.id, v)
         }}
       />
 
