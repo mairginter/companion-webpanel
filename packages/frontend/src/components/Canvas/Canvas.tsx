@@ -53,7 +53,9 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
   const saveUndoSnapshot = useAppStore((s) => s.saveUndoSnapshot)
 
   const setZoom = useAppStore((s) => s.setZoom)
+  const setAutoZoom = useAppStore((s) => s.setAutoZoom)
   const zoom = panel?.zoom ?? 1
+  const autoZoom = panel?.autoZoom ?? false
   const scrollWrapperRef = useRef<HTMLDivElement>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -90,12 +92,42 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
       const delta = e.deltaY < 0 ? 0.05 : -0.05
       const currentPanel = useAppStore.getState().getActivePanel()
       if (!currentPanel) return
+      // Ctrl+Scroll schaltet autoZoom aus — User übernimmt manuelle Kontrolle
+      if (currentPanel.autoZoom) setAutoZoom(currentPanel.id, false)
       const newZoom = Math.max(0.2, Math.min(2.0, (currentPanel.zoom ?? 1) + delta))
       setZoom(currentPanel.id, newZoom)
     }
     el.addEventListener('wheel', handler, { passive: false })
     return () => el.removeEventListener('wheel', handler)
-  }, [setZoom])
+  }, [setZoom, setAutoZoom])
+
+  // Auto-zoom: ResizeObserver passt Zoom ans Fenster an wenn panel.autoZoom aktiv
+  useEffect(() => {
+    if (!autoZoom || !scrollWrapperRef.current || !panel) return
+
+    const canvasW = panel.canvas?.width ?? 1920
+    const canvasH = panel.canvas?.height ?? 1080
+
+    let debounceTimer: ReturnType<typeof setTimeout>
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      const { width, height } = entry.contentRect
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => {
+        const fitZoom = Math.min(width / canvasW, height / canvasH)
+        const currentPanel = useAppStore.getState().getActivePanel()
+        if (currentPanel) setZoom(currentPanel.id, fitZoom)
+      }, 50)
+    })
+
+    observer.observe(scrollWrapperRef.current)
+    return () => {
+      observer.disconnect()
+      clearTimeout(debounceTimer)
+    }
+  }, [autoZoom, panel?.id, panel?.canvas?.width, panel?.canvas?.height, setZoom])
 
   // divides by zoom so Lasso/ContextMenu coords map back to canvas-space
   const getCanvasPos = useCallback(
