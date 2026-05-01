@@ -221,9 +221,11 @@
     "hide": "Hide",
     "quit": "Quit",
     "apply": "Apply",
-    "loadPreferenceFile": "Load Preference File…",
+    "loadPreferenceFile": "Load Config File…",
     "preferenceFile": "Preference File",
-    "newConfig": "New Config"
+    "newConfig": "New Empty Config",
+    "newConfigDesc": "Start with empty settings",
+    "configFile": "Config File"
   },
   "errors": {
     "caps_disabled": "Button subscriptions not enabled",

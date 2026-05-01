@@ -188,6 +188,8 @@ async function main(): Promise<void> {
     loadPreferenceFile:   t('startup.loadPreferenceFile'),
     preferenceFile:       t('startup.preferenceFile'),
     newConfig:            t('startup.newConfig'),
+    newConfigDesc:        t('startup.newConfigDesc'),
+    configFile:           t('startup.configFile'),
   }))
 
   // Fix #4: Fenster beim Open Panel nicht schließen
