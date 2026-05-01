@@ -13,6 +13,9 @@
  *   getVersion()         → App-Version aus package.json (z.B. "1.2.3")
  *   getI18nStrings()     → übersetzte UI-Strings für startup.html
  *   quit()               → graceful shutdown
+ *   getSettingsPath()        → current settings file path (~-normalized)
+ *   chooseSettingsPath()     → opens file picker, returns chosen path or null
+ *   applySettingsPath(path)  → saves new path + relaunches app
  */
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppStatus } from './types'
@@ -50,4 +53,13 @@ contextBridge.exposeInMainWorld('cwpApi', {
   hideWindow: (): void => {
     ipcRenderer.send('hide-window')
   },
+
+  getSettingsPath: (): Promise<string> =>
+    ipcRenderer.invoke('get-settings-path'),
+
+  chooseSettingsPath: (): Promise<string | null> =>
+    ipcRenderer.invoke('choose-settings-path'),
+
+  applySettingsPath: (settingsPath: string): Promise<void> =>
+    ipcRenderer.invoke('apply-settings-path', settingsPath),
 })

@@ -192,6 +192,34 @@ async function main(): Promise<void> {
     shell.openPath(userDataPath)
   })
 
+  ipcMain.handle('get-settings-path', () => normalizePath(activeSettingsPath))
+
+  ipcMain.handle('choose-settings-path', async () => {
+    const result = await dialog.showOpenDialog({
+      defaultPath: path.dirname(activeSettingsPath),
+      filters: [{ name: 'JSON Settings', extensions: ['json'] }],
+      properties: ['openFile'],
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return normalizePath(result.filePaths[0])
+  })
+
+  ipcMain.handle('apply-settings-path', async (_event, normalizedNewPath: string) => {
+    const newAbsPath = expandPath(normalizedNewPath)
+    // Aktuellen Settings-Inhalt in neue Datei kopieren wenn dort noch nicht vorhanden
+    if (!fs.existsSync(newAbsPath)) {
+      saveSettingsFile(newAbsPath, settings)
+    }
+    // settingsPath-Feld in aktuelle Settings-Datei schreiben
+    settings.settingsPath = normalizedNewPath
+    saveSettingsFile(activeSettingsPath, settings)
+    // meta.json auf neuen Pfad setzen
+    saveMeta(userDataPath, { settingsPath: normalizedNewPath })
+    // App neu starten
+    app.relaunch()
+    app.quit()
+  })
+
   ipcMain.handle('open-panel', () => {
     shell.openExternal(`http://localhost:${appStatus.port}`)
   })
