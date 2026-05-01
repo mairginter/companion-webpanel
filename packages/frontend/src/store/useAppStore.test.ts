@@ -333,6 +333,24 @@ describe('setZoom', () => {
   })
 })
 
+describe('setAutoZoom', () => {
+  it('setzt autoZoom auf true für ein Panel', () => {
+    useAppStore.getState().setAutoZoom('panel-1', true)
+    expect(useAppStore.getState().getActivePanel()?.autoZoom).toBe(true)
+  })
+
+  it('setzt autoZoom auf false für ein Panel', () => {
+    useAppStore.getState().setAutoZoom('panel-1', true)
+    useAppStore.getState().setAutoZoom('panel-1', false)
+    expect(useAppStore.getState().getActivePanel()?.autoZoom).toBe(false)
+  })
+
+  it('verändert anderen Panels autoZoom nicht', () => {
+    useAppStore.getState().setAutoZoom('other-panel', true)
+    expect(useAppStore.getState().getActivePanel()?.autoZoom).toBeUndefined()
+  })
+})
+
 describe('virtualKeys — applyVDelta', () => {
   it('speichert Virtual-Key-State nach vDelta', () => {
     useAppStore.getState().applyVDelta({ t: 'vDelta', deviceId: 'cwp-a1b2c3d4', keyIndex: 3, bgColor: '#f00' })

@@ -75,6 +75,8 @@ interface AppStore {
   deletePanel: (panelId: string) => boolean
   /** Setzt den Zoom-Faktor eines Panels. Klemmt auf [0.2, 2.0]. */
   setZoom: (panelId: string, zoom: number) => void
+  /** Aktiviert/Deaktiviert Auto-Zoom (Fit-to-Window) für ein Panel. */
+  setAutoZoom: (panelId: string, value: boolean) => void
   /** Dupliziert ein Panel mit allen Elementen (neue IDs), wechselt dazu. */
   duplicatePanel: (panelId: string) => Panel
   /** Kopiert Elemente aus sourcePanelId nach targetPanelId mit +75px Offset und neuen IDs. */
@@ -359,6 +361,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
           ...s.settings,
           panels: s.settings.panels.map((p) =>
             p.id !== panelId ? p : { ...p, zoom: clamped },
+          ),
+        },
+      }
+    }),
+
+  setAutoZoom: (panelId, value) =>
+    set((s) => {
+      if (!s.settings) return s
+      return {
+        settings: {
+          ...s.settings,
+          panels: s.settings.panels.map((p) =>
+            p.id !== panelId ? p : { ...p, autoZoom: value },
           ),
         },
       }
