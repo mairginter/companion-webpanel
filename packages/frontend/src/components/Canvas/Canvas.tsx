@@ -101,7 +101,12 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
     return () => el.removeEventListener('wheel', handler)
   }, [setZoom, setAutoZoom])
 
-  // Auto-zoom: ResizeObserver passt Zoom ans Fenster an wenn panel.autoZoom aktiv
+  // Auto-zoom: ResizeObserver passt Zoom ans Fenster an wenn panel.autoZoom aktiv.
+  // mode in Deps: beim Wechsel view↔edit wird der DOM-Baum neu gemountet (DndContext-Wrapper),
+  // dadurch wird scrollWrapperRef.current ausgetauscht — ohne mode würde der Observer
+  // am alten (entfernten) Node hängen und nie mehr feuern. Außerdem sendet der Browser
+  // beim Entfernen eines beobachteten Elements contentRect={0,0} → Guard verhindert,
+  // dass dieser Null-Fire den Zoom auf das Minimum (20%) setzt.
   useEffect(() => {
     if (!autoZoom || !scrollWrapperRef.current || !panel) return
 
@@ -114,6 +119,7 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
       const entry = entries[0]
       if (!entry) return
       const { width, height } = entry.contentRect
+      if (width <= 0 || height <= 0) return
       clearTimeout(debounceTimer)
       debounceTimer = setTimeout(() => {
         const fitZoom = Math.min(width / canvasW, height / canvasH)
@@ -127,7 +133,7 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
       observer.disconnect()
       clearTimeout(debounceTimer)
     }
-  }, [autoZoom, panel?.id, panel?.canvas?.width, panel?.canvas?.height, setZoom])
+  }, [autoZoom, mode, panel?.id, panel?.canvas?.width, panel?.canvas?.height, setZoom])
 
   // divides by zoom so Lasso/ContextMenu coords map back to canvas-space
   const getCanvasPos = useCallback(
