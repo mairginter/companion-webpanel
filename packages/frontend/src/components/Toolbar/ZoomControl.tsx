@@ -29,9 +29,9 @@ export function ZoomControl({ zoom, onZoomChange, autoZoom, onAutoZoomChange }: 
   )
 
   const handleReset = useCallback(() => {
-    onAutoZoomChange(false)
+    if (autoZoom) onAutoZoomChange(false)
     onZoomChange(1.0)
-  }, [onZoomChange, onAutoZoomChange])
+  }, [autoZoom, onZoomChange, onAutoZoomChange])
 
   const handleFitToggle = useCallback(() => {
     onAutoZoomChange(!autoZoom)
@@ -124,7 +124,7 @@ export function ZoomControl({ zoom, onZoomChange, autoZoom, onAutoZoomChange }: 
                 fontFamily: 'JetBrains Mono, monospace',
               }}
             >
-              {pct}%
+              {autoZoom ? 'Auto' : `${pct}%`}
             </span>
           </div>
 
@@ -132,6 +132,7 @@ export function ZoomControl({ zoom, onZoomChange, autoZoom, onAutoZoomChange }: 
           <div style={{ display: 'flex', gap: 6 }}>
             <button
               onClick={handleReset}
+              title={autoZoom ? 'Fit deaktivieren + auf 100% zurücksetzen' : 'Auf 100% zurücksetzen'}
               style={{
                 padding: '3px 10px',
                 borderRadius: 5,
