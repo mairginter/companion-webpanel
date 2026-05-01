@@ -185,6 +185,8 @@ async function main(): Promise<void> {
     hide:                 t('startup.hide'),
     quit:                 t('startup.quit'),
     apply:                t('startup.apply'),
+    loadPreferenceFile:   t('startup.loadPreferenceFile'),
+    preferenceFile:       t('startup.preferenceFile'),
   }))
 
   // Fix #4: Fenster beim Open Panel nicht schließen

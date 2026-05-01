@@ -115,6 +115,30 @@
     }
     .port-apply:hover { opacity: 0.8; }
 
+    /* Preference-File-Zeile */
+    .preffile-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preffile-label {
+      font-size: 11px;
+      color: #4a5568;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .preffile-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #8896aa;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
     /* Fehler-Banner */
     .error-banner {
       display: none;
@@ -231,6 +255,13 @@
       <button class="port-apply" id="btnApplyPort">Apply</button>
     </div>
 
+    <!-- Preference-File-Zeile -->
+    <div class="preffile-row">
+      <span class="preffile-label" id="prefFileLabel">…</span>
+      <span class="preffile-name" id="prefFileName">…</span>
+      <button class="port-apply" id="btnLoadPref">…</button>
+    </div>
+
     <!-- Fehler-Banner (nur sichtbar wenn kein Port gefunden) -->
     <div class="error-banner" id="errorBanner"></div>
 
@@ -268,6 +299,8 @@
       document.getElementById('btnHide').textContent = s.hide
       document.getElementById('btnQuit').textContent = s.quit
       document.getElementById('initialHostMsg').textContent = s.waitingForConnection
+      document.getElementById('prefFileLabel').textContent = s.preferenceFile + ':'
+      document.getElementById('btnLoadPref').textContent = s.loadPreferenceFile
       window._i18n = s
     })
 
@@ -325,6 +358,22 @@
     })
 
     document.getElementById('btnApplyPort').addEventListener('click', applyPort)
+
+    // ─── Preference File ─────────────────────────────────────────────────────
+
+    api.getSettingsPath().then((normalizedPath) => {
+      const filename = normalizedPath.replace(/\\/g, '/').split('/').pop() ?? normalizedPath
+      const el = document.getElementById('prefFileName')
+      el.textContent = filename
+      el.title = normalizedPath
+    })
+
+    document.getElementById('btnLoadPref').addEventListener('click', async () => {
+      const chosen = await api.chooseSettingsPath()
+      if (!chosen) return
+      await api.applySettingsPath(chosen)
+      // applySettingsPath löst app.relaunch() aus — kein weiterer Code nötig
+    })
 
     // ─── Buttons ─────────────────────────────────────────────────────────────
 

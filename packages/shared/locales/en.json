@@ -220,7 +220,9 @@
     "openInBrowser": "Open in Browser",
     "hide": "Hide",
     "quit": "Quit",
-    "apply": "Apply"
+    "apply": "Apply",
+    "loadPreferenceFile": "Load Preference File…",
+    "preferenceFile": "Preference File"
   },
   "errors": {
     "caps_disabled": "Button subscriptions not enabled",
