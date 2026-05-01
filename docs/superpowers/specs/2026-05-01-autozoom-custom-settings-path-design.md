@@ -86,20 +86,11 @@ Kein Migrations-Code nötig — `autoZoom?: boolean` ist optional, `undefined` w
 
 Die Einstellungsdatei kann in einem Cloud-Sync-Ordner (OneDrive, iCloud, Google Drive) abgelegt werden. Beim Start wird der konfigurierte Pfad geladen, auf einem neuen Gerät muss der Pfad einmalig gesetzt werden.
 
-### Dateiname-Umbenennung
+### Dateiname — Default für neue Installationen
 
-`settings.json` → `companionwebpanel.json`
+`companionwebpanel.json` ist der neue Default-Name — **nur für neue Installationen** (wenn noch keine Settings-Datei existiert). Bestehende Installationen behalten ihren bisherigen Namen (`settings.json`) unverändert. **Kein automatischer Umbenennung.** Der Benutzer kann über "Load Preference File" jederzeit eine beliebig benannte `.json`-Datei wählen.
 
-**Migration (einmalig, automatisch):** In `settingsHelper.ts` vor dem Laden:
-```typescript
-const oldPath = path.join(userDataPath, 'settings.json')
-const newPath = path.join(userDataPath, 'companionwebpanel.json')
-if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) {
-  fs.renameSync(oldPath, newPath)
-}
-```
-
-`getSettingsPath()` gibt fortan `companionwebpanel.json` zurück.
+`getSettingsPath()` gibt `companionwebpanel.json` zurück — wird aber nur aufgerufen wenn kein meta.json und keine `settings.json` existiert (Backwards-Compat-Logik in main.ts, siehe unten).
 
 ### Neue Datei: `metaConfig.ts`
 
@@ -144,10 +135,16 @@ interface Settings {
 
 ```
 1. meta = loadMeta(userDataPath)
-2. resolvedPath = meta.settingsPath
-               ?? path.join(userDataPath, 'companionwebpanel.json')
 
-3. settings = loadSettings(resolvedPath)   ← bestehende Funktion, neuer Pfad
+2. Wenn meta.settingsPath gesetzt:
+     resolvedPath = expandPath(meta.settingsPath)
+   Sonst (kein meta.json / kein Pfad):
+     Wenn userData/settings.json existiert:
+       resolvedPath = userData/settings.json          ← Backwards-Compat für Upgrades
+     Sonst:
+       resolvedPath = userData/companionwebpanel.json  ← neuer Default für Neuinstallationen
+
+3. settings = loadSettings(resolvedPath)
 
 4. Wenn settings.settingsPath gesetzt:
    expandedFromSettings = expandPath(settings.settingsPath)
@@ -216,7 +213,7 @@ Beide Features zusammen. Migration: nur Version-Bump (alle neuen Felder optional
 | `packages/backend/src/standalone.ts` | Version-Check 1.7.0 |
 | `packages/backend/src/server/ClientServer.ts` | Version-Check 1.7.0 |
 | `CompanionWebpannelSettings.json` | Version → 1.7.0 |
-| `packages/electron/src/settingsHelper.ts` | `getDefaultSettings()` v1.7.0, `getSettingsPath()` → `companionwebpanel.json`, Rename-Migration, v1.6.0→v1.7.0 Migrations-Stub |
+| `packages/electron/src/settingsHelper.ts` | `getDefaultSettings()` v1.7.0, `getSettingsPath()` → `companionwebpanel.json` (nur neuer Default), v1.6.0→v1.7.0 Migrations-Stub |
 
 **Test-Fixture:** `makeSettings()` in `useAppStore.test.ts` → `version: '1.7.0'`
 
