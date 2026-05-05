@@ -51,6 +51,9 @@ export class VirtualSurfaceSession extends EventEmitter {
   private keepaliveTimer: NodeJS.Timeout | null = null
   private keepaliveTimeoutTimer: NodeJS.Timeout | null = null
 
+  // API >= 1.10: ADD-DEVICE must wait for CAPS before being sent
+  private waitingForCaps = false
+
   constructor(
     deviceId: string,
     surfaceName: string,
@@ -106,6 +109,7 @@ export class VirtualSurfaceSession extends EventEmitter {
   private connect(): void {
     this.setStatus('connecting')
     this.lineBuffer = ''
+    this.waitingForCaps = false
 
     const url = `ws://${this.host}:${this.port}`
     console.log(`[VirtualSurface ${this.deviceId}] Verbinde zu ${url}`)
@@ -165,7 +169,22 @@ export class VirtualSurfaceSession extends EventEmitter {
 
   private handleLine(line: string): void {
     if (line.startsWith('BEGIN ')) {
-      this.sendAddDevice()
+      // API >= 1.10: server sends CAPS immediately after BEGIN — wait for it before ADD-DEVICE.
+      // Older Companion versions don't send CAPS, so send ADD-DEVICE right away.
+      const apiMatch = line.match(/ApiVersion=([\d.]+)/)
+      const apiVersion = apiMatch ? apiMatch[1] : '1.0.0'
+      const needsCaps = compareVersions(apiVersion, '1.10.0') >= 0
+      if (needsCaps) {
+        this.waitingForCaps = true
+      } else {
+        this.sendAddDevice()
+      }
+    } else if (line.startsWith('CAPS ')) {
+      // Companion declared capabilities — now safe to send ADD-DEVICE
+      if (this.waitingForCaps) {
+        this.waitingForCaps = false
+        this.sendAddDevice()
+      }
     } else if (line.startsWith('ADD-DEVICE OK')) {
       console.log(`[VirtualSurface ${this.deviceId}] Surface registriert ✓`)
       this.setStatus('connected')
@@ -176,8 +195,10 @@ export class VirtualSurfaceSession extends EventEmitter {
       this.ws?.close()
     } else if (line.startsWith('KEY-STATE ')) {
       this.handleKeyState(line)
-    } else if (line.startsWith('PING')) {
-      this.sendLine('PONG')
+    } else if (line.startsWith('PING ') || line === 'PING') {
+      // Echo the payload so Companion can verify round-trip integrity
+      const payload = line.length > 5 ? line.slice(5) : ''
+      this.sendLine(payload ? `PONG ${payload}` : 'PONG')
     } else if (line.startsWith('PONG')) {
       if (this.keepaliveTimeoutTimer) {
         clearTimeout(this.keepaliveTimeoutTimer)
@@ -260,6 +281,14 @@ export class VirtualSurfaceSession extends EventEmitter {
 }
 
 // ─── Protocol Helpers ────────────────────────────────────────────────────────
+
+/** Compares two semver-like version strings. Returns negative/0/positive. */
+function compareVersions(a: string, b: string): number {
+  const parse = (v: string) => v.split('.').map((n) => parseInt(n, 10) || 0)
+  const [a1, a2, a3] = parse(a)
+  const [b1, b2, b3] = parse(b)
+  return a1 !== b1 ? a1 - b1 : a2 !== b2 ? a2 - b2 : a3 - b3
+}
 
 function parseParams(str: string): Record<string, string> {
   const result: Record<string, string> = {}

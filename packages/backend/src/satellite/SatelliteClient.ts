@@ -220,9 +220,10 @@ export class SatelliteClient extends EventEmitter {
       this.handleBegin(line)
     } else if (line.startsWith('CAPS ')) {
       this.handleCaps(line)
-    } else if (line.startsWith('PING')) {
-      // Companion sendet PING (server-seitig) — mit PONG antworten
-      this.sendLine('PONG')
+    } else if (line.startsWith('PING ') || line === 'PING') {
+      // Companion sendet PING — Payload echoen (Protokoll-Anforderung)
+      const payload = line.length > 5 ? line.slice(5) : ''
+      this.sendLine(payload ? `PONG ${payload}` : 'PONG')
     } else if (line.startsWith('PONG')) {
       // Antwort auf unseren PING — Timeout-Timer abbrechen
       if (this.keepaliveTimeoutTimer) {
