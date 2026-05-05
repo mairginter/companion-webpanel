@@ -172,8 +172,9 @@ export class VirtualSurfaceSession extends EventEmitter {
     if (line.startsWith('BEGIN ')) {
       // Require Companion 4.3+ (API >= 1.10). Older versions don't send CAPS and lack
       // features we depend on — emit 'version-error' so the UI can show a hint.
-      const apiMatch = line.match(/ApiVersion=([\d.]+)/)
-      const apiVersion = apiMatch ? apiMatch[1] : '1.0.0'
+      // Use parseParams to handle both quoted (ApiVersion="1.10.0") and unquoted forms.
+      const params = parseParams(line.slice('BEGIN '.length))
+      const apiVersion = params['ApiVersion'] ?? '1.0.0'
       if (!isApiVersionSupported(apiVersion)) {
         console.error(
           `[VirtualSurface ${this.deviceId}] Companion API ${apiVersion} zu alt — ` +
