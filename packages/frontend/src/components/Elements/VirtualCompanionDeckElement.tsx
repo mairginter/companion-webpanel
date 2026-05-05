@@ -184,6 +184,7 @@ export const VirtualCompanionDeckElement = React.memo(function VirtualCompanionD
 
   const vStatus = useAppStore((s) => s.getVirtualSessionStatus(deviceId))
   const isStale = vStatus === 'stale' || vStatus === 'error'
+  const isVersionError = vStatus === 'version-error'
 
   const containerStyle: React.CSSProperties = {
     ...(isContained
@@ -235,15 +236,26 @@ export const VirtualCompanionDeckElement = React.memo(function VirtualCompanionD
         }}
       />
 
-      {isStale && (
+      {(isStale || isVersionError) && (
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'rgba(0,0,0,0.45)',
+          background: 'rgba(0,0,0,0.55)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           borderRadius,
           pointerEvents: 'none',
+          padding: 8,
         }}>
-          <span style={{ color: '#ff8a3d', fontSize: 12, fontWeight: 600 }}>⚠ {vStatus}</span>
+          {isVersionError ? (
+            <div style={{ color: '#f59e0b', fontSize: 11, fontWeight: 600, textAlign: 'center', lineHeight: 1.5 }}>
+              ⚠ Companion 4.3+ required
+              <br />
+              <span style={{ fontWeight: 400, fontSize: 10, color: '#fcd34d' }}>
+                Settings → Surfaces →<br />enable Satellite API subscriptions
+              </span>
+            </div>
+          ) : (
+            <span style={{ color: '#ff8a3d', fontSize: 12, fontWeight: 600 }}>⚠ {vStatus}</span>
+          )}
         </div>
       )}
     </div>

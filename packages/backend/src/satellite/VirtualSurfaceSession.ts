@@ -17,7 +17,7 @@ import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 import { KeyState } from '@cwp/shared'
 
-export type VirtualSurfaceStatus = 'connecting' | 'connected' | 'stale' | 'error'
+export type VirtualSurfaceStatus = 'connecting' | 'connected' | 'stale' | 'error' | 'version-error'
 
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 30000]
 const KEEPALIVE_INTERVAL_MS = 2000
@@ -141,7 +141,8 @@ export class VirtualSurfaceSession extends EventEmitter {
       console.log(`[VirtualSurface ${this.deviceId}] Verbindung getrennt`)
       this.clearTimers()
       if (!this.destroyed) {
-        this.setStatus('stale')
+        // version-error: keep status visible, retry slowly (max backoff) — not 'stale'
+        if (this.status !== 'version-error') this.setStatus('stale')
         this.scheduleReconnect()
       }
     })
@@ -169,18 +170,23 @@ export class VirtualSurfaceSession extends EventEmitter {
 
   private handleLine(line: string): void {
     if (line.startsWith('BEGIN ')) {
-      // API >= 1.10: server sends CAPS immediately after BEGIN — wait for it before ADD-DEVICE.
-      // Older Companion versions don't send CAPS, so send ADD-DEVICE right away.
+      // Require Companion 4.3+ (API >= 1.10). Older versions don't send CAPS and lack
+      // features we depend on — emit 'version-error' so the UI can show a hint.
       const apiMatch = line.match(/ApiVersion=([\d.]+)/)
       const apiVersion = apiMatch ? apiMatch[1] : '1.0.0'
-      const needsCaps = compareVersions(apiVersion, '1.10.0') >= 0
-      if (needsCaps) {
-        this.waitingForCaps = true
-      } else {
-        this.sendAddDevice()
+      if (!isApiVersionSupported(apiVersion)) {
+        console.error(
+          `[VirtualSurface ${this.deviceId}] Companion API ${apiVersion} zu alt — ` +
+          `Companion 4.3+ benötigt. Bitte Companion updaten und in Settings → Surfaces` +
+          ` "Satellite API subscriptions" aktivieren.`,
+        )
+        this.setStatus('version-error')
+        this.ws?.close()
+        return
       }
+      // API >= 1.10: CAPS is guaranteed immediately after BEGIN — wait for it.
+      this.waitingForCaps = true
     } else if (line.startsWith('CAPS ')) {
-      // Companion declared capabilities — now safe to send ADD-DEVICE
       if (this.waitingForCaps) {
         this.waitingForCaps = false
         this.sendAddDevice()
@@ -282,12 +288,10 @@ export class VirtualSurfaceSession extends EventEmitter {
 
 // ─── Protocol Helpers ────────────────────────────────────────────────────────
 
-/** Compares two semver-like version strings. Returns negative/0/positive. */
-function compareVersions(a: string, b: string): number {
-  const parse = (v: string) => v.split('.').map((n) => parseInt(n, 10) || 0)
-  const [a1, a2, a3] = parse(a)
-  const [b1, b2, b3] = parse(b)
-  return a1 !== b1 ? a1 - b1 : a2 !== b2 ? a2 - b2 : a3 - b3
+/** Returns true if the API version is >= 1.10.0 (Companion 4.3+). */
+function isApiVersionSupported(version: string): boolean {
+  const [major, minor] = version.split('.').map((n) => parseInt(n, 10) || 0)
+  return major > 1 || (major === 1 && minor >= 10)
 }
 
 function parseParams(str: string): Record<string, string> {

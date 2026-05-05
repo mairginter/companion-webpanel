@@ -322,7 +322,7 @@ export interface VSnapshotMessage {
 export interface VSessionStatusMessage {
   t: 'vSessionStatus'
   deviceId: string
-  status: 'connecting' | 'connected' | 'stale' | 'error'
+  status: 'connecting' | 'connected' | 'stale' | 'error' | 'version-error'
 }
 
 /** Frontend → Backend: User klickt Button im Virtual Deck */

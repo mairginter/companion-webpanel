@@ -57,7 +57,7 @@ interface AppStore {
   getVirtualKeyState: (deviceId: string, keyIndex: number) => KeyState | undefined
 
   /** key: deviceId → status */
-  virtualSessionStatus: Record<string, 'connecting' | 'connected' | 'stale' | 'error'>
+  virtualSessionStatus: Record<string, 'connecting' | 'connected' | 'stale' | 'error' | 'version-error'>
   applyVSessionStatus: (msg: VSessionStatusMessage) => void
   getVirtualSessionStatus: (deviceId: string) => string | undefined
 
