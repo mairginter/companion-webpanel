@@ -22,8 +22,10 @@ interface Props {
   onConfirm: (refs: CompanionRef[]) => void
   onClose: () => void
   confirmLabel?: string
-  /** Vorauswahl beim Öffnen */
-  initialRef?: { hostId?: string; page?: number }
+  /** Vorauswahl beim Öffnen — row/col markiert den aktuell konfigurierten Button */
+  initialRef?: { hostId?: string; page?: number; row?: number; col?: number }
+  /** Set von "row:col"-Keys die bereits im Panel vorhanden sind (gleiche hostId + page) */
+  usedCells?: Set<string>
   /** Positionierung neben dem PropertiesPanel */
   alignSide?: 'left' | 'right'
   panelWidth?: number
@@ -88,7 +90,7 @@ function saveLastPage(hostId: string, page: number): void {
 }
 
 export function CompanionButtonPickerDialog({
-  onConfirm, onClose, confirmLabel = 'Hinzufügen', initialRef, alignSide, panelWidth = 320,
+  onConfirm, onClose, confirmLabel = 'Hinzufügen', initialRef, usedCells, alignSide, panelWidth = 320,
   initialGridCols, initialGridRows,
 }: Props) {
   const settings = useAppStore((s) => s.settings)
@@ -108,8 +110,17 @@ export function CompanionButtonPickerDialog({
   })
   const [keysPerRow, setKeysPerRow] = useState(initialGridCols ?? 8)
   const [rows, setRows] = useState(initialGridRows ?? 4)
-  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set())
-  const lastClickedCell = useRef<{ row: number; col: number } | null>(null)
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(() => {
+    if (initialRef?.row !== undefined && initialRef?.col !== undefined) {
+      return new Set([`${initialRef.row}:${initialRef.col}`])
+    }
+    return new Set()
+  })
+  const lastClickedCell = useRef<{ row: number; col: number } | null>(
+    initialRef?.row !== undefined && initialRef?.col !== undefined
+      ? { row: initialRef.row, col: initialRef.col }
+      : null
+  )
   const [loadingPreview, setLoadingPreview] = useState(false)
 
   const changePage = (page: number) => {
@@ -324,16 +335,20 @@ export function CompanionButtonPickerDialog({
                 maxHeight: 8 * cellSize + 7 * 2 + 16,
               }}>
                 {gridCells.map(({ row, col, bgColor, text }) => {
-                  const isSelected = selectedCells.has(`${row}:${col}`)
+                  const key = `${row}:${col}`
+                  const isSelected = selectedCells.has(key)
+                  const isCurrent = initialRef?.row === row && initialRef?.col === col
+                  const isUsed = !isCurrent && (usedCells?.has(key) ?? false)
+                  const borderColor = isSelected ? '#4a9eff' : isCurrent ? '#f59e0b' : '1px solid #2a3344'
                   return (
                     <div
-                      key={`${row}:${col}`}
+                      key={key}
                       onClick={(e) => handleCellClick(row, col, e)}
-                      title={`Zeile ${row + 1}, Spalte ${col + 1}`}
+                      title={`R${row} / C${col}`}
                       style={{
                         width: cellSize, height: cellSize,
                         background: bgColor ?? '#1a2030',
-                        border: isSelected ? '2px solid #4a9eff' : '1px solid #2a3344',
+                        border: isSelected || isCurrent ? `2px solid ${borderColor}` : '1px solid #2a3344',
                         borderRadius: 4,
                         cursor: 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -341,6 +356,7 @@ export function CompanionButtonPickerDialog({
                         overflow: 'hidden',
                         boxSizing: 'border-box',
                         transition: 'border-color 0.1s',
+                        position: 'relative',
                       }}
                     >
                       {text && (
@@ -348,20 +364,38 @@ export function CompanionButtonPickerDialog({
                           {text.split('\n')[0]}
                         </span>
                       )}
+                      {isUsed && (
+                        <span style={{
+                          position: 'absolute', bottom: 1, right: 2,
+                          fontSize: 8, lineHeight: 1, color: '#22c55e',
+                          textShadow: '0 0 3px rgba(0,0,0,0.8)',
+                          pointerEvents: 'none',
+                        }}>✓</span>
+                      )}
                     </div>
                   )
                 })}
               </div>
-              {selectedCells.size > 0 && (
-                <div style={{ fontSize: 11, color: '#8896aa', marginTop: 6 }}>
-                  {selectedCells.size === 1
-                    ? (() => {
-                        const [r, c] = [...selectedCells][0].split(':').map(Number)
-                        return `Zeile ${r + 1}, Spalte ${c + 1}`
-                      })()
-                    : `${selectedCells.size} Buttons ausgewählt`}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                <div style={{ fontSize: 11, color: '#8896aa' }}>
+                  {selectedCells.size > 0
+                    ? selectedCells.size === 1
+                      ? (() => {
+                          const [r, c] = [...selectedCells][0].split(':').map(Number)
+                          return `R${r} / C${c}`
+                        })()
+                      : `${selectedCells.size} Buttons ausgewählt`
+                    : ''}
                 </div>
-              )}
+                <div style={{ display: 'flex', gap: 10, fontSize: 10, color: '#8896aa' }}>
+                  {initialRef?.row !== undefined && (
+                    <span><span style={{ color: '#f59e0b' }}>■</span> aktuell</span>
+                  )}
+                  {usedCells && usedCells.size > 0 && (
+                    <span><span style={{ color: '#22c55e' }}>✓</span> im Panel</span>
+                  )}
+                </div>
+              </div>
             </div>
           </>
         )}

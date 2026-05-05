@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CompanionButtonElement } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
@@ -16,6 +16,23 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const hostConnected = sessionStatus[element.ref.hostId] === 'connected'
+
+  // Alle anderen companionButton-Elemente im Panel auf gleicher Host+Page → grüner Haken im Picker
+  const usedCells = useMemo(() => {
+    const panel = settings?.panels.find((p) => p.id === panelId)
+    if (!panel) return undefined
+    const { hostId, page } = element.ref
+    const cells = new Set<string>()
+    for (const el of panel.elements) {
+      if (el.type === 'companionButton' && el.id !== element.id) {
+        const btn = el as CompanionButtonElement
+        if (btn.ref.hostId === hostId && btn.ref.page === page) {
+          cells.add(`${btn.ref.row}:${btn.ref.col}`)
+        }
+      }
+    }
+    return cells
+  }, [settings, panelId, element.id, element.ref.hostId, element.ref.page])
 
   const updateRender = (patch: Partial<NonNullable<CompanionButtonElement['render']>>) => {
     if (!settings) return
@@ -67,7 +84,7 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
           {' · '}
           <span style={{ color: '#e9edf2' }}>P{element.ref.page}</span>
           {' · '}
-          R{element.ref.row + 1} / C{element.ref.col + 1}
+          R{element.ref.row} / C{element.ref.col}
         </div>
         <button
           onClick={() => hostConnected && setPickerOpen(true)}
@@ -128,7 +145,8 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
       {pickerOpen && (
         <CompanionButtonPickerDialog
           confirmLabel={t('propertiesPanel.confirm')}
-          initialRef={{ hostId: element.ref.hostId, page: element.ref.page }}
+          initialRef={{ hostId: element.ref.hostId, page: element.ref.page, row: element.ref.row, col: element.ref.col }}
+          usedCells={usedCells}
           onConfirm={(refs) => { if (refs.length > 0) updateRef(refs[0]); setPickerOpen(false) }}
           onClose={() => setPickerOpen(false)}
           alignSide={side}

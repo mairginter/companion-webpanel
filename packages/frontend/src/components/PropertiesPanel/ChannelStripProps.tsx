@@ -41,7 +41,7 @@ const pickerBtn = (connected: boolean): React.CSSProperties => ({
 
 function refLabel(ref: CompanionRef | undefined): string {
   if (!ref) return '—'
-  return `P${ref.page} · R${ref.row + 1}/C${ref.col + 1}`
+  return `P${ref.page} · R${ref.row}/C${ref.col}`
 }
 
 export function ChannelStripProps({ element, panelId, side = 'right', panelWidth = 320 }: Props) {
