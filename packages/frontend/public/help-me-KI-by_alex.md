@@ -101,13 +101,14 @@ Konfigurierbare Properties:
 - Physical Style: aktiviert einen silber-metallischen Rahmen mit konkaver Dom-Fläche (3D-Optik). Im View-Modus skaliert die Dom beim Drücken leicht ein.
 - Text-Align: Textausrichtung (left, center, right)
 - Bitmap skalieren (scaleBitmap): Companion-Bitmap füllt den Button, auch wenn er größer als 72×72px ist
+- Bitmap-Auflösung (bitmapSize): Auflösung der von Companion angeforderten Bitmap — Werte: 72 / 100 / 144 / 200 px (Standard: 72). Nur sichtbar wenn "Bitmap anzeigen" aktiv ist. Höhere Auflösung verbessert die Bildqualität bei großen Buttons, erhöht aber den Datenverbrauch (quadratisch: 144px = 4× mehr Daten als 72px). Das Backend subscribed Companion mit dem gesetzten Wert (`ADD-SUB BITMAP=N`) und führt bei Auflösungsänderung automatisch einen Re-Subscribe durch.
 - Hintergrundfarbe anzeigen (showBgColor): Companion-Hintergrundfarbe als Button-Hintergrund verwenden
 - Text anzeigen (showText): Companion-Button-Text einblenden
 - Schriftgröße: wird bei kleinen Buttons automatisch auf min. 7px begrenzt
 
 Im View-Modus: Klick/Touch löst KEY-PRESS in Companion aus.
 
-**Multi-Button-Editing:** Wenn ≥2 CompanionButtons selektiert sind, erscheint im PropertiesPanel ein Batch-Edit-Panel. Felder mit gemischten Werten zeigen "—" (indeterminate). Nur geänderte Felder werden auf alle selektierten Buttons angewendet.
+**Multi-Button-Editing:** Wenn ≥2 CompanionButtons selektiert sind, erscheint im PropertiesPanel ein Batch-Edit-Panel. Felder mit gemischten Werten zeigen "—" (indeterminate). Nur geänderte Felder werden auf alle selektierten Buttons angewendet. Editierbare Felder im Batch-Modus: Host, showBgColor, showBitmap, bitmapSize, showText, textAlign, borderRadius, physicalStyle, fontSize.
 
 **Host-Labels im Edit-Modus:** Label-Icon-Button in der Toolbar (Edit-Modus) blendet semi-transparente Host-Name-Labels (8px, unten) auf allen CompanionButtons ein. Nützlich zur Kontrolle welcher Button zu welchem Host gehört.
 
