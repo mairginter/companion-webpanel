@@ -98,6 +98,7 @@
     "textAlign": "Textausrichtung",
     "showBitmap": "Bitmap anzeigen",
     "scaleBitmap": "Bitmap skalieren",
+    "bitmapSize": "Bitmap-Auflösung",
     "showText": "Text anzeigen",
     "showBgColor": "Companion-Farbe",
     "physicalStyle": "Physischer Taster-Stil",

@@ -98,6 +98,7 @@
     "textAlign": "Text align",
     "showBitmap": "Show bitmap",
     "scaleBitmap": "Scale bitmap",
+    "bitmapSize": "Bitmap resolution",
     "showText": "Show text",
     "showBgColor": "Companion color",
     "physicalStyle": "Physical button style",
