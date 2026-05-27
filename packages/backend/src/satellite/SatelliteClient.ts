@@ -40,6 +40,7 @@ interface SubInfo {
   page: number
   row: number
   col: number
+  bitmapSize: number
 }
 
 /**
@@ -107,10 +108,10 @@ export class SatelliteClient extends EventEmitter {
    * Abonniert einen Button. Wenn bereits verbunden, wird ADD-SUB sofort gesendet.
    * Bei Reconnect werden alle aktiven Subscriptions automatisch re-subscribed.
    */
-  subscribe(subId: string, page: number, row: number, col: number): void {
-    this.activeSubs.set(subId, { page, row, col })
+  subscribe(subId: string, page: number, row: number, col: number, bitmapSize = 72): void {
+    this.activeSubs.set(subId, { page, row, col, bitmapSize })
     if (this.status === 'connected') {
-      this.sendAddSub(subId, page, row, col)
+      this.sendAddSub(subId, page, row, col, bitmapSize)
     }
   }
 
@@ -271,8 +272,8 @@ export class SatelliteClient extends EventEmitter {
 
     // Verbunden! Alle aktiven Subscriptions re-subscriben (auch nach Reconnect)
     this.setStatus('connected')
-    for (const [subId, { page, row, col }] of this.activeSubs) {
-      this.sendAddSub(subId, page, row, col)
+    for (const [subId, { page, row, col, bitmapSize }] of this.activeSubs) {
+      this.sendAddSub(subId, page, row, col, bitmapSize)
     }
     this.startKeepalive()
   }
@@ -334,11 +335,11 @@ export class SatelliteClient extends EventEmitter {
 
   // ─── Send Helpers ──────────────────────────────────────────────────────────
 
-  private sendAddSub(subId: string, page: number, row: number, col: number): void {
+  private sendAddSub(subId: string, page: number, row: number, col: number, bitmapSize: number): void {
     // LOCATION-Format: "<page>/<row>/<col>"
     this.sendLine(
       `ADD-SUB SUBID=${subId} LOCATION=${page}/${row}/${col} ` +
-      `BITMAP=72 COLORS=hex TEXT=true TEXT_STYLE=true`,
+      `BITMAP=${bitmapSize} COLORS=hex TEXT=true TEXT_STYLE=true`,
     )
   }
 
