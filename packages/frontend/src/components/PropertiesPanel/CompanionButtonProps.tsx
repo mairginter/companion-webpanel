@@ -108,10 +108,25 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
         <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.showBitmap, false)} onChange={(e) => updateRender({ showBitmap: e.target.checked })} />
       </div>
       {tog(r.showBitmap, false) && (
-        <div style={row}>
-          <span style={lbl}>{t('propertiesPanel.scaleBitmap')}</span>
-          <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.scaleBitmap, true)} onChange={(e) => updateRender({ scaleBitmap: e.target.checked })} />
-        </div>
+        <>
+          <div style={row}>
+            <span style={lbl}>{t('propertiesPanel.scaleBitmap')}</span>
+            <input type="checkbox" style={{ width: 20, height: 20, cursor: 'pointer' }} checked={tog(r.scaleBitmap, true)} onChange={(e) => updateRender({ scaleBitmap: e.target.checked })} />
+          </div>
+          <div style={row}>
+            <span style={lbl}>{t('propertiesPanel.bitmapSize')}</span>
+            <select
+              value={r.bitmapSize ?? 72}
+              style={sel}
+              onChange={(e) => updateRender({ bitmapSize: parseInt(e.target.value, 10) })}
+            >
+              <option value={72}>72 px</option>
+              <option value={100}>100 px</option>
+              <option value={144}>144 px</option>
+              <option value={200}>200 px</option>
+            </select>
+          </div>
+        </>
       )}
       <div style={row}>
         <span style={lbl}>{t('propertiesPanel.showText')}</span>
