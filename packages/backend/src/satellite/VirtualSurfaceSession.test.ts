@@ -39,11 +39,13 @@ describe('VirtualSurfaceSession', () => {
     session = new VirtualSurfaceSession('cwp-a1b2c3d4', 'Test Surface', 8, 4, '127.0.0.1', 16623)
   })
 
-  it('sendet ADD-DEVICE nach BEGIN', () => {
+  it('sendet ADD-DEVICE nach BEGIN + CAPS', () => {
     session.start()
     const ws = getMockWs()
     ws.emit('open')
     ws.emit('message', 'BEGIN CompanionVersion="4.3.0" ApiVersion="1.10.0"\n')
+    // VirtualSurfaceSession wartet nach BEGIN auf CAPS (API >= 1.10) bevor ADD-DEVICE gesendet wird
+    ws.emit('message', 'CAPS SUBSCRIPTIONS=1\n')
     expect(ws.sent.some((s: string) =>
       s.includes('ADD-DEVICE') &&
       s.includes('cwp-a1b2c3d4') &&
@@ -57,6 +59,7 @@ describe('VirtualSurfaceSession', () => {
     const ws = getMockWs()
     ws.emit('open')
     ws.emit('message', 'BEGIN CompanionVersion="4.3.0" ApiVersion="1.10.0"\n')
+    ws.emit('message', 'CAPS SUBSCRIPTIONS=1\n')
     ws.emit('message', 'ADD-DEVICE OK\n')
     expect(session.getStatus()).toBe('connected')
   })
@@ -68,6 +71,7 @@ describe('VirtualSurfaceSession', () => {
     const ws = getMockWs()
     ws.emit('open')
     ws.emit('message', 'BEGIN CompanionVersion="4.3.0" ApiVersion="1.10.0"\n')
+    ws.emit('message', 'CAPS SUBSCRIPTIONS=1\n')
     ws.emit('message', 'ADD-DEVICE OK\n')
     ws.emit('message', 'KEY-STATE DEVICEID="cwp-a1b2c3d4" KEY=3 TYPE=BUTTON COLOR=#ff0000\n')
     expect(handler).toHaveBeenCalledWith(3, expect.objectContaining({ bgColor: '#ff0000' }))
@@ -78,6 +82,7 @@ describe('VirtualSurfaceSession', () => {
     const ws = getMockWs()
     ws.emit('open')
     ws.emit('message', 'BEGIN CompanionVersion="4.3.0" ApiVersion="1.10.0"\n')
+    ws.emit('message', 'CAPS SUBSCRIPTIONS=1\n')
     ws.emit('message', 'ADD-DEVICE OK\n')
     ws.sent = []
     session.sendKeyPress(5, true)
@@ -93,6 +98,7 @@ describe('VirtualSurfaceSession', () => {
     const ws = getMockWs()
     ws.emit('open')
     ws.emit('message', 'BEGIN CompanionVersion="4.3.0" ApiVersion="1.10.0"\n')
+    ws.emit('message', 'CAPS SUBSCRIPTIONS=1\n')
     ws.emit('message', 'ADD-DEVICE OK\n')
     ws.emit('close')
     expect(statusHandler).toHaveBeenCalledWith('stale')
