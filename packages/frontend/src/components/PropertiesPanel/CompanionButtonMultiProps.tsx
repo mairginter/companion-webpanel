@@ -101,6 +101,7 @@ export function CompanionButtonMultiProps({ elements, panelId }: Props) {
   const commonBorderRadius = common(elements, (el) => r(el).borderRadius)
   const commonPhysicalStyle = common(elements, (el) => tog(r(el).physicalStyle, false))
   const commonFontSize = common(elements, (el) => r(el).fontSize)
+  const commonBitmapSize = common(elements, (el) => r(el).bitmapSize ?? 72)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -202,6 +203,22 @@ export function CompanionButtonMultiProps({ elements, panelId }: Props) {
             fontSize: 13, textAlign: 'right',
           }}
         />
+      </div>
+
+      {/* bitmapSize */}
+      <div style={row}>
+        <span style={lbl}>{t('propertiesPanel.bitmapSize')}</span>
+        <select
+          style={{ ...sel, fontSize: 13, padding: '4px 8px' }}
+          value={commonBitmapSize ?? ''}
+          onChange={(e) => e.target.value && patchRender({ bitmapSize: parseInt(e.target.value, 10) })}
+        >
+          {commonBitmapSize === null && <option value="">—</option>}
+          <option value={72}>72 px</option>
+          <option value={100}>100 px</option>
+          <option value={144}>144 px</option>
+          <option value={200}>200 px</option>
+        </select>
       </div>
     </div>
   )
