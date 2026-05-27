@@ -184,6 +184,7 @@ CompanionWebpannel/
 - ✅ **Fader-Knob gerippte 3D-Textur** — `repeating-linear-gradient` + weiße Mittellinie
 - ✅ **Drum Wheel Mausrad-Optik** — `borderRadius:10`, dunkle Gummirippen, zylindrischer Lichtreflex
 - ✅ **VirtualCompanionDeck Opacity-Fix** — `hexToRgba()` — Opacity gilt nur für Hintergrund, nicht Buttons
+- ✅ **Per-Button Bitmap-Auflösung** — `render.bitmapSize` (72/100/144/200 px) in `CompanionButtonProps` (Select unter showBitmap) + `CompanionButtonMultiProps` (Batch mit Mixed-State); SatelliteClient `subscribe(…, bitmapSize)` übergibt `BITMAP=N` an ADD-SUB; HostManager `realSubSizes: Map<string,Map<string,number>>` erkennt Größenänderung → automatischer Re-Subscribe; mehrere Elemente auf gleichem Button → MAX-Auflösung (v1.3.5)
 - ⬜ **Mute → Meter in Blautönen** — wenn Channel gemuted, Meter-Balken statt Grün/Gelb/Rot in verschiedenen Blautönen anzeigen (visuelles Feedback dass Channel stumm ist)
 
 ### Virtual Companion Deck (nächste Iteration)
@@ -206,6 +207,8 @@ CompanionWebpannel/
 - ✅ **Release v1.3.1** — HostEditModal, caps-disabled Hinweis, Copy-to-Panel, Panel Duplicate, Multi-Button Editing; `CompanionWebpanel-1.3.1.exe` portable (Win x64), Tag `v1.3.1` lokal (nicht gepusht)
 - ✅ **Release v1.3.2** — Named Layer System (4 Layer, Multi-Select, EditableElement/Canvas-Sort-Fix), HelpModal Settings-Ordner öffnen (Electron IPC); `CompanionWebpanel-1.3.2.exe` portable (Win x64), Tag `v1.3.2` lokal (nicht gepusht)
 - ✅ **Release v1.3.3** — Config-file never auto-create (First-Run + verschobene Datei), Startup-UI Warnung, Auto-Zoom Fix (View→Edit); `CompanionWebpanel-1.3.3.exe` portable (Win x64), Tag `v1.3.3` lokal (nicht gepusht)
+- ✅ **Release v1.3.4** — Satellite protocol fixes (parseParams für ApiVersion), version-error Status bei zu alter Companion-Version; `CompanionWebpanel-1.3.4.exe` portable (Win x64), Tag `v1.3.4` lokal (nicht gepusht)
+- ✅ **Release v1.3.5** — Per-Button Bitmap-Auflösung (72/100/144/200 px): Select in CompanionButtonProps + MultiProps, SatelliteClient BITMAP=N per ADD-SUB, HostManager Re-Subscribe bei Größenänderung; VirtualSurfaceSession-Test-Fix (CAPS-Flow); `CompanionWebpanel-1.3.5.exe` portable (Win x64), Tag `v1.3.5` lokal (nicht gepusht)
 
 ### Code Review — Noch offen (P2/P3, nach Bedarf)
 - ⬜ **P2-2** i18n-Strings IPC-Handler cachen (Zeile 136-146 `main.ts`), bei `changeLanguage` neu bauen
