@@ -33,8 +33,8 @@ export class HostManager {
   private onStatusChange?: (hostId: string, status: ClientStatus) => void
   private virtualSurfaceManager: VirtualSurfaceManager
 
-  // Echte Subscriptions (von Panel-Elementen): hostId → Set<"page/row/col">
-  private realSubKeys = new Map<string, Set<string>>()
+  // Echte Subscriptions (von Panel-Elementen): hostId → Map<"page/row/col" → bitmapSize>
+  private realSubSizes = new Map<string, Map<string, number>>()
 
   // Picker-Subscriptions (temporär für den Picker-Dialog): hostId → Set<"page/row/col">
   private pickerSubKeys = new Map<string, Set<string>>()
@@ -81,7 +81,7 @@ export class HostManager {
    * Neue Hosts/Buttons werden subscribed, entfernte werden unsubscribed.
    */
   syncSubscriptions(settings: Settings): void {
-    // Desired: hostId → Set<"page/row/col"> aus allen companionButton-Elementen
+    // Desired: hostId → Map<"page/row/col", bitmapSize> aus allen companionButton-Elementen
     const desired = this.buildDesiredSubs(settings)
 
     // Hosts mit autoConnect=false: laufenden Client stoppen falls vorhanden
@@ -90,7 +90,7 @@ export class HostManager {
         const client = this.clients.get(host.id)!
         client.stop().catch(() => {})
         this.clients.delete(host.id)
-        this.realSubKeys.delete(host.id)
+        this.realSubSizes.delete(host.id)
         this.clientServer.broadcast({ t: 'sessionStatus', hostId: host.id, status: 'stale' })
       }
     }
@@ -108,25 +108,33 @@ export class HostManager {
       }
 
       const client = this.clients.get(hostId)!
-      const currentReal = this.realSubKeys.get(hostId) ?? new Set<string>()
-      const desiredForHost = desired.get(hostId) ?? new Set<string>()
+      const currentSizes = this.realSubSizes.get(hostId) ?? new Map<string, number>()
+      const desiredSizes = desired.get(hostId) ?? new Map<string, number>()
 
-      // Neue Subscriptions hinzufügen
-      for (const prc of desiredForHost) {
-        if (!currentReal.has(prc)) {
+      // Neue und geänderte Subscriptions hinzufügen (Größenänderung → Re-Subscribe)
+      for (const [prc, bitmapSize] of desiredSizes) {
+        const currentSize = currentSizes.get(prc)
+        if (currentSize === undefined) {
+          // Neu: direkt subscriben
           const [p, r, c] = prc.split('/').map(Number)
-          client.subscribe(`cwp/${prc}`, p, r, c)
+          client.subscribe(`cwp/${prc}`, p, r, c, bitmapSize)
+        } else if (currentSize !== bitmapSize) {
+          // Gleicher Button, andere Größe → REMOVE-SUB + ADD-SUB
+          client.unsubscribe(`cwp/${prc}`)
+          const [p, r, c] = prc.split('/').map(Number)
+          client.subscribe(`cwp/${prc}`, p, r, c, bitmapSize)
         }
+        // gleiche Größe: nichts tun
       }
 
       // Entfernte Subscriptions abmelden
-      for (const prc of currentReal) {
-        if (!desiredForHost.has(prc)) {
+      for (const prc of currentSizes.keys()) {
+        if (!desiredSizes.has(prc)) {
           client.unsubscribe(`cwp/${prc}`)
         }
       }
 
-      this.realSubKeys.set(hostId, desiredForHost)
+      this.realSubSizes.set(hostId, desiredSizes)
     }
 
     this.virtualSurfaceManager.sync(settings)
@@ -214,7 +222,7 @@ export class HostManager {
     await Promise.all([...this.clients.values()].map((c) => c.stop()))
     await this.virtualSurfaceManager.stop()
     this.clients.clear()
-    this.realSubKeys.clear()
+    this.realSubSizes.clear()
     this.pickerSubKeys.clear()
   }
 
@@ -244,26 +252,30 @@ export class HostManager {
 
   /**
    * Liest alle companionButton-Refs aus allen Panels und gruppiert sie nach hostId.
-   * Ergebnis: hostId → Set<"page/row/col">
+   * Ergebnis: hostId → Map<"page/row/col", bitmapSize>
+   * Bei mehreren Elementen auf gleichem Button: MAX-Auflösung gewinnt.
    */
-  private buildDesiredSubs(settings: Settings): Map<string, Set<string>> {
-    const desired = new Map<string, Set<string>>()
+  private buildDesiredSubs(settings: Settings): Map<string, Map<string, number>> {
+    const desired = new Map<string, Map<string, number>>()
 
-    const addRef = (ref: import('@cwp/shared').CompanionRef | undefined) => {
+    const addRef = (ref: import('@cwp/shared').CompanionRef | undefined, bitmapSize = 72) => {
       if (!ref) return
       const { hostId, page, row, col } = ref
-      if (!desired.has(hostId)) desired.set(hostId, new Set())
-      desired.get(hostId)!.add(`${page}/${row}/${col}`)
+      if (!desired.has(hostId)) desired.set(hostId, new Map())
+      const key = `${page}/${row}/${col}`
+      const existing = desired.get(hostId)!.get(key) ?? 0
+      // MAX: wenn mehrere Elemente denselben Button referenzieren, höchste Auflösung nehmen
+      desired.get(hostId)!.set(key, Math.max(existing, bitmapSize))
     }
 
     for (const panel of settings.panels) {
       for (const el of panel.elements) {
         if (el.type === 'companionButton') {
-          addRef(el.ref)
+          addRef(el.ref, el.render?.bitmapSize ?? 72)
         } else if (el.type === 'channelStrip') {
-          addRef(el.refs.button.ref)
-          addRef(el.refs.solo)
-          addRef(el.refs.pan)
+          addRef(el.refs.button.ref, 72)
+          addRef(el.refs.solo, 72)
+          addRef(el.refs.pan, 72)
         }
       }
     }
@@ -278,7 +290,7 @@ export class HostManager {
       // Bekannte Pages aus realSubKeys + pickerSubKeys sammeln
       const pages = new Set<number>()
       const allKeys = [
-        ...(this.realSubKeys.get(hostId) ?? []),
+        ...(this.realSubSizes.get(hostId)?.keys() ?? []),
         ...(this.pickerSubKeys.get(hostId) ?? []),
       ]
       for (const prc of allKeys) {
