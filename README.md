@@ -6,6 +6,16 @@ Available as a **browser PWA** (reachable from any device on the LAN) and as a s
 
 ---
 
+## A Note on How This Was Built
+
+This project is **fully vibe-coded** — the entire codebase was written by AI (Claude) based on my specifications, direction, and review. I want to be transparent about that.
+
+This doesn't mean the project was thrown together casually. It grew out of a real production problem: when you run a live show with Bitfocus Companion, the number of controlled functions grows fast — vMix, OBS, Allen & Heath mixers, PTZ cameras, NDI, lighting, all at once. Physical StreamDecks become cluttered and hard to navigate under pressure. During a live broadcast you need to find the right button in seconds, not hunt across six pages.
+
+I have hands-on experience with the interfaces and APIs involved — Satellite API, WebSocket protocols, production device control — and every architectural decision in this project was deliberately chosen and validated by me. The AI was the implementation tool; the domain knowledge, product design, and quality control behind it are mine.
+
+---
+
 ## Screenshot
 
 ![Panel Screenshot](docs/CompanionWebpannel_example.png)
@@ -190,4 +200,4 @@ CompanionWebpannel/
 
 ## License
 
-Private project — not for public distribution.
+[The Unlicense](LICENSE) — public domain. Do whatever you want.

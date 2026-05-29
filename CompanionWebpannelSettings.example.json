@@ -1,0 +1,63 @@
+{
+  "version": "1.7.0",
+  "server": {
+    "port": 8080
+  },
+  "activeHostId": "my-companion",
+  "hosts": [
+    {
+      "id": "my-companion",
+      "name": "My Companion",
+      "host": "192.168.1.100",
+      "satellite": {
+        "wsPort": 16623
+      },
+      "notes": "Main Companion instance",
+      "autoConnect": true
+    }
+  ],
+  "panels": [
+    {
+      "id": "panel-main",
+      "name": "My Panel",
+      "zoom": 1,
+      "defaultMode": "view",
+      "grid": {
+        "enabled": false,
+        "size": 40,
+        "snap": true
+      },
+      "canvas": {
+        "width": 1280,
+        "height": 720,
+        "background": "#1a1d23"
+      },
+      "elements": [
+        {
+          "id": "btn-example",
+          "type": "companionButton",
+          "x": 20,
+          "y": 20,
+          "w": 100,
+          "h": 100,
+          "z": 0,
+          "ref": {
+            "hostId": "my-companion",
+            "page": 1,
+            "row": 0,
+            "col": 0
+          },
+          "render": {
+            "centerBitmap": true,
+            "bitmapSize": 72,
+            "enforceMinSize": true,
+            "showText": true,
+            "textAlign": "bottom",
+            "borderRadius": 8,
+            "opacity": 1
+          }
+        }
+      ]
+    }
+  ]
+}
