@@ -32,6 +32,7 @@ export type RotateHandler = (hostId: string, page: number, row: number, col: num
 export type PreviewPageHandler = (hostId: string, page: number, keysPerRow: number, rows: number) => void
 export type PreviewPageRemoveHandler = (hostId: string, page: number) => void
 export type VPressHandler = (deviceId: string, keyIndex: number, pressed: boolean) => void
+export type DiscoveryToggleHandler = () => void
 
 // Eindeutiger Key für einen gehaltenen Button
 type PressKey = `${string}:${number}:${number}:${number}`
@@ -70,6 +71,8 @@ export class ClientServer {
   private onPreviewPageAdd?: PreviewPageHandler
   private onPreviewPageRemove?: PreviewPageRemoveHandler
   private onVPress?: VPressHandler
+  private onDiscoveryStart?: DiscoveryToggleHandler
+  private onDiscoveryStop?: DiscoveryToggleHandler
   private settings: Settings
   private settingsPath: string
   private staticDir?: string
@@ -85,6 +88,8 @@ export class ClientServer {
     onRotate?: RotateHandler,
     onVPress?: VPressHandler,
     staticDir?: string,
+    onDiscoveryStart?: DiscoveryToggleHandler,
+    onDiscoveryStop?: DiscoveryToggleHandler,
   ) {
     this.settings = settings
     this.settingsPath = settingsPath
@@ -95,6 +100,8 @@ export class ClientServer {
     this.onPreviewPageRemove = onPreviewPageRemove
     this.onVPress = onVPress
     this.staticDir = staticDir
+    this.onDiscoveryStart = onDiscoveryStart
+    this.onDiscoveryStop = onDiscoveryStop
 
     // ─── HTTP Server ────────────────────────────────────────────────────────
     this.httpServer = http.createServer((req, res) => {
@@ -189,6 +196,14 @@ export class ClientServer {
             res.end(JSON.stringify({ error: 'Ungültiger Request-Body' }))
           }
         })
+
+      } else if (req.method === 'POST' && (req.url === '/api/discovery/start' || req.url === '/api/discovery/stop')) {
+        // mDNS-Discovery an/aus — Browse-on-demand solange das HostManagerModal offen ist.
+        // Kein Body nötig; die Ergebnisse kommen als 'discovery'-Broadcast über den WS.
+        if (req.url.endsWith('/start')) this.onDiscoveryStart?.()
+        else this.onDiscoveryStop?.()
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true }))
 
       } else if (req.method === 'DELETE' && req.url?.startsWith('/api/preview-page')) {
         // Picker-Subscriptions beenden

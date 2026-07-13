@@ -335,6 +335,26 @@ export interface VPressMessage {
   pressed: boolean
 }
 
+/** Per mDNS gefundene Companion-Instanz (Bonjour-Announce ab Companion 5.0) */
+export interface DiscoveredHost {
+  /** Eindeutig pro Instanz — mDNS fqdn */
+  id: string
+  /** Instanz-Name aus dem mDNS-Announce */
+  name: string
+  /** Erste nicht-link-locale IPv4-Adresse */
+  address: string
+  /** Satellite-WS-Port (Default 16623) */
+  port: number
+  /** TXT-Record protocolVersion (Satellite-API-Version), falls announced */
+  apiVersion?: string
+}
+
+/** Backend → Frontend: aktueller Stand der mDNS-Discovery (komplette Liste, kein Delta) */
+export interface DiscoveryMessage {
+  t: 'discovery'
+  hosts: DiscoveredHost[]
+}
+
 export type BackendToFrontend =
   | DeltaMessage
   | SnapshotMessage
@@ -344,6 +364,7 @@ export type BackendToFrontend =
   | VDeltaBatchMessage
   | VSnapshotMessage
   | VSessionStatusMessage
+  | DiscoveryMessage
 export type FrontendToBackend = PressMessage | RotateMessage | VPressMessage
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

@@ -189,6 +189,16 @@ describe('applyHostInfo', () => {
   })
 })
 
+describe('applyDiscovery', () => {
+  it('ersetzt die Liste der gefundenen Hosts komplett', () => {
+    const host = { id: 'a.local', name: 'Studio', address: '192.168.144.102', port: 16623, apiVersion: '1.12.0' }
+    useAppStore.getState().applyDiscovery({ t: 'discovery', hosts: [host] })
+    expect(useAppStore.getState().discoveredHosts).toEqual([host])
+    useAppStore.getState().applyDiscovery({ t: 'discovery', hosts: [] })
+    expect(useAppStore.getState().discoveredHosts).toEqual([])
+  })
+})
+
 describe('Host CRUD', () => {
   const newHost: import('@cwp/shared').HostProfile = {
     id: 'h2', name: 'Studio B', host: '10.0.0.2', satellite: { wsPort: 16623 }, autoConnect: true,

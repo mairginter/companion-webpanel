@@ -7,11 +7,13 @@
  *  - Warn-Dialog bei Löschen eines referenzierten Hosts
  *  - Felder: Name, Host/IP, WS-Port (default 16623), Notes, Automatisch verbinden
  *  - Speichern direkt via saveSettings() → POST /api/settings
+ *  - mDNS-Discovery: Browse läuft nur solange das Modal offen ist (Browse-on-demand);
+ *    gefundene Companion-5.0-Instanzen erscheinen mit „+"-Button zum Übernehmen
  */
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../../store/useAppStore'
-import { HostProfile, Settings } from '@cwp/shared'
+import { DiscoveredHost, HostProfile, Settings } from '@cwp/shared'
 
 type SessionStatus = 'connecting' | 'connected' | 'stale' | 'error' | 'caps-disabled'
 
@@ -327,18 +329,20 @@ function HostForm({ value, onChange }: HostFormProps) {
 
 interface HostEditModalProps {
   host: HostProfile | null        // null = neuer Host
+  /** Vorbefüllung für neue Hosts (z.B. aus mDNS-Discovery) — nur bei host === null verwendet */
+  prefill?: Partial<Omit<HostProfile, 'id'>>
   onSave: (host: HostProfile) => void
   onCancel: () => void
 }
 
-function HostEditModal({ host, onSave, onCancel }: HostEditModalProps) {
+function HostEditModal({ host, prefill, onSave, onCancel }: HostEditModalProps) {
   const { t } = useTranslation()
   const [formValue, setFormValue] = useState<Omit<HostProfile, 'id'>>(
     host
       ? { name: host.name, host: host.host, satellite: host.satellite, notes: host.notes ?? '',
           autoConnect: host.autoConnect, showInToolbar: host.showInToolbar,
           gridCols: host.gridCols, gridRows: host.gridRows, maxPages: host.maxPages, pageNames: host.pageNames }
-      : emptyHost()
+      : { ...emptyHost(), ...prefill }
   )
 
   const isNew = host === null
@@ -449,10 +453,22 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
   const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
   const hostInfo = useAppStore((s) => s.hostInfo)
+  const discoveredHosts = useAppStore((s) => s.discoveredHosts)
 
   // Welcher Host wird gerade bearbeitet (null = keiner, 'new' = neuer Host, HostProfile = vorhandener Host)
   const [editTarget, setEditTarget] = useState<HostProfile | null | 'new'>(null)
   const [deleteTarget, setDeleteTarget] = useState<HostProfile | null>(null)
+  // Vorbefüllung fürs Edit-Modal wenn ein Discovery-Treffer übernommen wird
+  const [prefill, setPrefill] = useState<Partial<Omit<HostProfile, 'id'>> | undefined>(undefined)
+
+  // Browse-on-demand: mDNS-Discovery läuft nur solange dieses Modal offen ist.
+  // Die Ergebnisse kommen als 'discovery'-Broadcast über den bestehenden WS in den Store.
+  useEffect(() => {
+    fetch('/api/discovery/start', { method: 'POST' }).catch(() => { /* Backend offline — Sektion bleibt leer */ })
+    return () => {
+      fetch('/api/discovery/stop', { method: 'POST' }).catch(() => { /* dito */ })
+    }
+  }, [])
 
   if (!settings) return null
   // s ist garantiert non-null für alle Closures unten
@@ -470,8 +486,19 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
     )
   }
 
-  function openAdd() { setEditTarget('new') }
-  function openEdit(host: HostProfile) { setEditTarget(host) }
+  function openAdd() { setPrefill(undefined); setEditTarget('new') }
+  function openEdit(host: HostProfile) { setPrefill(undefined); setEditTarget(host) }
+
+  // Discovery-Treffer übernehmen: Edit-Modal mit Name/IP/Port vorbefüllt öffnen
+  function openAddDiscovered(d: DiscoveredHost) {
+    setPrefill({ name: d.name, host: d.address, satellite: { wsPort: d.port } })
+    setEditTarget('new')
+  }
+
+  // Nur Instanzen anbieten die noch nicht als Host angelegt sind (Match über IP)
+  const unknownDiscovered = discoveredHosts.filter(
+    (d) => !hosts.some((h) => h.host === d.address),
+  )
 
   function handleEditSave(savedHost: HostProfile) {
     const isNew = !s.hosts.some((h) => h.id === savedHost.id)
@@ -625,6 +652,53 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
                 {t('hostManager.noHosts')}
               </div>
             )}
+
+            {/* Gefundene Companion-Instanzen (mDNS, ab Companion 5.0) */}
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 12, color: '#8896aa', fontWeight: 600, marginBottom: 6 }}>
+                {t('hostManager.discoveredTitle')}
+              </div>
+              {unknownDiscovered.length === 0 ? (
+                <div style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.5 }}>
+                  {t('hostManager.discoveredEmpty')}
+                  <br />
+                  <span style={{ fontSize: 11 }}>{t('hostManager.discoveryHint')}</span>
+                </div>
+              ) : (
+                unknownDiscovered.map((d) => (
+                  <div
+                    key={d.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      background: '#121821', border: '1px solid #2a3344', borderRadius: 8,
+                      padding: '8px 14px', marginBottom: 6,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#e9edf2' }}>{d.name}</div>
+                      <div style={{ fontSize: 12, color: '#8896aa', display: 'flex', gap: 10 }}>
+                        <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>{d.address}:{d.port}</span>
+                        {d.apiVersion && (
+                          <span style={{
+                            fontSize: 11, color: '#21d07a', border: '1px solid #21d07a',
+                            borderRadius: 4, padding: '0 5px',
+                          }}>
+                            API {d.apiVersion}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      style={{ ...btnConnect, padding: '5px 12px', flexShrink: 0 }}
+                      title={t('hostManager.addDiscovered')}
+                      onClick={() => openAddDiscovered(d)}
+                    >
+                      + {t('hostManager.addDiscovered')}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           {/* Footer */}
@@ -654,6 +728,7 @@ export function HostManagerModal({ onClose, saveSettings }: Props) {
       {editTarget !== null && (
         <HostEditModal
           host={editTarget === 'new' ? null : editTarget}
+          prefill={prefill}
           onSave={handleEditSave}
           onCancel={() => setEditTarget(null)}
         />

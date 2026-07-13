@@ -9,6 +9,8 @@ import {
   SnapshotMessage,
   SessionStatusMessage,
   HostInfoMessage,
+  DiscoveredHost,
+  DiscoveryMessage,
   VDeltaMessage,
   VSnapshotMessage,
   VSessionStatusMessage,
@@ -48,6 +50,10 @@ interface AppStore {
   /** key: hostId → { companionVersion, apiVersion } */
   hostInfo: Record<string, { companionVersion: string; apiVersion: string }>
   applyHostInfo: (msg: HostInfoMessage) => void
+
+  // ─── mDNS-Discovery (transient, nur solange HostManagerModal offen) ────────
+  discoveredHosts: DiscoveredHost[]
+  applyDiscovery: (msg: DiscoveryMessage) => void
 
   // ─── Virtual Deck State ───────────────────────────────────────────────────
   /** key: deviceId → Record<keyIndex as string, KeyState> */
@@ -227,6 +233,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         [msg.hostId]: { companionVersion: msg.companionVersion, apiVersion: msg.apiVersion },
       },
     })),
+
+  // ─── mDNS-Discovery ───────────────────────────────────────────────────────
+  discoveredHosts: [],
+
+  // Backend sendet immer die komplette Liste (kein Delta) — direkt ersetzen
+  applyDiscovery: (msg) => set({ discoveredHosts: msg.hosts }),
 
   // ─── Virtual Deck ─────────────────────────────────────────────────────────
   virtualKeys: {},

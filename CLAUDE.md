@@ -252,6 +252,7 @@ Plan-Datei mit vollständigen Fix-Details: [docs/plans/2026-04-19-code-review-v1
 - **Windows-DPI-Skalierung** → User sieht "1920px" (physisch), Canvas braucht CSS-px = physisch/scaleFactor. Toolbar-Höhe = 56px. Verfügbare Canvas-Fläche: `window.innerWidth × (window.innerHeight - 56)`. `window.devicePixelRatio > 1` → Warnung zeigen.
 - **Alte Electron-Instanz killen (bash)** → `powershell.exe -Command "Get-Process electron -ErrorAction SilentlyContinue | Stop-Process -Force"`
 - **`BITMAP_FORMAT` nur senden wenn in CAPS `BITMAP_FORMATS` annonciert** → Feature-Detection immer via CAPS-Keys, nie via ApiVersion; nicht annoncierte Formate fallen server-seitig stumm auf raw-RGB zurück. Format-Status bei jedem `connect()` resetten — Reconnect kann auf älteren Companion treffen.
+- **mDNS-Discovery (UDP 5353)** → erster Browse löst den Windows-Firewall-Prompt für Node/Electron aus; mDNS kreuzt keine Subnetze/VPN-Routen (Host kann per IP erreichbar sein, taucht aber nicht in der Discovery auf) — manuelles Anlegen bleibt der Primärweg. Browse läuft nur solange das HostManagerModal offen ist (`POST /api/discovery/start|stop`, Watchdog 5 min).
 - **electron-builder `buildResources` ≠ `files`** → `buildResources` zeigt nur wo Build-Ressourcen (icon.ico) für den Installer liegen. Dateien die die App zur Laufzeit braucht (z.B. `assets/tray-*.png`) müssen explizit in `files` stehen.
 
 ---

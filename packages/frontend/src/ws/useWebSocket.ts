@@ -27,6 +27,7 @@ export function useWebSocket(): {
   const applyVDelta = useAppStore((s) => s.applyVDelta)
   const applyVSnapshot = useAppStore((s) => s.applyVSnapshot)
   const applyVSessionStatus = useAppStore((s) => s.applyVSessionStatus)
+  const applyDiscovery = useAppStore((s) => s.applyDiscovery)
 
   const connect = useCallback(() => {
     // Nicht verbinden wenn bereits offen oder am verbinden
@@ -73,6 +74,9 @@ export function useWebSocket(): {
           case 'vSessionStatus':
             applyVSessionStatus(msg)
             break
+          case 'discovery':
+            applyDiscovery(msg)
+            break
         }
       } catch {
         console.warn('[WS] Ungültige Nachricht vom Backend')
@@ -93,7 +97,7 @@ export function useWebSocket(): {
     socket.onerror = (err) => {
       console.error('[WS] Fehler:', err)
     }
-  }, [applyDelta, applySnapshot, applySessionStatus, applyHostInfo, markAllSessionsStale, applyVDelta, applyVSnapshot, applyVSessionStatus])
+  }, [applyDelta, applySnapshot, applySessionStatus, applyHostInfo, markAllSessionsStale, applyVDelta, applyVSnapshot, applyVSessionStatus, applyDiscovery])
 
   useEffect(() => {
     connect()

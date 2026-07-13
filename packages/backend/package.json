@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@cwp/shared": "*",
+    "@julusian/bonjour-service": "^1.4.3",
     "ws": "^8.17.0"
   },
   "devDependencies": {

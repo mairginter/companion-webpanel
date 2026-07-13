@@ -74,7 +74,11 @@
     "deleteWarning": "⚠ {{count}} Button-Element(e) referenzieren diesen Host und werden mit ⛔ markiert (kein Companion-Zugriff mehr).",
     "deleteLinkedButtons": "Verknüpfte Buttons ebenfalls löschen ({{count}} Element(e))",
     "capsDisabledTitle": "Button Subscriptions API nicht aktiv.",
-    "capsDisabledPath": "Aktivieren unter: Companion → Settings → Protocols → „Button Subscriptions API“"
+    "capsDisabledPath": "Aktivieren unter: Companion → Settings → Protocols → „Button Subscriptions API“",
+    "discoveredTitle": "Gefundene Companion-Instanzen",
+    "discoveredEmpty": "Keine neuen Instanzen im Netzwerk gefunden.",
+    "addDiscovered": "Übernehmen",
+    "discoveryHint": "Automatische Erkennung braucht Companion 5.0+ im selben Subnetz (mDNS). Beim ersten Suchlauf ggf. die Windows-Firewall-Freigabe bestätigen. Manuelles Anlegen funktioniert immer."
   },
   "propertiesPanel": {
     "geometry": "Geometrie",
