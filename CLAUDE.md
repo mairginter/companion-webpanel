@@ -216,6 +216,7 @@ CompanionWebpannel/
 - ✅ **Release v1.3.4** — Satellite protocol fixes (parseParams für ApiVersion), version-error Status bei zu alter Companion-Version; `CompanionWebpanel-1.3.4.exe` portable (Win x64), Tag `v1.3.4` lokal (nicht gepusht)
 - ✅ **Release v1.3.5** — Per-Button Bitmap-Auflösung (72/100/144/200 px): Select in CompanionButtonProps + MultiProps, SatelliteClient BITMAP=N per ADD-SUB, HostManager Re-Subscribe bei Größenänderung; VirtualSurfaceSession-Test-Fix (CAPS-Flow); `CompanionWebpanel-1.3.5.exe` portable (Win x64), Tag `v1.3.5` lokal (nicht gepusht)
 - ✅ **Release v1.4.0** — Companion-5.0-Adoption komplett: WebP/PNG-Bitmaps (BITMAP_FORMAT, ~17× kleiner), mDNS-Auto-Discovery (HostManagerModal), Non-square Bitmaps (STYLE + deriveBitmapDims), Seitennamen im Picker via HTTP-API-Proxy (Schema 1.8.0, httpPort); alles live gegen Companion 5.0.0 verifiziert; `CompanionWebpanel-1.4.0.exe` portable (Win x64), Tag `v1.4.0` lokal (nicht gepusht)
+- ✅ **Release v1.4.1** — Seitennamen als Batch: `resolveMany()` (Worker-Pool, Concurrency 20, TTL-Cache) + `GET /api/page-names?hostId`; Picker lädt alle Namen beim Öffnen/Host-Wechsel (99 Namen in ~145 ms live gemessen); `CompanionWebpanel-1.4.1.exe` portable (Win x64), Tag `v1.4.1` lokal (nicht gepusht)
 
 ### Code Review — Noch offen (P2/P3, nach Bedarf)
 - ⬜ **P2-2** i18n-Strings IPC-Handler cachen (Zeile 136-146 `main.ts`), bei `changeLanguage` neu bauen
