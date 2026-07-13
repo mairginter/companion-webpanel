@@ -19,6 +19,10 @@
 export const PAGE_NAME_TTL_MS = 30_000
 export const PAGE_NAME_TIMEOUT_MS = 1500
 
+// Batch-Abfrage: Companion verkraftet das locker (live gemessen: 100 Seiten in
+// ~53 ms bei Limit 25); Limit 20 lässt Luft für andere gleichzeitige API-Nutzer
+export const PAGE_NAME_BATCH_CONCURRENCY = 20
+
 interface CacheEntry {
   name: string
   expires: number
@@ -53,5 +57,34 @@ export class PageNameResolver {
 
     this.cache.set(key, { name, expires: this.now() + PAGE_NAME_TTL_MS })
     return name
+  }
+
+  /**
+   * Löst viele Seiten parallel auf (Worker-Pool mit Concurrency-Limit).
+   * Ergebnis-Map enthält nur Seiten mit nicht-leerem Namen — der Picker kann
+   * damit direkt mergen. Einzelfehler brechen den Batch nicht ab (resolve()
+   * liefert dann '' und die Seite fehlt einfach in der Map).
+   */
+  async resolveMany(
+    hostAddr: string,
+    httpPort: number,
+    pages: number[],
+    concurrency = PAGE_NAME_BATCH_CONCURRENCY,
+  ): Promise<Record<number, string>> {
+    const names: Record<number, string> = {}
+    let next = 0
+
+    const worker = async (): Promise<void> => {
+      while (next < pages.length) {
+        const page = pages[next++]
+        const name = await this.resolve(hostAddr, httpPort, page)
+        if (name) names[page] = name
+      }
+    }
+
+    await Promise.all(
+      Array.from({ length: Math.min(concurrency, pages.length) }, worker),
+    )
+    return names
   }
 }

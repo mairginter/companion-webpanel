@@ -200,6 +200,29 @@ export class ClientServer {
           }
         })
 
+      } else if (req.method === 'GET' && req.url?.startsWith('/api/page-names')) {
+        // Alle Seitennamen eines Hosts als Batch (1…maxPages, parallel mit
+        // Concurrency-Limit, TTL-Cache in pageNames.ts). Antwort: { names: {page: name} }
+        const url = new URL(req.url, 'http://localhost')
+        const hostId = url.searchParams.get('hostId')
+        const host = this.settings.hosts.find((h) => h.id === hostId)
+        if (!host) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'hostId erforderlich' }))
+          return
+        }
+        const pages = Array.from({ length: host.maxPages ?? 99 }, (_, i) => i + 1)
+        this.pageNames.resolveMany(host.host, host.httpPort ?? 8000, pages)
+          .then((names) => {
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ names }))
+          })
+          .catch(() => {
+            // resolveMany fängt Einzelfehler intern — doppelter Boden
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ names: {} }))
+          })
+
       } else if (req.method === 'GET' && req.url?.startsWith('/api/page-name')) {
         // Seitenname via Companion-HTTP-API (Proxy, siehe pageNames.ts)
         // Query: hostId + page → { name } ('' wenn nicht ermittelbar)

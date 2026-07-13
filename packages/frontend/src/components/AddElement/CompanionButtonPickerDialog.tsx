@@ -123,21 +123,22 @@ export function CompanionButtonPickerDialog({
   )
   const [loadingPreview, setLoadingPreview] = useState(false)
 
-  // Von Companion (HTTP-API via Backend-Proxy) geholte Seitennamen — pro Page,
-  // lazy beim Seitenwechsel. Lokale pageNames aus dem HostProfile haben Vorrang.
+  // Von Companion (HTTP-API via Backend-Proxy) geholte Seitennamen — als Batch
+  // beim Öffnen/Host-Wechsel (Backend: parallel + TTL-Cache, ~50-100 ms für 100
+  // Seiten). Lokale pageNames aus dem HostProfile haben Vorrang.
   const [remotePageNames, setRemotePageNames] = useState<Record<number, string>>({})
 
   useEffect(() => {
     if (!hostId) return
     let cancelled = false
-    fetch(`${BACKEND_BASE}/api/page-name?hostId=${encodeURIComponent(hostId)}&page=${pageNum}`)
+    fetch(`${BACKEND_BASE}/api/page-names?hostId=${encodeURIComponent(hostId)}`)
       .then((r) => r.json())
-      .then(({ name }) => {
-        if (!cancelled && name) setRemotePageNames((prev) => ({ ...prev, [pageNum]: name }))
+      .then(({ names }) => {
+        if (!cancelled && names) setRemotePageNames(names)
       })
-      .catch(() => { /* graceful: Dropdown zeigt dann nur die Nummer */ })
+      .catch(() => { /* graceful: Dropdown zeigt dann nur die Nummern */ })
     return () => { cancelled = true }
-  }, [hostId, pageNum])
+  }, [hostId])
 
   const changePage = (page: number) => {
     setPageNum(page)

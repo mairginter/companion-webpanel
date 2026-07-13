@@ -59,3 +59,50 @@ describe('PageNameResolver', () => {
     expect(await resolver.resolve('10.0.0.1', 8000, 3)).toBe('Kameras')
   })
 })
+
+describe('PageNameResolver.resolveMany', () => {
+  it('liefert alle Seiten als Map (Page → Name, leere Namen ausgelassen)', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const page = url.match(/page_number_(\d+)_name/)![1]
+      return okResponse(page === '2' ? '' : `Seite ${page}`)
+    })
+    const resolver = new PageNameResolver(fetchMock as unknown as typeof fetch)
+    const names = await resolver.resolveMany('10.0.0.1', 8000, [1, 2, 3])
+    expect(names).toEqual({ 1: 'Seite 1', 3: 'Seite 3' })
+  })
+
+  it('begrenzt die Parallelität auf das Concurrency-Limit', async () => {
+    let inFlight = 0
+    let maxInFlight = 0
+    const fetchMock = vi.fn(async () => {
+      inFlight++
+      maxInFlight = Math.max(maxInFlight, inFlight)
+      await new Promise((r) => setTimeout(r, 1))
+      inFlight--
+      return okResponse('X')
+    })
+    const resolver = new PageNameResolver(fetchMock as unknown as typeof fetch)
+    const pages = Array.from({ length: 50 }, (_, i) => i + 1)
+    await resolver.resolveMany('10.0.0.1', 8000, pages, 5)
+    expect(fetchMock).toHaveBeenCalledTimes(50)
+    expect(maxInFlight).toBeLessThanOrEqual(5)
+  })
+
+  it('nutzt den TTL-Cache — zweiter Batch-Aufruf ohne neue Requests', async () => {
+    const fetchMock = vi.fn(async () => okResponse('X'))
+    const resolver = new PageNameResolver(fetchMock as unknown as typeof fetch)
+    await resolver.resolveMany('10.0.0.1', 8000, [1, 2, 3])
+    await resolver.resolveMany('10.0.0.1', 8000, [1, 2, 3])
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('einzelne Fehler brechen den Batch nicht ab (Seite fehlt einfach)', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes('page_number_2_')) throw new Error('timeout')
+      return okResponse('OK')
+    })
+    const resolver = new PageNameResolver(fetchMock as unknown as typeof fetch)
+    const names = await resolver.resolveMany('10.0.0.1', 8000, [1, 2, 3])
+    expect(names).toEqual({ 1: 'OK', 3: 'OK' })
+  })
+})
