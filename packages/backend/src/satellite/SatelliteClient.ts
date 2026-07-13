@@ -43,6 +43,19 @@ interface SubInfo {
   bitmapSize: number
 }
 
+// Bitmap-Wire-Formate: raw-RGB (immer verfügbar) oder komprimierte Data-URLs
+// (webp/png, ab Companion 5.0 / API 1.12 — via CAPS BITMAP_FORMATS annonciert).
+// Präferenz-Reihenfolge: webp (~17× kleiner als raw) > png > rgb.
+type BitmapFormat = 'rgb' | 'png' | 'webp'
+
+/** Wählt das beste vom Server annoncierte Bitmap-Format (CAPS BITMAP_FORMATS="rgb,png,webp"). */
+function negotiateBitmapFormat(capsFormats: string | undefined): BitmapFormat {
+  const formats = (capsFormats ?? '').split(',')
+  if (formats.includes('webp')) return 'webp'
+  if (formats.includes('png')) return 'png'
+  return 'rgb' // Key fehlt bei Companion ≤ 4.3 → Legacy-Format
+}
+
 /**
  * Verwaltet eine Companion Satellite-Verbindung mit Button Subscriptions API.
  * 1 Instanz pro Host. Alle Subscriptions laufen über diese eine WS-Verbindung.
@@ -65,6 +78,11 @@ export class SatelliteClient extends EventEmitter {
 
   private companionVersion = ''
   private apiVersion = ''
+
+  // Per CAPS negotiiertes Bitmap-Format + Non-square-Fähigkeit (Companion 5.0).
+  // Werden bei jedem Connect zurückgesetzt — Reconnect kann auf älteren Server treffen.
+  private bitmapFormat: BitmapFormat = 'rgb'
+  private capsNonsquare = false
 
   private reconnectTimer: NodeJS.Timeout | null = null
   private reconnectAttempt = 0
@@ -160,6 +178,8 @@ export class SatelliteClient extends EventEmitter {
   private connect(): void {
     this.setStatus('connecting')
     this.lineBuffer = ''
+    this.bitmapFormat = 'rgb'
+    this.capsNonsquare = false
 
     const url = `ws://${this.host}:${this.port}`
     const socket = new WebSocket(url)
@@ -270,6 +290,11 @@ export class SatelliteClient extends EventEmitter {
       return
     }
 
+    // Companion 5.0 (API 1.12): komprimierte Bitmap-Formate + Non-square-Rendering.
+    // Feature-Detection via CAPS, nicht ApiVersion — ältere Server senden die Keys nicht.
+    this.bitmapFormat = negotiateBitmapFormat(params['BITMAP_FORMATS'])
+    this.capsNonsquare = params['NONSQUARE'] === '1'
+
     // Verbunden! Alle aktiven Subscriptions re-subscriben (auch nach Reconnect)
     this.setStatus('connected')
     for (const [subId, { page, row, col, bitmapSize }] of this.activeSubs) {
@@ -324,7 +349,8 @@ export class SatelliteClient extends EventEmitter {
       state.text = decoded.replace(/\\n/g, '\n')
     }
 
-    // BITMAP = Raw-RGB base64 (72×72×3 Bytes)
+    // BITMAP = Raw-RGB base64 (Legacy) ODER Data-URL "data:image/webp;base64,…"
+    // (bei negotiiertem BITMAP_FORMAT ab Companion 5.0) — beides Passthrough
     const bitmap = params['BITMAP']
     if (bitmap !== undefined) state.bitmap = bitmap
 
@@ -337,9 +363,12 @@ export class SatelliteClient extends EventEmitter {
 
   private sendAddSub(subId: string, page: number, row: number, col: number, bitmapSize: number): void {
     // LOCATION-Format: "<page>/<row>/<col>"
+    // BITMAP_FORMAT nur anhängen wenn per CAPS negotiiert — das Wire-Format
+    // für Companion 4.3 bleibt dadurch byte-identisch zum bisherigen Verhalten.
+    const formatParam = this.bitmapFormat !== 'rgb' ? ` BITMAP_FORMAT=${this.bitmapFormat}` : ''
     this.sendLine(
       `ADD-SUB SUBID=${subId} LOCATION=${page}/${row}/${col} ` +
-      `BITMAP=${bitmapSize} COLORS=hex TEXT=true TEXT_STYLE=true`,
+      `BITMAP=${bitmapSize} COLORS=hex TEXT=true TEXT_STYLE=true${formatParam}`,
     )
   }
 

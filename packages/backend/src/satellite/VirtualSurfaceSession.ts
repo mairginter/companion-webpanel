@@ -54,6 +54,10 @@ export class VirtualSurfaceSession extends EventEmitter {
   // API >= 1.10: ADD-DEVICE must wait for CAPS before being sent
   private waitingForCaps = false
 
+  // Per CAPS negotiiertes Bitmap-Format (Companion 5.0: webp/png als Data-URL).
+  // Reset bei jedem Connect — Reconnect kann auf älteren Server treffen.
+  private bitmapFormat: 'rgb' | 'png' | 'webp' = 'rgb'
+
   constructor(
     deviceId: string,
     surfaceName: string,
@@ -110,6 +114,7 @@ export class VirtualSurfaceSession extends EventEmitter {
     this.setStatus('connecting')
     this.lineBuffer = ''
     this.waitingForCaps = false
+    this.bitmapFormat = 'rgb'
 
     const url = `ws://${this.host}:${this.port}`
     console.log(`[VirtualSurface ${this.deviceId}] Verbinde zu ${url}`)
@@ -190,6 +195,11 @@ export class VirtualSurfaceSession extends EventEmitter {
     } else if (line.startsWith('CAPS ')) {
       if (this.waitingForCaps) {
         this.waitingForCaps = false
+        // Companion 5.0: BITMAP_FORMATS="rgb,png,webp" → bestes Format wählen
+        // (webp > png > rgb); Key fehlt bei ≤ 4.3 → Legacy raw-RGB
+        const caps = parseParams(line.slice('CAPS '.length))
+        const formats = (caps['BITMAP_FORMATS'] ?? '').split(',')
+        this.bitmapFormat = formats.includes('webp') ? 'webp' : formats.includes('png') ? 'png' : 'rgb'
         this.sendAddDevice()
       }
     } else if (line.startsWith('ADD-DEVICE OK')) {
@@ -218,10 +228,14 @@ export class VirtualSurfaceSession extends EventEmitter {
 
   private sendAddDevice(): void {
     const keysTotal = this.cols * this.rows
+    // BITMAP_FORMAT nur anhängen wenn per CAPS negotiiert — Wire-Format für
+    // Companion 4.3 bleibt byte-identisch. KEY-STATE BITMAP wird dann eine
+    // Data-URL (data:image/webp;base64,…) statt raw-RGB-Base64.
+    const formatParam = this.bitmapFormat !== 'rgb' ? ` BITMAP_FORMAT=${this.bitmapFormat}` : ''
     this.sendLine(
       `ADD-DEVICE DEVICEID="${this.deviceId}" PRODUCT_NAME="${this.surfaceName}" ` +
       `KEYS_TOTAL=${keysTotal} KEYS_PER_ROW=${this.cols} ` +
-      `BITMAPS=72 COLORS=hex TEXT=true TEXT_STYLE=true`,
+      `BITMAPS=72 COLORS=hex TEXT=true TEXT_STYLE=true${formatParam}`,
     )
   }
 

@@ -226,6 +226,7 @@ export interface KeyState {
   bgColor?: string
   textColor?: string
   text?: string
+  /** Raw-RGB-Base64 (Companion ≤ 4.3) ODER Data-URL "data:image/webp;base64,…" (ab 5.0) */
   bitmap?: string
 }
 
@@ -239,6 +240,7 @@ export interface DeltaMessage {
   bgColor?: string
   textColor?: string
   text?: string
+  /** Raw-RGB-Base64 (Companion ≤ 4.3) ODER Data-URL "data:image/webp;base64,…" (ab 5.0) */
   bitmap?: string
 }
 

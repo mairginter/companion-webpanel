@@ -18,6 +18,10 @@ const bitmapCache = new Map<string, string>()
 let sharedCanvas: HTMLCanvasElement | null = null
 
 export function rawRgbBase64ToDataUrl(base64: string, width: number, height: number): string {
+  // Data-URL (webp/png ab Companion 5.0): selbstbeschreibend — direkt durchreichen,
+  // kein Canvas-Roundtrip und kein Cache nötig (<img src> rendert Data-URLs nativ)
+  if (base64.startsWith('data:')) return base64
+
   const cacheKey = `${width}x${height}:${base64}`
   const cached = bitmapCache.get(cacheKey)
   if (cached !== undefined) return cached

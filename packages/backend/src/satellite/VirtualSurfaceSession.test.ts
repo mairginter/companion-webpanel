@@ -91,6 +91,30 @@ describe('VirtualSurfaceSession', () => {
     )).toBe(true)
   })
 
+  it('sendet ADD-DEVICE mit BITMAP_FORMAT=webp wenn CAPS webp annonciert (Companion 5.0)', () => {
+    session.start()
+    const ws = getMockWs()
+    ws.emit('open')
+    ws.emit('message', 'BEGIN CompanionVersion="5.0.0" ApiVersion="1.12.0"\n')
+    ws.emit('message', 'CAPS SUBSCRIPTIONS=1 NONSQUARE=1 BITMAP_FORMATS="rgb,png,webp"\n')
+    const addDevice = ws.sent.find((s: string) => s.startsWith('ADD-DEVICE'))
+    expect(addDevice).toBeDefined()
+    // Legacy-Params bleiben, BITMAP_FORMAT kommt zusätzlich dazu
+    expect(addDevice).toContain('BITMAPS=72 COLORS=hex TEXT=true TEXT_STYLE=true')
+    expect(addDevice).toContain('BITMAP_FORMAT=webp')
+  })
+
+  it('sendet KEIN BITMAP_FORMAT bei CAPS ohne BITMAP_FORMATS (Companion 4.3)', () => {
+    session.start()
+    const ws = getMockWs()
+    ws.emit('open')
+    ws.emit('message', 'BEGIN CompanionVersion="4.3.0" ApiVersion="1.10.0"\n')
+    ws.emit('message', 'CAPS SUBSCRIPTIONS=1\n')
+    const addDevice = ws.sent.find((s: string) => s.startsWith('ADD-DEVICE'))
+    expect(addDevice).toBeDefined()
+    expect(addDevice).not.toContain('BITMAP_FORMAT')
+  })
+
   it('setzt Status auf stale nach Disconnect', () => {
     const statusHandler = vi.fn()
     session.on('status', statusHandler)
