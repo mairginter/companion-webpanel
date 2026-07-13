@@ -68,6 +68,10 @@ Bei Socket-Close werden alle Subscriptions automatisch entfernt.
 // Backend → Frontend (Host-Info nach BEGIN-Handshake)
 { t: "hostInfo", hostId: string, companionVersion: string, apiVersion: string }
 
+// Backend → Frontend (mDNS-Discovery-Stand — komplette Liste, kein Delta;
+// nur aktiv solange /api/discovery/start lief)
+{ t: "discovery", hosts: Array<{ id: string, name: string, address: string, port: number, apiVersion?: string }> }
+
 // Frontend → Backend (Button-Press / Release)
 { t: "press", hostId: string, page: number, row: number, col: number, pressed: boolean }
 
@@ -77,6 +81,18 @@ Bei Socket-Close werden alle Subscriptions automatisch entfernt.
 
 Backend-Port: 8080 (konfigurierbar via `server.port` in Settings oder `CLIENT_WS_PORT` env)  
 Settings-Pfad: `../../CompanionWebpannelSettings.json` oder `SETTINGS_PATH` env
+
+### HTTP-Endpoints des Backends (:8080)
+
+| Methode + Pfad | Zweck |
+|---|---|
+| `GET /api/settings` | Aktuelle Settings als JSON (kompakt, kein pretty-print) |
+| `POST /api/settings` | Settings speichern (atomisch tmp→rename); prüft Schema-Version, max. 1 MB Body |
+| `POST /api/preview-page` | Temporäre Picker-Subscriptions starten — Body `{ hostId, page, keysPerRow, rows }` |
+| `DELETE /api/preview-page?hostId&page` | Picker-Subscriptions beenden |
+| `POST /api/discovery/start` / `.../stop` | mDNS-Browse an/aus (Browse-on-demand, HostManagerModal-Lifecycle; Watchdog stoppt nach 5 min automatisch). Ergebnisse kommen als `discovery`-WS-Broadcast |
+| `GET /api/page-names?hostId=<id>` | Alle Companion-Seitennamen (1…maxPages) als Batch → `{ names: { "<page>": "<name>" } }`; parallel (Limit 20) via Companion-HTTP-API `:httpPort`, TTL-Cache 30 s; nicht ermittelbare Seiten fehlen in der Map |
+| `GET /api/page-name?hostId=<id>&page=<n>` | Einzelner Seitenname → `{ name }` (`''` bei 403/404/Timeout — graceful) |
 
 ---
 

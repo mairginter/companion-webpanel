@@ -22,7 +22,7 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | [docs/design-system.md](docs/design-system.md) | Farben, Typografie, Keyboard Shortcuts, Button-States, Edit/View-Mode-Tabelle |
 | [docs/phase-history.md](docs/phase-history.md) | Abgeschlossene Phasen 1–7 mit Commit-Referenzen |
 | [docs/satellite-api-protocol.md](docs/satellite-api-protocol.md) | Vollständige Satellite API Protokoll-Referenz (v1.12 / Companion 5.0+) |
-| [docs/Webpanel-Architektur.md](docs/Webpanel-Architektur.md) | Architektur-Doku (aktuell, v1.1) |
+| [docs/Webpanel-Architektur.md](docs/Webpanel-Architektur.md) | Architektur-Doku (aktuell, v2.0 — Stand v1.4.1 / Companion 5.0) |
 | [docs/bitfocus-companion-module-sources.md](docs/bitfocus-companion-module-sources.md) | API-Quellen / Docs-Links |
 
 ---
@@ -47,17 +47,20 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 
 ```
 [Companion] ←→ WS:16623 ←→ [Node Backend] ←→ WS:8080 ←→ [React PWA / Browser]
-                              SatelliteClient (1 pro Host)
-                              └── ADD-SUB pro referenziertem Button
-                              └── SUB-STATE → StateStore
-                              └── SUB-PRESS / SUB-ROTATE ← Events vom Browser
-                              StateStore (In-Memory, Key: hostId:page:row:col)
-                              ClientServer (HTTP + WS auf :8080)
+     │                        SatelliteClient (1 pro Host)
+     │                        └── ADD-SUB pro referenziertem Button (+BITMAP_FORMAT/STYLE ab 5.0)
+     │                        └── SUB-STATE → StateStore
+     │                        └── SUB-PRESS / SUB-ROTATE ← Events vom Browser
+     │                        StateStore (In-Memory, Key: hostId:page:row:col)
+     │                        ClientServer (HTTP + WS auf :8080)
+     ├─ HTTP:8000 ──────────→ pageNames.ts (Seitennamen-Proxy, Batch + TTL-Cache)
+     └─ mDNS-Announce ─────→ DiscoveryService (Browse-on-demand, HostManagerModal)
 ```
 
-- Subscriptions **dynamisch**: neuer Button → sofort `ADD-SUB`, gelöscht → `REMOVE-SUB`
+- Subscriptions **dynamisch**: neuer Button → sofort `ADD-SUB`, gelöscht → `REMOVE-SUB`, Dimensionen geändert → Re-Subscribe
 - Backend ist **State-Broker**: cached alle SUB-STATEs, sendet nur Deltas
 - Frontend ist **stateless**: rendert nur was sich ändert
+- **Companion-5.0-Features** (WebP, Non-square, Discovery) per CAPS-Feature-Detection — auf 4.3 exakt altes Verhalten
 
 ---
 
@@ -100,10 +103,14 @@ CompanionWebpannel/
 └── packages/
     ├── shared/src/types.ts                       ← Alle TypeScript-Typen
     ├── backend/src/
-    │   ├── satellite/SatelliteClient.ts          ← 1 pro Host, Button Subscriptions API, PING/PONG
+    │   ├── satellite/SatelliteClient.ts          ← 1 pro Host, Button Subscriptions API, PING/PONG, BITMAP_FORMAT/STYLE (5.0)
+    │   ├── satellite/bitmapDims.ts               ← deriveBitmapDims(): Aspect-Quantisierung für Non-square
+    │   ├── satellite/VirtualSurfaceSession.ts    ← ADD-DEVICE-Pfad fürs Virtual Companion Deck
+    │   ├── discovery/DiscoveryService.ts         ← mDNS-Browse (Companion 5.0), Browse-on-demand + Watchdog
     │   ├── state/StateStore.ts                   ← In-Memory State + Delta-Logik
-    │   ├── server/ClientServer.ts                ← HTTP (/api/settings, /api/preview-page) + WS-Server
-    │   ├── HostManager.ts                        ← Orchestrierung: 1 Client pro Host, Subscription-Diff
+    │   ├── server/ClientServer.ts                ← HTTP (/api/settings, /api/preview-page, /api/discovery/*, /api/page-name(s)) + WS-Server
+    │   ├── server/pageNames.ts                   ← PageNameResolver: Companion-HTTP-API-Proxy, Batch + TTL-Cache
+    │   ├── HostManager.ts                        ← Orchestrierung: 1 Client pro Host, Subscription-Diff (realSubDims "WxH")
     │   ├── index.ts                              ← createBackend() Factory für Electron
     │   └── standalone.ts                         ← Standalone Entry Point (npm start/dev)
     ├── frontend/src/

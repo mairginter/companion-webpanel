@@ -129,3 +129,16 @@ Implementierungsplan: `docs/superpowers/plans/2026-04-10-zoom-and-host-grid.md`
 ## CompanionButton-Picker — Grid-Größe aus Host-Konfiguration ✅ (Session 2026-04-10)
 - ✅ `HostProfile` um `gridCols?: number` und `gridRows?: number` erweitert
 - ✅ `CompanionButtonPickerDialog` + `ChannelStripWizard` lesen Host-Default beim Öffnen (Resync bei Host-Wechsel)
+
+> Zwischenstände v1.1–v1.3.5 (VirtualDeck, Layer-System, Physical Style, Multi-Button-Editing, Releases usw.): siehe CLAUDE.md → „Nächste Session — Offene Aufgaben" (✅-Einträge mit Commit-Referenzen).
+
+## Phase 8 — Companion 5.0 Adoption ✅ FERTIG (Session 2026-07-13, v1.4.0/v1.4.1)
+Plan + Live-Test-Ergebnisse: `memory/plan-2026-07-13-companion-5-adoption.md` (11/11 Protokoll-Tests PASS gegen Companion 5.0.0 / API 1.12.0)
+
+- ✅ **A — WebP/PNG-Bitmaps** (`931c726`): CAPS `BITMAP_FORMATS`-Negotiation in SatelliteClient + VirtualSurfaceSession, `BITMAP_FORMAT` auf ADD-SUB/ADD-DEVICE, Frontend Data-URL-Passthrough — ~17× kleinere Button-Updates
+- ✅ **D — Doku-Refresh** (`fa7ac59`): satellite-api-protocol.md auf 1.12, ws-protocol, CLAUDE.md-Korrekturen
+- ✅ **B — mDNS-Auto-Discovery** (`ec1f5b7`): `DiscoveryService` (@julusian/bonjour-service), Browse-on-demand via HostManagerModal, „Gefundene Companion-Instanzen"-Sektion mit Übernehmen-Button
+- ✅ **C — Non-square Bitmaps** (`bc08f07`): `deriveBitmapDims()` (Aspect-Quantisierung), HostManager `realSubDims` ("WxH"), SatelliteClient STYLE-Branch mit 4.3-Legacy-Fallback
+- ✅ **E — Seitennamen im Picker** (`f428e4c`): Schema-Bump 1.8.0 (`httpPort` + Migration), `PageNameResolver` + `GET /api/page-name(s)`, Picker-Merge (lokal > Companion > Nummer)
+- ✅ **Seitennamen-Batch** (`b873cda`): `resolveMany()` Worker-Pool → alle Namen beim Picker-Öffnen (99 Namen ~145 ms)
+- Releases: `v1.4.0` (`e721348`) + `v1.4.1` (`ecb3d43`), Tags lokal; Backend 51 / Electron 20 / Frontend 128 Tests grün

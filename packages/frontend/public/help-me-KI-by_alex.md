@@ -13,7 +13,7 @@ Das Panel kommuniziert mit Bitfocus Companion über die Satellite API (WebSocket
 
 Mindestanforderung: Bitfocus Companion 4.3.0 oder neuer, mit aktivierter Option "satellite_subscriptions_enabled" in den Companion-Einstellungen.
 
-Ab Companion 5.0 nutzt das Panel automatisch komprimierte WebP-Bitmaps (Satellite API 1.12) — Button-Grafiken sind dadurch ~17× kleiner als das Raw-RGB-Format älterer Companion-Versionen. Das passiert transparent per Feature-Detection; es ist keine Konfiguration nötig, und mit Companion 4.3 bleibt alles wie bisher.
+Ab Companion 5.0 nutzt das Panel automatisch komprimierte WebP-Bitmaps (Satellite API 1.12) — Button-Grafiken sind dadurch ~17× kleiner als das Raw-RGB-Format älterer Companion-Versionen. Zusätzlich werden nicht-quadratische Buttons (z.B. 2:1-Breitformat) mit passendem Seitenverhältnis direkt von Companion gerendert, statt mit schwarzen Balken aufgefüllt zu werden — Voraussetzung: „Bitmap anzeigen" + „Bitmap skalieren" am Element aktiv. Beides passiert transparent per Feature-Detection; es ist keine Konfiguration nötig, und mit Companion 4.3 bleibt alles wie bisher.
 
 Settings-Schema-Version: **1.8.0**
 
@@ -33,11 +33,16 @@ Felder pro Host:
 - Name: Anzeigename im Panel (frei wählbar)
 - Host/IP: IP-Adresse oder Hostname des Companion-Rechners
 - Port: WebSocket-Port der Satellite API (Standard: 16623)
+- HTTP-Port (httpPort): Companion Admin-/HTTP-API-Port (Standard: 8000) — wird für die automatischen Seitennamen im Button-Picker genutzt; braucht aktivierte HTTP-API in Companion und Firewall-Freigabe am Companion-Host
 - Automatisch verbinden (autoConnect): wenn deaktiviert, wird dieser Host beim Start nicht verbunden
 - In Toolbar anzeigen (showInToolbar): wenn deaktiviert, erscheint der Status-Punkt dieses Hosts nicht in der Toolbar
 - Notizen: freies Textfeld
 - Button-Grid: Spalten und Zeilen für den Button-Picker (Standard: 8×4)
 - Max. Pages: maximale Seiten-Anzahl im Picker-Dropdown
+
+**Auto-Discovery (ab Companion 5.0):** Solange der Host-Manager geöffnet ist, sucht das Panel per mDNS nach Companion-Instanzen im selben Subnetz. Gefundene Instanzen erscheinen unter „Gefundene Companion-Instanzen" mit API-Versions-Badge und können per „Übernehmen" direkt als Host angelegt werden (Name/IP/Port vorbefüllt). mDNS kreuzt keine Subnetze/VPN — manuelles Anlegen funktioniert immer.
+
+**Seitennamen im Button-Picker:** Das Page-Dropdown zeigt automatisch die in Companion vergebenen Seitennamen („3 — Kameras"). Die Namen kommen über die Companion-HTTP-API (siehe HTTP-Port) und werden beim Öffnen des Pickers als Batch geladen (30 s Cache). Lokal im Host konfigurierte Page-Namen haben Vorrang. Ist die HTTP-API nicht erreichbar, zeigt das Dropdown einfach nur Nummern.
 
 Der Verbindungsstatus wird in der Toolbar als farbiger Punkt pro Host angezeigt:
 - Blau/Orange (animiert): verbindet

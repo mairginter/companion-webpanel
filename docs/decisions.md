@@ -16,7 +16,7 @@ Diese Entscheidungen sind **final** — nicht mehr diskutieren. Kurze Begründun
 | Surface-Zuordnung | **Entfällt** — Button Subscriptions API (seit Companion 4.3 / API 1.10.0) | Kein ADD-DEVICE, kein Surface in Companion UI sichtbar |
 | KEY-PRESS Timing | Echte Haltezeit (onPointerDown/Up/Leave/Cancel) | Long-Press-Aktionen in Companion funktionieren |
 | Max. Connections | 1 SatelliteClient pro Host (statt 1 Session pro Page) | Alle Subscriptions über eine WS-Verbindung |
-| Schema-Version | 1.3.0 | +server.port (Phase 6 Task 1 ✅); wizard/surfaceConfig entfernt — kein pageAssignment mehr nötig |
+| Schema-Version | 1.8.0 (aktuell) | Historie: 1.3.0 +server.port · 1.4.0 VirtualDeck · 1.5.0 maxPages/pageNames · 1.6.0 language · 1.7.0 settingsPath · 1.8.0 httpPort |
 | Monorepo-Tool | npm workspaces | Kein extra Tool nötig, standard npm |
 | Frontend Build | Vite + vite-plugin-pwa | Schnell, modernes HMR, PWA out-of-the-box |
 | State-Management Frontend | Zustand | Minimal, kein Boilerplate, gut für WS-Deltas |
@@ -108,3 +108,14 @@ Diese Entscheidungen sind **final** — nicht mehr diskutieren. Kurze Begründun
 | Zoom Koordinaten-Fix | Drag/Resize/Pointer-Deltas durch `zoom` dividieren in `getCanvasPos`, `handleDragEnd`, `ResizeHandles`, `EditableElement` | @dnd-kit liefert screen-space Pixel — innerhalb `scale(zoom)` sonst falsch skaliert |
 | Zoom Ctrl+Scroll | Nativer `wheel`-Event mit `{ passive: false }` auf `scrollWrapperRef`; `useAppStore.getState()` statt React-Closure | React onWheel ist passiv → `preventDefault()` schlägt fehl; Closure hätte veralteten zoom-Wert |
 | HostProfile Grid | `gridCols?: number`, `gridRows?: number` in `HostProfile` | Picker + ChannelStrip-Wizard lesen Host-Default; kein Schema-Bump — Fallback 8/4 beim Consumer |
+| Bitmap-Format-Negotiation (5.0) | Feature-Detection via CAPS `BITMAP_FORMATS` (webp > png > rgb), NIE via ApiVersion; Reset bei jedem `connect()` | Nicht annoncierte Formate fallen server-seitig stumm auf raw-RGB zurück; Reconnect kann auf älteren Companion treffen; Wire-Format für 4.3 bleibt byte-identisch |
+| WebP-Bitmap-Pfad | Backend Passthrough; Frontend erkennt `data:`-Prefix → direkt an `<img src>`, kein Canvas/Cache | Data-URLs sind selbstbeschreibend; ~17× kleiner als raw-RGB (72px: 1227 statt 20736 Zeichen) |
+| mDNS-Discovery Lifecycle | Browse-on-demand: nur solange HostManagerModal offen (`POST /api/discovery/start\|stop`), Watchdog-Auto-Stop 5 min | Kein Dauer-Multicast; Windows-Firewall-Prompt (UDP 5353) erst bei aktiver Nutzung |
+| mDNS-Dependency | `@julusian/bonjour-service` (Companions eigene Lib, pure JS) | Bündelt durch esbuild fürs Electron-Package; DiscoveredHost: fqdn-Dedupe, erste nicht-link-locale IPv4, TXT `protocolVersion` |
+| Non-square Bitmaps (5.0) | Automatisch aus Element-Geometrie abgeleitet, NICHT persistiert; Aspect quantisiert auf Stufen {1:2, 9:16, 3:4, 1:1, 4:3, 16:9, 2:1}, `bitmapSize` = lange Seite | Kein Schema-Bump; Quantisierung verhindert Re-Subscribe-Churn beim Resize; Gate: NONSQUARE-CAP + Data-URL-Format + showBitmap + scaleBitmap≠false |
+| Non-square Wire-Format | `STYLE=<base64 JSON>` ersetzt BITMAP/COLORS/TEXT/TEXT_STYLE; `BITMAP_FORMAT` bleibt separater Param; Fallback Legacy `BITMAP=max(w,h)` | raw-RGB hat keinen Header — non-square nur mit selbstbeschreibenden Data-URLs eindeutig dekodierbar |
+| Multi-Element gleicher Button | Superset-Box `w=max(w), h=max(h)` (HostManager `realSubDims` als "WxH"-Strings) | Degeneriert zum alten MAX-Verhalten bei lauter Quadraten |
+| Seitennamen-Quelle | Companion-HTTP-API `GET :httpPort/api/variable/internal/page_number_<N>_name/value` via Backend-Proxy | Satellite API hat keine PAGE-NAME-Message (auch 1.12 nicht); Proxy vermeidet CORS, Frontend bleibt stateless; interne Variablen sind read-only — Namen ändern nur in Companion-UI |
+| Seitennamen-Batch | `resolveMany()` Worker-Pool Concurrency 20, TTL-Cache 30 s (auch leere Ergebnisse), Timeout 1,5 s/Seite | Live gemessen: 99 Namen in ~145 ms; leere Ergebnisse cachen verhindert Timeout-Hämmern gegen tote Hosts |
+| Seitennamen-Priorität im Picker | Lokale `pageNames` (HostProfile) > Companion-Name (HTTP-API) > nur Nummer | User-Overrides gewinnen; graceful degradation ohne HTTP-API |
+| httpPort Feld | `HostProfile.httpPort?: number` (Default 8000) — Schema-Bump 1.8.0 | Companion Admin-Port; braucht eigene Firewall-Freigabe am Companion-Host |
