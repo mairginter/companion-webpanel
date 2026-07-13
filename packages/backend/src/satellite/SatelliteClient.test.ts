@@ -118,4 +118,36 @@ describe('SatelliteClient', () => {
     boot('CAPS SUBSCRIPTIONS=0')
     expect(client.getStatus()).toBe('caps-disabled')
   })
+
+  it('sendet STYLE-basiertes ADD-SUB für non-square wenn NONSQUARE + Format annonciert', () => {
+    client.subscribe('cwp/1/0/0', 1, 0, 0, 144, 72)
+    const ws = boot('CAPS SUBSCRIPTIONS=1 NONSQUARE=1 BITMAP_FORMATS="rgb,png,webp"')
+    const addSub = ws.sent.find((s: string) => s.startsWith('ADD-SUB'))
+    const m = addSub?.match(/ STYLE=(\S+)/)
+    expect(m).toBeTruthy()
+    const style = JSON.parse(Buffer.from(m![1], 'base64').toString('utf8'))
+    expect(style).toEqual({ bitmap: { w: 144, h: 72 }, text: true, textStyle: true, colors: 'hex' })
+    // BITMAP_FORMAT bleibt separater Param; Simple-Style-Params entfallen bei STYLE
+    expect(addSub).toContain('BITMAP_FORMAT=webp')
+    expect(addSub).not.toContain(' BITMAP=')
+    expect(addSub).not.toContain('COLORS=')
+    expect(addSub).not.toContain(' TEXT=')
+  })
+
+  it('fällt ohne NONSQUARE-CAP auf quadratisches Legacy-Format zurück (BITMAP=lange Seite)', () => {
+    client.subscribe('cwp/1/0/0', 1, 0, 0, 200, 100)
+    const ws = boot('CAPS SUBSCRIPTIONS=1 BITMAP_FORMATS="rgb,png,webp"')
+    const addSub = ws.sent.find((s: string) => s.startsWith('ADD-SUB'))
+    expect(addSub).toContain('BITMAP=200 COLORS=hex TEXT=true TEXT_STYLE=true')
+    expect(addSub).not.toMatch(/ STYLE=/) // Achtung: 'TEXT_STYLE=' enthält 'STYLE=' — Anker nötig
+    expect(addSub).toContain('BITMAP_FORMAT=webp')
+  })
+
+  it('nutzt Legacy-Format für quadratische Subs auch mit NONSQUARE-CAP', () => {
+    client.subscribe('cwp/1/0/0', 1, 0, 0, 72, 72)
+    const ws = boot('CAPS SUBSCRIPTIONS=1 NONSQUARE=1 BITMAP_FORMATS="rgb,png,webp"')
+    const addSub = ws.sent.find((s: string) => s.startsWith('ADD-SUB'))
+    expect(addSub).toContain('BITMAP=72 COLORS=hex TEXT=true TEXT_STYLE=true')
+    expect(addSub).not.toMatch(/ STYLE=/)
+  })
 })

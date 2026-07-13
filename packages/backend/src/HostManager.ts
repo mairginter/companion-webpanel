@@ -18,6 +18,7 @@
 import { WebSocket } from 'ws'
 import { Settings, AnyElement, VDeltaBatchMessage, VSessionStatusMessage, VSnapshotMessage } from '@cwp/shared'
 import { SatelliteClient, ClientStatus } from './satellite/SatelliteClient'
+import { deriveBitmapDims } from './satellite/bitmapDims'
 import { StateStore } from './state/StateStore'
 import { ClientServer } from './server/ClientServer'
 import { VirtualSurfaceManager } from './VirtualSurfaceManager'
@@ -33,8 +34,9 @@ export class HostManager {
   private onStatusChange?: (hostId: string, status: ClientStatus) => void
   private virtualSurfaceManager: VirtualSurfaceManager
 
-  // Echte Subscriptions (von Panel-Elementen): hostId → Map<"page/row/col" → bitmapSize>
-  private realSubSizes = new Map<string, Map<string, number>>()
+  // Echte Subscriptions (von Panel-Elementen): hostId → Map<"page/row/col" → "WxH">
+  // Dimensionen als String — Re-Subscribe bei jeder Änderung per String-Vergleich
+  private realSubDims = new Map<string, Map<string, string>>()
 
   // Picker-Subscriptions (temporär für den Picker-Dialog): hostId → Set<"page/row/col">
   private pickerSubKeys = new Map<string, Set<string>>()
@@ -81,7 +83,7 @@ export class HostManager {
    * Neue Hosts/Buttons werden subscribed, entfernte werden unsubscribed.
    */
   syncSubscriptions(settings: Settings): void {
-    // Desired: hostId → Map<"page/row/col", bitmapSize> aus allen companionButton-Elementen
+    // Desired: hostId → Map<"page/row/col", "WxH"> aus allen companionButton-Elementen
     const desired = this.buildDesiredSubs(settings)
 
     // Hosts mit autoConnect=false: laufenden Client stoppen falls vorhanden
@@ -90,7 +92,7 @@ export class HostManager {
         const client = this.clients.get(host.id)!
         client.stop().catch(() => {})
         this.clients.delete(host.id)
-        this.realSubSizes.delete(host.id)
+        this.realSubDims.delete(host.id)
         this.clientServer.broadcast({ t: 'sessionStatus', hostId: host.id, status: 'stale' })
       }
     }
@@ -108,33 +110,35 @@ export class HostManager {
       }
 
       const client = this.clients.get(hostId)!
-      const currentSizes = this.realSubSizes.get(hostId) ?? new Map<string, number>()
-      const desiredSizes = desired.get(hostId) ?? new Map<string, number>()
+      const currentDims = this.realSubDims.get(hostId) ?? new Map<string, string>()
+      const desiredDims = desired.get(hostId) ?? new Map<string, string>()
 
-      // Neue und geänderte Subscriptions hinzufügen (Größenänderung → Re-Subscribe)
-      for (const [prc, bitmapSize] of desiredSizes) {
-        const currentSize = currentSizes.get(prc)
-        if (currentSize === undefined) {
+      // Neue und geänderte Subscriptions hinzufügen (Dimensionsänderung → Re-Subscribe)
+      for (const [prc, dims] of desiredDims) {
+        const currentDim = currentDims.get(prc)
+        if (currentDim === undefined) {
           // Neu: direkt subscriben
           const [p, r, c] = prc.split('/').map(Number)
-          client.subscribe(`cwp/${prc}`, p, r, c, bitmapSize)
-        } else if (currentSize !== bitmapSize) {
-          // Gleicher Button, andere Größe → REMOVE-SUB + ADD-SUB
+          const [w, h] = dims.split('x').map(Number)
+          client.subscribe(`cwp/${prc}`, p, r, c, w, h)
+        } else if (currentDim !== dims) {
+          // Gleicher Button, andere Dimensionen → REMOVE-SUB + ADD-SUB
           client.unsubscribe(`cwp/${prc}`)
           const [p, r, c] = prc.split('/').map(Number)
-          client.subscribe(`cwp/${prc}`, p, r, c, bitmapSize)
+          const [w, h] = dims.split('x').map(Number)
+          client.subscribe(`cwp/${prc}`, p, r, c, w, h)
         }
-        // gleiche Größe: nichts tun
+        // gleiche Dimensionen: nichts tun
       }
 
       // Entfernte Subscriptions abmelden
-      for (const prc of currentSizes.keys()) {
-        if (!desiredSizes.has(prc)) {
+      for (const prc of currentDims.keys()) {
+        if (!desiredDims.has(prc)) {
           client.unsubscribe(`cwp/${prc}`)
         }
       }
 
-      this.realSubSizes.set(hostId, desiredSizes)
+      this.realSubDims.set(hostId, desiredDims)
     }
 
     this.virtualSurfaceManager.sync(settings)
@@ -222,7 +226,7 @@ export class HostManager {
     await Promise.all([...this.clients.values()].map((c) => c.stop()))
     await this.virtualSurfaceManager.stop()
     this.clients.clear()
-    this.realSubSizes.clear()
+    this.realSubDims.clear()
     this.pickerSubKeys.clear()
   }
 
@@ -252,26 +256,32 @@ export class HostManager {
 
   /**
    * Liest alle companionButton-Refs aus allen Panels und gruppiert sie nach hostId.
-   * Ergebnis: hostId → Map<"page/row/col", bitmapSize>
-   * Bei mehreren Elementen auf gleichem Button: MAX-Auflösung gewinnt.
+   * Ergebnis: hostId → Map<"page/row/col", "WxH">
+   * Bei mehreren Elementen auf gleichem Button: Superset-Box w=max(w), h=max(h)
+   * (degeneriert zum bisherigen MAX-Verhalten wenn alle quadratisch sind).
    */
-  private buildDesiredSubs(settings: Settings): Map<string, Map<string, number>> {
-    const desired = new Map<string, Map<string, number>>()
+  private buildDesiredSubs(settings: Settings): Map<string, Map<string, string>> {
+    // Zwischenstand numerisch mergen, erst am Ende als "WxH"-String serialisieren
+    const merged = new Map<string, Map<string, { w: number; h: number }>>()
 
-    const addRef = (ref: import('@cwp/shared').CompanionRef | undefined, bitmapSize = 72) => {
+    const addRef = (ref: import('@cwp/shared').CompanionRef | undefined, w = 72, h = w) => {
       if (!ref) return
       const { hostId, page, row, col } = ref
-      if (!desired.has(hostId)) desired.set(hostId, new Map())
+      if (!merged.has(hostId)) merged.set(hostId, new Map())
       const key = `${page}/${row}/${col}`
-      const existing = desired.get(hostId)!.get(key) ?? 0
-      // MAX: wenn mehrere Elemente denselben Button referenzieren, höchste Auflösung nehmen
-      desired.get(hostId)!.set(key, Math.max(existing, bitmapSize))
+      const existing = merged.get(hostId)!.get(key) ?? { w: 0, h: 0 }
+      merged.get(hostId)!.set(key, { w: Math.max(existing.w, w), h: Math.max(existing.h, h) })
     }
 
     for (const panel of settings.panels) {
       for (const el of panel.elements) {
         if (el.type === 'companionButton') {
-          addRef(el.ref, el.render?.bitmapSize ?? 72)
+          const base = el.render?.bitmapSize ?? 72
+          // Non-square nur wenn das Bitmap sichtbar und auf den Container skaliert wird —
+          // sonst bringt die Element-Geometrie keine Information (Quadrat wie bisher)
+          const useGeometry = el.render?.showBitmap === true && el.render?.scaleBitmap !== false
+          const dims = useGeometry ? deriveBitmapDims(el.w, el.h, base) : { w: base, h: base }
+          addRef(el.ref, dims.w, dims.h)
         } else if (el.type === 'channelStrip') {
           addRef(el.refs.button.ref, 72)
           addRef(el.refs.solo, 72)
@@ -280,6 +290,12 @@ export class HostManager {
       }
     }
 
+    const desired = new Map<string, Map<string, string>>()
+    for (const [hostId, keys] of merged) {
+      const m = new Map<string, string>()
+      for (const [key, { w, h }] of keys) m.set(key, `${w}x${h}`)
+      desired.set(hostId, m)
+    }
     return desired
   }
 
@@ -290,7 +306,7 @@ export class HostManager {
       // Bekannte Pages aus realSubKeys + pickerSubKeys sammeln
       const pages = new Set<number>()
       const allKeys = [
-        ...(this.realSubSizes.get(hostId)?.keys() ?? []),
+        ...(this.realSubDims.get(hostId)?.keys() ?? []),
         ...(this.pickerSubKeys.get(hostId) ?? []),
       ]
       for (const prc of allKeys) {

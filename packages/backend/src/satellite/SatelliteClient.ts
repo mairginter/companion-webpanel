@@ -40,7 +40,11 @@ interface SubInfo {
   page: number
   row: number
   col: number
-  bitmapSize: number
+  // Gewünschte Bitmap-Dimensionen. Quadratisch (w===h) → Legacy BITMAP=N;
+  // non-square wird nur genutzt wenn der Server NONSQUARE + BITMAP_FORMATS kann,
+  // sonst fällt sendAddSub() auf BITMAP=max(w,h) zurück (4.3-kompatibel).
+  bitmapW: number
+  bitmapH: number
 }
 
 // Bitmap-Wire-Formate: raw-RGB (immer verfügbar) oder komprimierte Data-URLs
@@ -125,11 +129,12 @@ export class SatelliteClient extends EventEmitter {
   /**
    * Abonniert einen Button. Wenn bereits verbunden, wird ADD-SUB sofort gesendet.
    * Bei Reconnect werden alle aktiven Subscriptions automatisch re-subscribed.
+   * bitmapH weglassen → quadratisch (heutiges Verhalten).
    */
-  subscribe(subId: string, page: number, row: number, col: number, bitmapSize = 72): void {
-    this.activeSubs.set(subId, { page, row, col, bitmapSize })
+  subscribe(subId: string, page: number, row: number, col: number, bitmapW = 72, bitmapH = bitmapW): void {
+    this.activeSubs.set(subId, { page, row, col, bitmapW, bitmapH })
     if (this.status === 'connected') {
-      this.sendAddSub(subId, page, row, col, bitmapSize)
+      this.sendAddSub(subId, page, row, col, bitmapW, bitmapH)
     }
   }
 
@@ -297,8 +302,8 @@ export class SatelliteClient extends EventEmitter {
 
     // Verbunden! Alle aktiven Subscriptions re-subscriben (auch nach Reconnect)
     this.setStatus('connected')
-    for (const [subId, { page, row, col, bitmapSize }] of this.activeSubs) {
-      this.sendAddSub(subId, page, row, col, bitmapSize)
+    for (const [subId, { page, row, col, bitmapW, bitmapH }] of this.activeSubs) {
+      this.sendAddSub(subId, page, row, col, bitmapW, bitmapH)
     }
     this.startKeepalive()
   }
@@ -361,14 +366,32 @@ export class SatelliteClient extends EventEmitter {
 
   // ─── Send Helpers ──────────────────────────────────────────────────────────
 
-  private sendAddSub(subId: string, page: number, row: number, col: number, bitmapSize: number): void {
-    // LOCATION-Format: "<page>/<row>/<col>"
+  private sendAddSub(subId: string, page: number, row: number, col: number, bitmapW: number, bitmapH: number): void {
     // BITMAP_FORMAT nur anhängen wenn per CAPS negotiiert — das Wire-Format
     // für Companion 4.3 bleibt dadurch byte-identisch zum bisherigen Verhalten.
     const formatParam = this.bitmapFormat !== 'rgb' ? ` BITMAP_FORMAT=${this.bitmapFormat}` : ''
+
+    // Non-square nur wenn der Server es kann UND ein Data-URL-Format negotiiert ist:
+    // raw-RGB hat keinen Header und KeyState trägt keine Dimensionen — nur
+    // selbstbeschreibende Data-URLs (webp/png) sind non-square eindeutig dekodierbar.
+    if (this.capsNonsquare && this.bitmapFormat !== 'rgb' && bitmapW !== bitmapH) {
+      // STYLE ersetzt die Simple-Params BITMAP/COLORS/TEXT/TEXT_STYLE (API 1.11+);
+      // BITMAP_FORMAT bleibt separater Param (API 1.12)
+      const style = Buffer.from(JSON.stringify({
+        bitmap: { w: bitmapW, h: bitmapH },
+        text: true,
+        textStyle: true,
+        colors: 'hex',
+      })).toString('base64')
+      this.sendLine(`ADD-SUB SUBID=${subId} LOCATION=${page}/${row}/${col} STYLE=${style}${formatParam}`)
+      return
+    }
+
+    // Legacy: quadratisch mit der langen Seite (identisch zu Companion-4.3-Verhalten)
+    const size = Math.max(bitmapW, bitmapH)
     this.sendLine(
       `ADD-SUB SUBID=${subId} LOCATION=${page}/${row}/${col} ` +
-      `BITMAP=${bitmapSize} COLORS=hex TEXT=true TEXT_STYLE=true${formatParam}`,
+      `BITMAP=${size} COLORS=hex TEXT=true TEXT_STYLE=true${formatParam}`,
     )
   }
 
