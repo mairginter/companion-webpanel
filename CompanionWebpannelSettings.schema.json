@@ -13,7 +13,7 @@
   "properties": {
     "version": {
       "type": "string",
-      "pattern": "^1\\.7\\.0$"
+      "pattern": "^1\\.8\\.0$"
     },
     "server": {
       "type": "object",
@@ -99,6 +99,13 @@
               "default": 16623
             }
           }
+        },
+        "httpPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8000,
+          "description": "Companion Admin-/HTTP-API-Port für den Seitennamen-Proxy (http_api_enabled nötig)"
         },
         "notes": {
           "type": "string"

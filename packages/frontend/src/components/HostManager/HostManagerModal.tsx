@@ -188,7 +188,7 @@ function HostForm({ value, onChange }: HostFormProps) {
           />
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '120px 120px 1fr', gap: 12 }}>
         <div>
           <label style={labelStyle}>{t('hostManager.wsPort')}</label>
           <input
@@ -198,6 +198,22 @@ function HostForm({ value, onChange }: HostFormProps) {
             max={65535}
             value={value.satellite.wsPort}
             onChange={(e) => set({ satellite: { wsPort: parseInt(e.target.value, 10) || 16623 } })}
+          />
+        </div>
+        <div>
+          <label style={labelStyle} title={t('hostManager.httpPortHint')}>{t('hostManager.httpPort')}</label>
+          <input
+            style={inputStyle}
+            type="number"
+            min={1}
+            max={65535}
+            placeholder="8000"
+            title={t('hostManager.httpPortHint')}
+            value={value.httpPort ?? ''}
+            onChange={(e) => {
+              const n = parseInt(e.target.value, 10)
+              set({ httpPort: Number.isFinite(n) && n >= 1 && n <= 65535 ? n : undefined })
+            }}
           />
         </div>
         <div>
@@ -339,7 +355,8 @@ function HostEditModal({ host, prefill, onSave, onCancel }: HostEditModalProps) 
   const { t } = useTranslation()
   const [formValue, setFormValue] = useState<Omit<HostProfile, 'id'>>(
     host
-      ? { name: host.name, host: host.host, satellite: host.satellite, notes: host.notes ?? '',
+      ? { name: host.name, host: host.host, satellite: host.satellite, httpPort: host.httpPort,
+          notes: host.notes ?? '',
           autoConnect: host.autoConnect, showInToolbar: host.showInToolbar,
           gridCols: host.gridCols, gridRows: host.gridRows, maxPages: host.maxPages, pageNames: host.pageNames }
       : { ...emptyHost(), ...prefill }

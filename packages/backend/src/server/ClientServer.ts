@@ -26,6 +26,7 @@ import {
   SnapshotMessage,
   VSnapshotMessage,
 } from '@cwp/shared'
+import { PageNameResolver } from './pageNames'
 
 export type PressHandler = (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
 export type RotateHandler = (hostId: string, page: number, row: number, col: number, direction: 1 | -1) => void
@@ -76,6 +77,8 @@ export class ClientServer {
   private settings: Settings
   private settingsPath: string
   private staticDir?: string
+  // Seitennamen aus der Companion-HTTP-API (TTL-Cache, graceful bei Fehlern)
+  private pageNames = new PageNameResolver()
 
   constructor(
     port: number,
@@ -140,7 +143,7 @@ export class ClientServer {
           try {
             const incoming = JSON.parse(body) as Settings
 
-            if (incoming.version !== '1.7.0') {
+            if (incoming.version !== '1.8.0') {
               res.writeHead(400, { 'Content-Type': 'application/json' })
               res.end(JSON.stringify({ error: `Ungültige Schema-Version: ${incoming.version}` }))
               return
@@ -196,6 +199,29 @@ export class ClientServer {
             res.end(JSON.stringify({ error: 'Ungültiger Request-Body' }))
           }
         })
+
+      } else if (req.method === 'GET' && req.url?.startsWith('/api/page-name')) {
+        // Seitenname via Companion-HTTP-API (Proxy, siehe pageNames.ts)
+        // Query: hostId + page → { name } ('' wenn nicht ermittelbar)
+        const url = new URL(req.url, 'http://localhost')
+        const hostId = url.searchParams.get('hostId')
+        const page = parseInt(url.searchParams.get('page') ?? '', 10)
+        const host = this.settings.hosts.find((h) => h.id === hostId)
+        if (!host || isNaN(page) || page < 1) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'hostId und page erforderlich' }))
+          return
+        }
+        this.pageNames.resolve(host.host, host.httpPort ?? 8000, page)
+          .then((name) => {
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ name }))
+          })
+          .catch(() => {
+            // resolve() fängt intern schon alles — doppelter Boden
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ name: '' }))
+          })
 
       } else if (req.method === 'POST' && (req.url === '/api/discovery/start' || req.url === '/api/discovery/stop')) {
         // mDNS-Discovery an/aus — Browse-on-demand solange das HostManagerModal offen ist.

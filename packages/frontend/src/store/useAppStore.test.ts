@@ -3,7 +3,7 @@ import { useAppStore } from './useAppStore'
 import type { Settings } from '@cwp/shared'
 
 const makeSettings = (): Settings => ({
-  version: '1.7.0',
+  version: '1.8.0',
   activeHostId: 'h1',
   hosts: [{ id: 'h1', name: 'H1', host: '127.0.0.1', satellite: { wsPort: 16623 } }],
   panels: [{
@@ -227,7 +227,7 @@ describe('Host CRUD', () => {
   it('removeHost mit deleteRefs=true löscht verknüpfte companionButton-Elemente', () => {
     // Panel mit einem companionButton der h1 referenziert anlegen
     const settingsWithBtn: import('@cwp/shared').Settings = {
-      version: '1.7.0',
+      version: '1.8.0',
       activeHostId: 'h1',
       hosts: [{ id: 'h1', name: 'H1', host: '127.0.0.1', satellite: { wsPort: 16623 } }],
       panels: [{
@@ -249,7 +249,7 @@ describe('Host CRUD', () => {
 
   it('removeHost mit deleteRefs=false lässt Elemente stehen', () => {
     const settingsWithBtn: import('@cwp/shared').Settings = {
-      version: '1.7.0',
+      version: '1.8.0',
       activeHostId: 'h1',
       hosts: [{ id: 'h1', name: 'H1', host: '127.0.0.1', satellite: { wsPort: 16623 } }],
       panels: [{

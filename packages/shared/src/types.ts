@@ -1,7 +1,7 @@
-// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.7.0) ───
+// ─── Settings Types (spiegeln CompanionWebpannelSettings.schema.json v1.8.0) ───
 
 export interface Settings {
-  version: '1.7.0'
+  version: '1.8.0'
   /** UI language code (e.g. 'de', 'en'). Applied to all clients without a per-device override. */
   language?: string
   /** Custom path to this settings file (~-normalized). Stored so cloud-synced copies can self-identify. */
@@ -18,6 +18,12 @@ export interface HostProfile {
   name: string
   host: string
   satellite: { wsPort: number }
+  /**
+   * Admin-/HTTP-API-Port von Companion (Default 8000). Wird für den
+   * Seitennamen-Proxy (/api/page-name) genutzt — braucht `http_api_enabled`
+   * in Companion (Default: an) und eigene Firewall-Freigabe am Companion-Host.
+   */
+  httpPort?: number
   notes?: string
   /** Automatisch beim Start verbinden. Default: true */
   autoConnect?: boolean

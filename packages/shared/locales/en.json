@@ -75,6 +75,8 @@
     "deleteLinkedButtons": "Also delete linked buttons ({{count}} element(s))",
     "capsDisabledTitle": "Button Subscriptions API not active.",
     "capsDisabledPath": "Enable under: Companion → Settings → Protocols → \"Button Subscriptions API\"",
+    "httpPort": "HTTP port",
+    "httpPortHint": "Companion admin/HTTP API port (default 8000) — used for page names in the button picker. Requires the HTTP API enabled in Companion and a firewall exception on the Companion host.",
     "discoveredTitle": "Discovered Companion instances",
     "discoveredEmpty": "No new instances found on the network.",
     "addDiscovered": "Add",

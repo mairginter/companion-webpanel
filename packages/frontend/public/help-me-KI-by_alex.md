@@ -15,7 +15,7 @@ Mindestanforderung: Bitfocus Companion 4.3.0 oder neuer, mit aktivierter Option 
 
 Ab Companion 5.0 nutzt das Panel automatisch komprimierte WebP-Bitmaps (Satellite API 1.12) — Button-Grafiken sind dadurch ~17× kleiner als das Raw-RGB-Format älterer Companion-Versionen. Das passiert transparent per Feature-Detection; es ist keine Konfiguration nötig, und mit Companion 4.3 bleibt alles wie bisher.
 
-Settings-Schema-Version: **1.7.0**
+Settings-Schema-Version: **1.8.0**
 
 Verfügbar als:
 - Web-App: läuft als Node.js-Prozess, erreichbar im Browser unter http://localhost:PORT

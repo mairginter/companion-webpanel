@@ -123,6 +123,22 @@ export function CompanionButtonPickerDialog({
   )
   const [loadingPreview, setLoadingPreview] = useState(false)
 
+  // Von Companion (HTTP-API via Backend-Proxy) geholte Seitennamen — pro Page,
+  // lazy beim Seitenwechsel. Lokale pageNames aus dem HostProfile haben Vorrang.
+  const [remotePageNames, setRemotePageNames] = useState<Record<number, string>>({})
+
+  useEffect(() => {
+    if (!hostId) return
+    let cancelled = false
+    fetch(`${BACKEND_BASE}/api/page-name?hostId=${encodeURIComponent(hostId)}&page=${pageNum}`)
+      .then((r) => r.json())
+      .then(({ name }) => {
+        if (!cancelled && name) setRemotePageNames((prev) => ({ ...prev, [pageNum]: name }))
+      })
+      .catch(() => { /* graceful: Dropdown zeigt dann nur die Nummer */ })
+    return () => { cancelled = true }
+  }, [hostId, pageNum])
+
   const changePage = (page: number) => {
     setPageNum(page)
     if (hostId) saveLastPage(hostId, page)
@@ -191,6 +207,7 @@ export function CompanionButtonPickerDialog({
 
   const handleHostChange = (id: string) => {
     setHostId(id)
+    setRemotePageNames({}) // Namen gehören zum alten Host
     setSelectedCells(new Set())
     lastClickedCell.current = null
     const host = settings?.hosts.find((h) => h.id === id)
@@ -283,11 +300,15 @@ export function CompanionButtonPickerDialog({
                       value={pageNum}
                       onChange={(e) => changePage(parseInt(e.target.value, 10))}
                     >
-                      {Array.from({ length: maxP }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>
-                          {pageNamesMap[n] ? `${n} — ${pageNamesMap[n]}` : String(n)}
-                        </option>
-                      ))}
+                      {Array.from({ length: maxP }, (_, i) => i + 1).map((n) => {
+                        // Lokaler Name (HostProfile) > Companion-Name (HTTP-API) > nur Nummer
+                        const name = pageNamesMap[n] ?? remotePageNames[n]
+                        return (
+                          <option key={n} value={n}>
+                            {name ? `${n} — ${name}` : String(n)}
+                          </option>
+                        )
+                      })}
                     </select>
                   )
                 })()}

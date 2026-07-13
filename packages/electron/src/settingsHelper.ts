@@ -20,7 +20,7 @@ export function getSettingsPath(userDataPath: string): string {
 /** Gibt leere Default-Settings zurück (keine Hosts, kein Panel). */
 export function getDefaultSettings(): Settings {
   return {
-    version: '1.7.0',
+    version: '1.8.0',
     server: { port: 8080 },
     activeHostId: '',
     hosts: [],
@@ -50,6 +50,9 @@ function migrateSettings(settings: Record<string, unknown>): boolean {
 
   // Migration: v1.6.0 → v1.7.0 (both new fields are optional, no defaults needed)
   if (settings.version === '1.6.0') { settings.version = '1.7.0'; migrated = true }
+
+  // Migration: v1.7.0 → v1.8.0 (httpPort auf HostProfile — optional, kein Default nötig)
+  if (settings.version === '1.7.0') { settings.version = '1.8.0'; migrated = true }
 
   return migrated
 }

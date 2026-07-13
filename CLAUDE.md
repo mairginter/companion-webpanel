@@ -36,7 +36,7 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | API | Companion Satellite API (WebSocket :16623) — kein TCP, kein Polling |
 | Surface-Modell | Button Subscriptions API (seit Companion 4.3 / API 1.10) — kein ADD-DEVICE |
 | Connections | 1 SatelliteClient pro Host, alle Subscriptions über eine WS-Verbindung |
-| Schema-Version | **1.7.0** — Settings-Version bump braucht immer 6 Dateien (siehe Dev-Gotchas) |
+| Schema-Version | **1.8.0** — Settings-Version bump braucht immer 6 Dateien (siehe Dev-Gotchas) |
 | Multi-Agent | **NEIN** — immer sequenziell, nie parallele Agenten auf gleichen Dateien |
 | Jede Codedatei | Kurz-Beschreibung + ausführliche Inline-Kommentare (festgelegt Session 3) |
 | Companion-Mindestversion | 4.3.0+ — `satellite_subscriptions_enabled = true` in Companion Settings |
@@ -138,7 +138,7 @@ CompanionWebpannel/
 - ✅ **WebP/PNG-Bitmaps (API 1.12)** — `BITMAP_FORMAT`-Negotiation via CAPS in SatelliteClient + VirtualSurfaceSession; Frontend Data-URL-Passthrough; ~17× kleinere Button-Updates; live-verifiziert gegen Companion 5.0 (Commit 931c726)
 - ✅ **mDNS-Auto-Discovery** — `DiscoveryService` (@julusian/bonjour-service), Browse-on-demand via HostManagerModal, `POST /api/discovery/start|stop`, „Gefundene Companion-Instanzen"-Sektion mit Übernehmen-Button; live-verifiziert (Commit ec1f5b7)
 - ✅ **Non-square Bitmaps (STYLE, API 1.11)** — `deriveBitmapDims()` quantisiert Element-Geometrie auf Aspect-Stufen; HostManager `realSubDims` ("WxH"), SatelliteClient STYLE-Branch mit Legacy-Fallback für 4.3; live-verifiziert (Commit bc08f07)
-- ⬜ **Phase E: Seitennamen im Picker via HTTP-API** — optional, vollständig gespeced im Plan (Machbarkeit live bestätigt: `GET :8000/api/variable/internal/page_number_<N>_name/value` → 200); braucht Schema-Bump 1.7.0→1.8.0 (`httpPort` auf HostProfile) + Backend-Proxy `/api/page-name`
+- ✅ **Phase E: Seitennamen im Picker via HTTP-API** — Schema-Bump 1.7.0→1.8.0 (`httpPort?` auf HostProfile + Migration); `PageNameResolver` (TTL-Cache 30 s, Timeout 1,5 s, graceful bei 403/404/Timeout) + `GET /api/page-name?hostId&page` in ClientServer; Picker holt Companion-Namen lazy beim Seitenwechsel (lokale `pageNames` haben Vorrang); httpPort-Feld im HostEditModal; live-verifiziert (Seite 1 = „PTZ Canon Control")
 
 ### Electron
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
@@ -178,7 +178,7 @@ CompanionWebpannel/
 - ✅ **Panel duplizieren in Panel-Liste** — ⧉-Icon (content_copy) in Panel-Dropdown-Zeile zwischen ✎ und ✕; `duplicatePanel(id)` klont Panel + alle Elemente mit neuen UUIDs, Name `"<Name> Copy"`, wechselt automatisch zum neuen Panel (Commit 2d8cdde, v1.3.1)
 
 ### CompanionButton-Picker
-- ⬜ Page-Name anzeigen — via Satellite API **nicht möglich** (auch API 1.12 hat keine PAGE-NAME-Message); umsetzbar über die allgemeine HTTP-API `GET :8000/api/variable/internal/page_number_<N>_name/value` (live-verifiziert gegen Companion 5.0) → Phase E in `memory/plan-2026-07-13-companion-5-adoption.md`
+- ✅ Page-Name anzeigen — via Satellite API nicht möglich (keine PAGE-NAME-Message); umgesetzt über die allgemeine HTTP-API + Backend-Proxy `/api/page-name` (siehe Companion-5.0-Adoption, Phase E); lokale `pageNames` im HostProfile haben weiterhin Vorrang
 
 ### ChannelStrip (nächste Iteration)
 - ✅ **Fader per Touch/Maus bedienbar** — vertikaler Pointer-Drag → SUB-ROTATE; `setPointerCapture` für konsistentes Tracking
@@ -243,7 +243,8 @@ Plan-Datei mit vollständigen Fix-Details: [docs/plans/2026-04-19-code-review-v1
 - **Settings-Version bump** → immer **6 Stellen** anfassen: `schema.json` + `types.ts` + `backend/standalone.ts` + `backend/server/ClientServer.ts` + `CompanionWebpannelSettings.json` + `electron/src/settingsHelper.ts` (getDefaultSettings + Migration)
 - **shared neu bauen nach Typänderungen** → `npm run build -w @cwp/shared` — sonst kompiliert Backend gegen alten Stand
 - **vitest/esbuild strippt TypeScript** → Type-Fehler nicht als Test-Failures sichtbar. TS-Check: `npx tsc --noEmit -p packages/frontend/tsconfig.json`
-- **Test-Fixture-Version** → `makeSettings()` in `useAppStore.test.ts` verwendet `version: '1.4.0'` — bei Version-Bump anpassen
+- **Test-Fixture-Version** → bei Schema-Bump auch anpassen: `makeSettings()` in `useAppStore.test.ts` (3 Stellen) + `packages/electron/tests/settingsHelper.test.ts` (Defaults- und Migrations-Erwartungen)
+- **PowerShell 5.1 + Umlaut-Dateien** → nie `Get-Content -Raw | -replace | Set-Content` auf UTF-8-Dateien ohne `-Encoding UTF8` beim LESEN — PS 5.1 liest sonst als Windows-1252 und erzeugt Mojibake + BOM (BOM bricht `JSON.parse` im Backend). Für Text-Ersetzungen Edit-Tool/Editor verwenden.
 - **vitest Backend-Build** → `packages/backend/tsconfig.json` braucht `skipLibCheck: true` — vitest-Typen sind inkompatibel mit `module: CommonJS`
 - **caps-disabled Status** → konsistent in 3 Stellen: `SessionStatusMessage['status']` (shared/types.ts) + `HostStatus.status` (electron/types.ts) + `tray.ts` switch-Statement
 - **Alte Electron-Instanz** → `Get-Process electron | Stop-Process -Force` (PowerShell) — sonst blockiert Single-Instance-Lock

@@ -1,9 +1,13 @@
+// packages/electron/tests/settingsHelper.test.ts
+//
+// Settings-Loader: Defaults, Pfade, Speichern, Migration (Schema v1.8.0).
+// Wichtig: loadSettingsFile erstellt NIE automatisch eine Datei (seit v1.3.3) —
+// fehlt sie, wirft readFileSync und der Aufrufer (main.ts) behandelt configMissing.
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import {
-  loadSettings,
   loadSettingsFile,
   saveSettings,
   saveSettingsFile,
@@ -22,9 +26,9 @@ afterEach(() => {
 })
 
 describe('getDefaultSettings', () => {
-  it('returns valid settings with version 1.7.0 and port 8080', () => {
+  it('returns valid settings with version 1.8.0 and port 8080', () => {
     const s = getDefaultSettings()
-    expect(s.version).toBe('1.7.0')
+    expect(s.version).toBe('1.8.0')
     expect(s.server?.port).toBe(8080)
     expect(s.hosts).toHaveLength(0)
     expect(s.panels).toHaveLength(0)
@@ -38,31 +42,9 @@ describe('getSettingsPath', () => {
   })
 })
 
-describe('loadSettings (dir-based)', () => {
-  it('creates companionwebpanel.json if no file exists', () => {
-    const s = loadSettings(tmpDir)
-    expect(s.version).toBe('1.7.0')
-    expect(fs.existsSync(path.join(tmpDir, 'companionwebpanel.json'))).toBe(true)
-  })
-
-  it('loads existing companionwebpanel.json', () => {
-    const settings = getDefaultSettings()
-    settings.server = { port: 9090 }
-    fs.writeFileSync(
-      path.join(tmpDir, 'companionwebpanel.json'),
-      JSON.stringify(settings),
-    )
-    const loaded = loadSettings(tmpDir)
-    expect(loaded.server?.port).toBe(9090)
-  })
-})
-
-describe('loadSettingsFile (path-based)', () => {
-  it('creates file at explicit path if not exists', () => {
-    const filePath = path.join(tmpDir, 'custom-name.json')
-    const s = loadSettingsFile(filePath)
-    expect(s.version).toBe('1.7.0')
-    expect(fs.existsSync(filePath)).toBe(true)
+describe('loadSettingsFile', () => {
+  it('wirft wenn die Datei fehlt — nie auto-create (v1.3.3-Verhalten)', () => {
+    expect(() => loadSettingsFile(path.join(tmpDir, 'missing.json'))).toThrow()
   })
 
   it('loads existing file at explicit path', () => {
@@ -72,6 +54,22 @@ describe('loadSettingsFile (path-based)', () => {
     fs.writeFileSync(filePath, JSON.stringify(settings))
     const loaded = loadSettingsFile(filePath)
     expect(loaded.server?.port).toBe(7777)
+  })
+
+  it('lässt aktuelle 1.8.0-Settings unverändert (kein Rewrite)', () => {
+    const filePath = path.join(tmpDir, 'settings.json')
+    fs.writeFileSync(filePath, JSON.stringify({
+      version: '1.8.0',
+      server: { port: 8080 },
+      activeHostId: 'h1',
+      hosts: [{ id: 'h1', name: 'Studio', host: '10.0.0.1', satellite: { wsPort: 16623 }, httpPort: 8000 }],
+      panels: [],
+    }))
+    const before = fs.statSync(filePath).mtimeMs
+    const loaded = loadSettingsFile(filePath)
+    expect(loaded.version).toBe('1.8.0')
+    expect(loaded.hosts[0].httpPort).toBe(8000)
+    expect(fs.statSync(filePath).mtimeMs).toBe(before) // nicht neu geschrieben
   })
 })
 
@@ -95,11 +93,27 @@ describe('saveSettings / saveSettingsFile', () => {
 })
 
 describe('migration', () => {
-  it('migrates v1.2.0 settings all the way to v1.7.0', () => {
-    const old = { version: '1.2.0', activeHostId: '', hosts: [], panels: [] }
-    fs.writeFileSync(path.join(tmpDir, 'companionwebpanel.json'), JSON.stringify(old))
-    const loaded = loadSettings(tmpDir)
-    expect(loaded.version).toBe('1.7.0')
+  it('migriert 1.7.0 → 1.8.0 (httpPort optional, Host-Daten unangetastet, Datei persistiert)', () => {
+    const filePath = path.join(tmpDir, 'settings.json')
+    fs.writeFileSync(filePath, JSON.stringify({
+      version: '1.7.0',
+      server: { port: 8080 },
+      activeHostId: 'h1',
+      hosts: [{ id: 'h1', name: 'Studio', host: '10.0.0.1', satellite: { wsPort: 16623 } }],
+      panels: [],
+    }))
+    const loaded = loadSettingsFile(filePath)
+    expect(loaded.version).toBe('1.8.0')
+    expect(loaded.hosts[0].host).toBe('10.0.0.1')
+    expect(loaded.hosts[0].httpPort).toBeUndefined()
+    expect(JSON.parse(fs.readFileSync(filePath, 'utf8')).version).toBe('1.8.0')
+  })
+
+  it('migrates v1.2.0 settings all the way to v1.8.0', () => {
+    const filePath = path.join(tmpDir, 'companionwebpanel.json')
+    fs.writeFileSync(filePath, JSON.stringify({ version: '1.2.0', activeHostId: '', hosts: [], panels: [] }))
+    const loaded = loadSettingsFile(filePath)
+    expect(loaded.version).toBe('1.8.0')
     expect(loaded.server?.port).toBe(8080)
   })
 })
