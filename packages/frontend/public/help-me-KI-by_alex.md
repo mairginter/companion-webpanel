@@ -13,6 +13,8 @@ Das Panel kommuniziert mit Bitfocus Companion über die Satellite API (WebSocket
 
 Mindestanforderung: Bitfocus Companion 4.3.0 oder neuer, mit aktivierter Option "satellite_subscriptions_enabled" in den Companion-Einstellungen.
 
+Ab Companion 5.0 nutzt das Panel automatisch komprimierte WebP-Bitmaps (Satellite API 1.12) — Button-Grafiken sind dadurch ~17× kleiner als das Raw-RGB-Format älterer Companion-Versionen. Das passiert transparent per Feature-Detection; es ist keine Konfiguration nötig, und mit Companion 4.3 bleibt alles wie bisher.
+
 Settings-Schema-Version: **1.7.0**
 
 Verfügbar als:

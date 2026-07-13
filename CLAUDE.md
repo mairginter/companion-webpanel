@@ -21,7 +21,7 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | [docs/ws-protocol.md](docs/ws-protocol.md) | Satellite API Kommandos + Backend↔Frontend WS-Protokoll + Companion API Quirks |
 | [docs/design-system.md](docs/design-system.md) | Farben, Typografie, Keyboard Shortcuts, Button-States, Edit/View-Mode-Tabelle |
 | [docs/phase-history.md](docs/phase-history.md) | Abgeschlossene Phasen 1–7 mit Commit-Referenzen |
-| [docs/satellite-api-protocol.md](docs/satellite-api-protocol.md) | Vollständige Satellite API Protokoll-Referenz (v1.10 / Companion 4.3+) |
+| [docs/satellite-api-protocol.md](docs/satellite-api-protocol.md) | Vollständige Satellite API Protokoll-Referenz (v1.12 / Companion 5.0+) |
 | [docs/Webpanel-Architektur.md](docs/Webpanel-Architektur.md) | Architektur-Doku (aktuell, v1.1) |
 | [docs/bitfocus-companion-module-sources.md](docs/bitfocus-companion-module-sources.md) | API-Quellen / Docs-Links |
 
@@ -36,7 +36,7 @@ Es spiegelt Companion-Buttons in Echtzeit (Bitmap, Farbe, Text) und löst Button
 | API | Companion Satellite API (WebSocket :16623) — kein TCP, kein Polling |
 | Surface-Modell | Button Subscriptions API (seit Companion 4.3 / API 1.10) — kein ADD-DEVICE |
 | Connections | 1 SatelliteClient pro Host, alle Subscriptions über eine WS-Verbindung |
-| Schema-Version | **1.3.0** — Settings-Version bump braucht immer 5 Dateien (siehe Dev-Gotchas) |
+| Schema-Version | **1.7.0** — Settings-Version bump braucht immer 6 Dateien (siehe Dev-Gotchas) |
 | Multi-Agent | **NEIN** — immer sequenziell, nie parallele Agenten auf gleichen Dateien |
 | Jede Codedatei | Kurz-Beschreibung + ausführliche Inline-Kommentare (festgelegt Session 3) |
 | Companion-Mindestversion | 4.3.0+ — `satellite_subscriptions_enabled = true` in Companion Settings |
@@ -172,7 +172,7 @@ CompanionWebpannel/
 - ✅ **Panel duplizieren in Panel-Liste** — ⧉-Icon (content_copy) in Panel-Dropdown-Zeile zwischen ✎ und ✕; `duplicatePanel(id)` klont Panel + alle Elemente mit neuen UUIDs, Name `"<Name> Copy"`, wechselt automatisch zum neuen Panel (Commit 2d8cdde, v1.3.1)
 
 ### CompanionButton-Picker
-- ⬜ Page-Name anzeigen — Companion sendet Page-Namen via Satellite API (prüfen ob `PAGE-NAME` verfügbar)
+- ⬜ Page-Name anzeigen — via Satellite API **nicht möglich** (auch API 1.12 hat keine PAGE-NAME-Message); umsetzbar über die allgemeine HTTP-API `GET :8000/api/variable/internal/page_number_<N>_name/value` (live-verifiziert gegen Companion 5.0) → Phase E in `memory/plan-2026-07-13-companion-5-adoption.md`
 
 ### ChannelStrip (nächste Iteration)
 - ✅ **Fader per Touch/Maus bedienbar** — vertikaler Pointer-Drag → SUB-ROTATE; `setPointerCapture` für konsistentes Tracking
@@ -251,6 +251,7 @@ Plan-Datei mit vollständigen Fix-Details: [docs/plans/2026-04-19-code-review-v1
 - **Scrollbar-Feedback-Loop** → `overflow:auto` + `minWidth:'100%'` + fixer Canvas-Breite: 1px Overflow → Scrollbar (17px) → `100%` schrumpft → Canvas > `100%` → beide Scrollbars locked. Fix: bei fixem Canvas kein `min*:'100%'`; ResizeObserver auf äußerem Container → `overflow:hidden` wenn Canvas passt, `overflow:auto` wenn nicht.
 - **Windows-DPI-Skalierung** → User sieht "1920px" (physisch), Canvas braucht CSS-px = physisch/scaleFactor. Toolbar-Höhe = 56px. Verfügbare Canvas-Fläche: `window.innerWidth × (window.innerHeight - 56)`. `window.devicePixelRatio > 1` → Warnung zeigen.
 - **Alte Electron-Instanz killen (bash)** → `powershell.exe -Command "Get-Process electron -ErrorAction SilentlyContinue | Stop-Process -Force"`
+- **`BITMAP_FORMAT` nur senden wenn in CAPS `BITMAP_FORMATS` annonciert** → Feature-Detection immer via CAPS-Keys, nie via ApiVersion; nicht annoncierte Formate fallen server-seitig stumm auf raw-RGB zurück. Format-Status bei jedem `connect()` resetten — Reconnect kann auf älteren Companion treffen.
 - **electron-builder `buildResources` ≠ `files`** → `buildResources` zeigt nur wo Build-Ressourcen (icon.ico) für den Installer liegen. Dateien die die App zur Laufzeit braucht (z.B. `assets/tray-*.png`) müssen explizit in `files` stehen.
 
 ---

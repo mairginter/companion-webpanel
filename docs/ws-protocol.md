@@ -2,17 +2,22 @@
 
 ## Satellite API — wichtigste Kommandos
 
-Vollständige Referenz: `docs/satellite-api-protocol.md` (v1.10 / Companion 4.3+)
+Vollständige Referenz: `docs/satellite-api-protocol.md` (v1.12 / Companion 5.0+)
 
 ### Button Subscriptions (ab API 1.10.0 / Companion 4.3.0) — aktuelle Implementierung
 
 ```
-← BEGIN CompanionVersion="4.3.0+..." ApiVersion="1.10.0"
-← CAPS SUBSCRIPTIONS=1                              (1=aktiviert, 0=in Companion Settings deaktiviert)
+← BEGIN CompanionVersion="5.0.0+..." ApiVersion="1.12.0"
+← CAPS SUBSCRIPTIONS=1 NONSQUARE=1 BITMAP_FORMATS="rgb,png,webp"
+      (SUBSCRIPTIONS: 1=aktiviert, 0=in Companion Settings deaktiviert;
+       NONSQUARE + BITMAP_FORMATS erst ab Companion 5.0 — Feature-Detection via CAPS, nicht ApiVersion)
 
 → ADD-SUB SUBID=cwp/1/0/0 LOCATION=1/0/0 BITMAP=72 COLORS=hex TEXT=true TEXT_STYLE=true
+      (+ ` BITMAP_FORMAT=webp` wenn per CAPS annonciert → BITMAP kommt als Data-URL, ~17× kleiner)
+      (Alternative ab 5.0: `STYLE=<base64 JSON>` statt BITMAP/COLORS/TEXT/TEXT_STYLE —
+       erlaubt non-square Dimensionen, z.B. {"bitmap":{"w":144,"h":72},"text":true,"textStyle":true,"colors":"hex"})
 ← ADD-SUB OK SUBID="cwp/1/0/0"
-← SUB-STATE SUBID="cwp/1/0/0" PRESSED=0 TYPE=BUTTON COLOR=#ff0000 TEXT=<base64> BITMAP=<base64> FONT_SIZE=auto
+← SUB-STATE SUBID="cwp/1/0/0" PRESSED=0 TYPE=BUTTON COLOR=#ff0000 TEXT=<base64> BITMAP=<base64|data-url> FONT_SIZE=auto
 
 → SUB-PRESS SUBID=cwp/1/0/0 PRESSED=true           (bei onPointerDown)
 → SUB-PRESS SUBID=cwp/1/0/0 PRESSED=false          (bei onPointerUp / onPointerLeave / onPointerCancel)
@@ -31,12 +36,13 @@ Vollständige Referenz: `docs/satellite-api-protocol.md` (v1.10 / Companion 4.3+
 `FONT_SIZE="auto"` → ignorieren oder in `render.fontSize` mappen.  
 Bei Socket-Close werden alle Subscriptions automatisch entfernt.
 
-### ADD-DEVICE (alt, nicht mehr verwendet — nur Referenz)
+### ADD-DEVICE (verwendet vom Virtual Companion Deck — `VirtualSurfaceSession.ts`)
 
 ```
-→ ADD-DEVICE DEVICEID="..." PRODUCT_NAME="..." KEYS_TOTAL=64 KEYS_PER_ROW=8 BITMAPS=72 COLORS=true TEXT=true
+→ ADD-DEVICE DEVICEID="..." PRODUCT_NAME="..." KEYS_TOTAL=64 KEYS_PER_ROW=8 BITMAPS=72 COLORS=hex TEXT=true TEXT_STYLE=true
+      (+ ` BITMAP_FORMAT=webp` wenn per CAPS annonciert — wie bei ADD-SUB)
 ← ADD-DEVICE OK DEVICEID="..."
-← KEY-STATE DEVICEID=... KEY=30 TYPE=BUTTON COLOR=rgb(255,0,0) TEXT=Live BITMAP=<base64>
+← KEY-STATE DEVICEID=... KEY=30 TYPE=BUTTON COLOR=#ff0000 TEXT=Live BITMAP=<base64|data-url>
 → KEY-PRESS DEVICEID=... KEY=30 PRESSED=true/false
 → REMOVE-DEVICE DEVICEID="..."
 ```
@@ -60,7 +66,7 @@ Bei Socket-Close werden alle Subscriptions automatisch entfernt.
 // caps-disabled = CAPS SUBSCRIPTIONS=0, Toolbar zeigt orange Badge
 
 // Backend → Frontend (Host-Info nach BEGIN-Handshake)
-{ t: "hostInfo", hostId: string, version: string, apiVersion: string }
+{ t: "hostInfo", hostId: string, companionVersion: string, apiVersion: string }
 
 // Frontend → Backend (Button-Press / Release)
 { t: "press", hostId: string, page: number, row: number, col: number, pressed: boolean }
@@ -81,10 +87,13 @@ Settings-Pfad: `../../CompanionWebpannelSettings.json` oder `SETTINGS_PATH` env
 - Protokoll ist zeilenbasiert über WS-Text-Frames — `\n` als Delimiter, mehrere Zeilen pro Frame möglich → Line-Buffer im `message`-Handler nötig.
 
 ### Bitmap-Format
-- Companion sendet Bitmaps als **Raw-RGB** (width × height × 3 Bytes, kein Header, kein JPEG/PNG).
-- base64-Länge bei 72px: `72 × 72 × 3 = 15552 Bytes → 20736 Zeichen base64`.
-- Konvertierung: Raw-RGB → RGBA (α=255) → `ImageData` → Canvas → `.toDataURL('image/png')` (siehe `utils/bitmap.ts`).
-- Erkennungslogik: Wenn `base64.length ≈ expectedB64Len (±4)` → Raw-RGB, sonst MIME-Detection (JPEG `/9j/`, PNG `iVBOR`).
+- **Legacy (immer, einziges Format bei Companion ≤ 4.3):** Raw-RGB (width × height × 3 Bytes, kein Header).
+  base64-Länge bei 72px: `72 × 72 × 3 = 15552 Bytes → 20736 Zeichen base64`.
+  Konvertierung: Raw-RGB → RGBA (α=255) → `ImageData` → Canvas → `.toDataURL('image/png')` (siehe `utils/bitmap.ts`).
+- **Ab Companion 5.0 (API 1.12) mit negotiiertem `BITMAP_FORMAT=webp|png`:** BITMAP kommt als
+  selbstbeschreibende Data-URL `data:image/webp;base64,…` — ~17× kleiner als raw (72px: 1227 statt 20736 Zeichen).
+  Backend ist Passthrough; Frontend erkennt am `data:`-Prefix und reicht direkt an `<img src>` durch (kein Canvas, kein Cache).
+- Erkennungslogik in `utils/bitmap.ts`: `data:`-Prefix → Passthrough; `base64.length ≈ expectedB64Len (±4)` → Raw-RGB; sonst MIME-Detection (JPEG `/9j/`, PNG `iVBOR`).
 
 ### Text-Encoding
 - Companion encodiert Zeilenumbrüche als **literale zwei Zeichen `\n`** (Backslash + n), nicht als echten Newline.
