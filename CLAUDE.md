@@ -134,6 +134,12 @@ CompanionWebpannel/
 
 ## Nächste Session — Offene Aufgaben
 
+### Companion 5.0 Adoption (Plan: `memory/plan-2026-07-13-companion-5-adoption.md`)
+- ✅ **WebP/PNG-Bitmaps (API 1.12)** — `BITMAP_FORMAT`-Negotiation via CAPS in SatelliteClient + VirtualSurfaceSession; Frontend Data-URL-Passthrough; ~17× kleinere Button-Updates; live-verifiziert gegen Companion 5.0 (Commit 931c726)
+- ✅ **mDNS-Auto-Discovery** — `DiscoveryService` (@julusian/bonjour-service), Browse-on-demand via HostManagerModal, `POST /api/discovery/start|stop`, „Gefundene Companion-Instanzen"-Sektion mit Übernehmen-Button; live-verifiziert (Commit ec1f5b7)
+- ✅ **Non-square Bitmaps (STYLE, API 1.11)** — `deriveBitmapDims()` quantisiert Element-Geometrie auf Aspect-Stufen; HostManager `realSubDims` ("WxH"), SatelliteClient STYLE-Branch mit Legacy-Fallback für 4.3; live-verifiziert (Commit bc08f07)
+- ⬜ **Phase E: Seitennamen im Picker via HTTP-API** — optional, vollständig gespeced im Plan (Machbarkeit live bestätigt: `GET :8000/api/variable/internal/page_number_<N>_name/value` → 200); braucht Schema-Bump 1.7.0→1.8.0 (`httpPort` auf HostProfile) + Backend-Proxy `/api/page-name`
+
 ### Electron
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
 - ✅ **HostManagerModal UI-Überarbeitung** — Inline-Edit durch dediziertes `HostEditModal` ersetzt (560px, `maxHeight: 85vh`, scrollbar, z-Index 1300); kein Clipping mehr; Backdrop-Click schließt Modal; `editTarget: HostProfile | null | 'new'` State; handleEditSave via `s.hosts.some()` statt stale closure (Commit 1f5238e + c9b9bec, v1.3.1)
