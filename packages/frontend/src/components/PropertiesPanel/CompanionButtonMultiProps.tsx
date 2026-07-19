@@ -3,7 +3,8 @@
  *
  * Batch-Edit-Panel für mehrere selektierte CompanionButton-Elemente.
  * Zeigt gemeinsame Werte an und ermöglicht das gleichzeitige Setzen von:
- * Host, showBgColor, showBitmap, showText, textAlign, borderRadius, physicalStyle, fontSize.
+ * Host, showBgColor, showBitmap, showText, textAlign, borderRadius,
+ * physicalStyle (Dome), forceBlackCap (Broadcast-LED), fontSize, bitmapSize.
  *
  * Mixed-State (verschiedene Werte in der Selektion) wird via Indeterminate-Checkbox
  * bzw. "—"-Platzhalter in Inputs/Selects angezeigt.
@@ -100,6 +101,7 @@ export function CompanionButtonMultiProps({ elements, panelId }: Props) {
   const commonTextAlign = common(elements, (el) => r(el).textAlign ?? 'center')
   const commonBorderRadius = common(elements, (el) => r(el).borderRadius)
   const commonPhysicalStyle = common(elements, (el) => tog(r(el).physicalStyle, false))
+  const commonForceBlackCap = common(elements, (el) => tog(r(el).forceBlackCap, false))
   const commonFontSize = common(elements, (el) => r(el).fontSize)
   const commonBitmapSize = common(elements, (el) => r(el).bitmapSize ?? 72)
 
@@ -178,10 +180,16 @@ export function CompanionButtonMultiProps({ elements, panelId }: Props) {
         />
       </div>
 
-      {/* physicalStyle */}
+      {/* physicalStyle (Dome, pro Button) */}
       <div style={row}>
         <span style={lbl}>{t('propertiesPanel.physicalStyle')}</span>
-        <MixedCheckbox value={commonPhysicalStyle} onChange={(v) => patchRender({ physicalStyle: v })} />
+        <MixedCheckbox value={commonPhysicalStyle} onChange={(v) => patchRender({ physicalStyle: v || undefined })} />
+      </div>
+
+      {/* forceBlackCap — immer setzbar, zieht aber nur bei aktivem Broadcast-LED-Modus */}
+      <div style={row}>
+        <span style={lbl}>{t('propertiesPanel.forceBlackCap')}</span>
+        <MixedCheckbox value={commonForceBlackCap} onChange={(v) => patchRender({ forceBlackCap: v || undefined })} />
       </div>
 
       {/* fontSize */}

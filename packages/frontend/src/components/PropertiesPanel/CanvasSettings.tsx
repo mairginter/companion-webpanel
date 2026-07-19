@@ -248,6 +248,29 @@ export function CanvasSettings({ panel, panelId }: Props) {
           }} />
         ) : null
       })()}
+
+      {/* Button-Style — GLOBALE Einstellung (Settings.buttonStyle), gilt app-weit.
+          'broadcast-led' stülpt sich als Overlay über alle CompanionButtons:
+          Companion-bgColor wird zur LED-Signalfarbe (Spec: BroadcastLED-Style.md). */}
+      <div>
+        <div style={lbl}>{t('propertiesPanel.buttonStyle')}</div>
+        <select
+          value={settings?.buttonStyle ?? 'default'}
+          style={sel}
+          onChange={(e) => {
+            if (!settings) return
+            const v = e.target.value as 'default' | 'broadcast-led'
+            // 'default' → Feld weglassen, hält die Settings-Datei schlank
+            setSettings({ ...settings, buttonStyle: v === 'default' ? undefined : v })
+          }}
+        >
+          <option value="default">{t('propertiesPanel.styleDefault')}</option>
+          <option value="broadcast-led">{t('propertiesPanel.styleBroadcastLed')}</option>
+        </select>
+        <div style={{ fontSize: 11, color: '#4a5568', marginTop: 4, lineHeight: 1.4 }}>
+          {t('propertiesPanel.buttonStyleHint')}
+        </div>
+      </div>
     </div>
   )
 }

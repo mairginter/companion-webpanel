@@ -1,6 +1,6 @@
 {
   "name": "@cwp/electron",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "private": true,
   "main": "dist/main.js",
   "scripts": {

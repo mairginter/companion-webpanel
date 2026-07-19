@@ -143,6 +143,7 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
       </div>
       <NumericInput label={t('propertiesPanel.borderRadius')} value={r.borderRadius ?? 6} min={0}
         onChange={(v) => updateRender({ borderRadius: v })} />
+      {/* Physischer Taster (Dome) — pro Button, unabhängig vom globalen Broadcast-LED-Style */}
       <div style={row}>
         <span style={lbl}>{t('propertiesPanel.physicalStyle')}</span>
         <input
@@ -150,6 +151,17 @@ export function CompanionButtonProps({ element, panelId, side = 'right', panelWi
           style={{ width: 20, height: 20, cursor: 'pointer' }}
           checked={r.physicalStyle === true}
           onChange={(e) => updateRender({ physicalStyle: e.target.checked || undefined })}
+        />
+      </div>
+      {/* forceBlackCap — immer setzbar, zieht aber nur bei aktivem Broadcast-LED-Modus
+          (gilt für LED-Kappen UND Dome-Buttons) */}
+      <div style={row}>
+        <span style={lbl}>{t('propertiesPanel.forceBlackCap')}</span>
+        <input
+          type="checkbox"
+          style={{ width: 20, height: 20, cursor: 'pointer' }}
+          checked={r.forceBlackCap === true}
+          onChange={(e) => updateRender({ forceBlackCap: e.target.checked || undefined })}
         />
       </div>
       {tog(r.showText, true) && (

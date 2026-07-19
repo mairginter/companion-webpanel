@@ -11,6 +11,17 @@ export interface Settings {
   panels: Panel[]
   /** Backend-Server-Konfiguration (optional — default port: 8080) */
   server?: { port?: number }
+  /**
+   * Globaler Button-Render-Style (app-weit, alle Panels):
+   *   'default'       — Buttons rendern wie konfiguriert (Default)
+   *   'broadcast-led' — Broadcast-LED-Overlay: stülpt sich über alle CompanionButtons
+   *                     und re-interpretiert die Companion-Farben — bgColor wird zur
+   *                     LED-Signalfarbe (durchleuchtet die dunkle Kappe + färbt den
+   *                     Text-Glow), textColor bleibt Legenden-Farbe. Dunkle Farben
+   *                     (Companion-Schwarz) = LED aus. Spec: BroadcastLED-Style.md.
+   * Unabhängig davon: render.physicalStyle (Dome) bleibt eine Per-Button-Option.
+   */
+  buttonStyle?: 'default' | 'broadcast-led'
 }
 
 export interface HostProfile {
@@ -88,8 +99,18 @@ export interface CompanionButtonElement extends BaseElement {
     opacity?: number
     /** Schriftgröße des Text-Overlays in px. Default: 11 */
     fontSize?: number
-    /** Simuliert einen physischen Taster mit konkaver Wölbung. Default: false */
+    /**
+     * Physischer Taster (Dome) — PRO BUTTON, unabhängig vom globalen buttonStyle:
+     * matte Gummi-/Kunststoff-Kappe in Vertiefung mit konkaver Mulde. Default: false.
+     * Hat Vorrang vor dem globalen Broadcast-LED-Style.
+     */
     physicalStyle?: boolean
+    /**
+     * Nur wirksam bei globalem buttonStyle 'broadcast-led': Kappe bleibt IMMER auf
+     * Referenz-Schwarz #1d1f23 — die Companion-Farbe wirkt nur noch als LED
+     * (Radial-/Außen-/Text-Glow), auch im Aktiv-Zustand. Default: false.
+     */
+    forceBlackCap?: boolean
   }
 }
 
@@ -100,6 +121,8 @@ export interface ShapeElement extends BaseElement {
     stroke?: string
     strokeWidth?: number
     borderRadius?: number
+    /** Oberflächen-Finish: 'flat' = flach (Default), 'plastic' = Kunststoff-Relief mit Glanz + Körnung */
+    finish?: 'flat' | 'plastic'
   }
 }
 

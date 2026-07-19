@@ -28,6 +28,8 @@ export function ShapeProps({ element, panelId }: Props) {
   }
 
   const lbl: React.CSSProperties = { fontSize: 12, color: '#4a5568', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }
+  const row: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }
+  const sel: React.CSSProperties = { background: '#1a2030', border: '1px solid #2a3344', color: '#e9edf2', borderRadius: 4, padding: '8px 10px', fontSize: 14 }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={lbl}>Shape</div>
@@ -37,6 +39,17 @@ export function ShapeProps({ element, panelId }: Props) {
         onChange={(v) => updateStyle({ strokeWidth: v })} />
       <NumericInput label={t('propertiesPanel.borderRadius')} value={element.style.borderRadius ?? 10} min={0}
         onChange={(v) => updateStyle({ borderRadius: v })} />
+      <div style={row}>
+        <span style={{ ...lbl, marginBottom: 0 }}>{t('propertiesPanel.shapeFinish')}</span>
+        <select
+          value={element.style.finish ?? 'flat'}
+          style={sel}
+          onChange={(e) => updateStyle({ finish: e.target.value as 'flat' | 'plastic' })}
+        >
+          <option value="flat">{t('propertiesPanel.finishFlat')}</option>
+          <option value="plastic">{t('propertiesPanel.finishPlastic')}</option>
+        </select>
+      </div>
     </div>
   )
 }

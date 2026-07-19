@@ -2,77 +2,17 @@ import React, { useState, useCallback, useMemo } from 'react'
 import { CompanionButtonElement as CompanionButtonElementType, defaultLayerFor } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { rawRgbBase64ToDataUrl } from '../../utils/bitmap'
-
-/** Blends hex color channels toward white. amount: 0=unchanged, 1=white */
-export function lightenHex(hex: string, amount: number): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgb(${Math.round(r + (255 - r) * amount)},${Math.round(g + (255 - g) * amount)},${Math.round(b + (255 - b) * amount)})`
-}
-
-/** Multiplies hex color channels toward black. amount: 0=unchanged, 1=black */
-export function darkenHex(hex: string, amount: number): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgb(${Math.round(r * (1 - amount))},${Math.round(g * (1 - amount))},${Math.round(b * (1 - amount))})`
-}
-
-/** CSS background for the physical-style dome.
- *  Center and rim colors are computed from bgColor (lighten/darken) — no white/black overlays
- *  so the hue stays correct across all companion colors (including black buttons). */
-export function buildDomeBackground(bgColor: string | undefined, pressed: boolean): string {
-  let r = 168, g = 170, b = 178
-  if (bgColor && /^#[0-9a-fA-F]{6}$/.test(bgColor)) {
-    r = parseInt(bgColor.slice(1, 3), 16)
-    g = parseInt(bgColor.slice(3, 5), 16)
-    b = parseInt(bgColor.slice(5, 7), 16)
-  }
-  // mix toward white; dim toward black
-  const mix = (ch: number, f: number) => Math.round(ch + (255 - ch) * f)
-  const dim  = (ch: number, f: number) => Math.round(ch * f)
-
-  // 4-stop curve approximating cos(θ) hemispheric reflectance:
-  // center changes slowly, outer rim drops steeply — matches reference image physics
-  if (pressed) {
-    const br = dim(r, 0.82), bg_ = dim(g, 0.82), bb_ = dim(b, 0.82)
-    return `radial-gradient(circle at 50% 45%,` +
-      ` rgb(${mix(br,0.24)},${mix(bg_,0.24)},${mix(bb_,0.24)}) 0%,` +
-      ` rgb(${br},${bg_},${bb_}) 42%,` +
-      ` rgb(${dim(br,0.68)},${dim(bg_,0.68)},${dim(bb_,0.68)}) 68%,` +
-      ` rgb(${dim(br,0.36)},${dim(bg_,0.36)},${dim(bb_,0.36)}) 100%)`
-  }
-  return `radial-gradient(circle at 50% 40%,` +
-    ` rgb(${mix(r,0.52)},${mix(g,0.52)},${mix(b,0.52)}) 0%,` +
-    ` rgb(${r},${g},${b}) 38%,` +
-    ` rgb(${dim(r,0.66)},${dim(g,0.66)},${dim(b,0.66)}) 65%,` +
-    ` rgb(${dim(r,0.35)},${dim(g,0.35)},${dim(b,0.35)}) 100%)`
-}
-
-/** CSS background for the physical-style outer frame.
- *  Layers (top→bottom):
- *  1. Metallic top-edge highlight — horizontal bright band simulating overhead light on polished surface
- *  2. Radial vignette — corners/edges significantly darker → strong 3D curvature illusion
- *  3. Base color (companion color or default grey) */
-export function buildFrameBackground(bgColor: string | undefined, pressed: boolean): string {
-  let r = 210, g = 212, b = 218
-  if (bgColor && /^#[0-9a-fA-F]{6}$/.test(bgColor)) {
-    r = parseInt(bgColor.slice(1, 3), 16)
-    g = parseInt(bgColor.slice(3, 5), 16)
-    b = parseInt(bgColor.slice(5, 7), 16)
-  }
-  // Polished-metal top highlight: bright band at top edge (light source from above),
-  // quick fade + slight bottom shadow = realistic curved-surface reflection
-  const metal = pressed
-    ? `linear-gradient(to bottom, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 28%, rgba(0,0,0,0.10) 100%)`
-    : `linear-gradient(to bottom, rgba(255,255,255,0.52) 0%, rgba(255,255,255,0.08) 18%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.16) 100%)`
-  // Stronger radial vignette: smaller ellipse + higher opacity → darker corners, more curvature depth
-  const vignette = pressed
-    ? `radial-gradient(ellipse 65% 65% at 50% 50%, rgba(0,0,0,0) 24%, rgba(0,0,0,0.58) 100%)`
-    : `radial-gradient(ellipse 65% 65% at 50% 50%, rgba(0,0,0,0) 26%, rgba(0,0,0,0.52) 100%)`
-  return `${metal}, ${vignette}, rgb(${r},${g},${b})`
-}
+import {
+  buildDomeRecessStyle,
+  buildDomeCapStyle,
+  buildDomeStyle,
+  buildDomeLedGlow,
+  ledGlowShadow,
+  LED_COLLAR_STYLE,
+  buildLedCapStyle,
+  buildLedLegend,
+  isLit,
+} from '../../utils/physical'
 
 interface Props {
   element: CompanionButtonElementType
@@ -97,7 +37,20 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   const showBgColor = render?.showBgColor !== false    // default: true
   const textAlign = render?.textAlign ?? 'bottom'
   const fontSize = render?.fontSize ?? 11
-  const physicalStyle = render?.physicalStyle === true
+
+  // Zwei unabhängige Style-Mechanismen (v1.5.0):
+  //  1. physicalStyle (Dome) — PRO BUTTON: matte Gummikappe mit konkaver Mulde.
+  //  2. buttonStyle 'broadcast-led' — GLOBAL (Settings): Overlay-Style über alle
+  //     CompanionButtons; re-interpretiert bgColor als LED-Signalfarbe und gibt
+  //     der Legende einen Glow in ihrer eigenen Farbe (auch auf Dome-Buttons).
+  // Dome-Buttons behalten im LED-Modus ihre Dome-Geometrie.
+  // forceBlackCap (pro Button, immer setzbar) zieht NUR bei aktivem LED-Modus:
+  // Kappe fest auf Referenz-Schwarz #1d1f23 — gilt für LED-Kappen UND Domes.
+  const globalButtonStyle = useAppStore((s) => s.settings?.buttonStyle ?? 'default')
+  const ledModeActive = globalButtonStyle === 'broadcast-led'
+  const physicalDome = render?.physicalStyle === true
+  const broadcastLed = ledModeActive && !physicalDome
+  const forceBlackCap = ledModeActive && render?.forceBlackCap === true
 
   // Button-State direkt per row/col — kein keysPerRow-Lookup mehr nötig
   const keyState = useAppStore((s) => s.getButtonState(ref.hostId, ref.page, ref.row, ref.col))
@@ -135,61 +88,33 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
   const textColor = keyState?.textColor ?? '#ffffff'
   const text = keyState?.text ?? ''
   const bitmap = keyState?.bitmap
+  // LED-Variante: leuchtet nur bei aktivem (gesättigtem/hellem) Feedback-Farbwechsel
+  const lit = isLit(bgColor)
 
   const bitmapSrc = useMemo(
     () => (showBitmap && bitmap ? rawRgbBase64ToDataUrl(bitmap, bitmapSize, bitmapSize) : ''),
     [showBitmap, bitmap, bitmapSize],
   )
 
-  // ─── Container ────────────────────────────────────────────────────────────
+  // ─── Positionierung ────────────────────────────────────────────────────────
   const positionBase: React.CSSProperties = isContained
     ? { position: 'relative' as const, width: '100%', height: '100%' }
     : { position: 'absolute' as const, left: element.x, top: element.y,
         width: element.w, height: element.h, zIndex: (element.layer ?? defaultLayerFor(element.type)) * 1000 + (element.z ?? 0) + 100 }
 
-  const containerStyle: React.CSSProperties = physicalStyle
-    ? {
-        ...positionBase,
-        borderRadius,
-        overflow: 'hidden',
-        cursor: mode === 'view' ? 'pointer' : 'default',
-        userSelect: 'none',
-        touchAction: 'none',
-        boxSizing: 'border-box',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: buildFrameBackground(bgColor, pressed),
-        boxShadow: pressed
-          ? '0 1px 4px rgba(0,0,0,0.55), inset 0 1px 3px rgba(0,0,0,0.25)'
-          : '0 4px 14px rgba(0,0,0,0.50), inset 0 1px 2px rgba(255,255,255,0.60)',
-        transition: pressed ? 'none' : 'transform 0.08s, box-shadow 0.08s',
-        ...(!hasData && { opacity: 0.6 }),
-        ...(isStale && { opacity: 0.5, outline: '2px solid #ff8a3d', outlineOffset: '-2px' }),
-        ...(pressed && { outline: '2.5px solid #ff5a5f', outlineOffset: '-2px' }),
-      }
-    : {
-        ...positionBase,
-        borderRadius,
-        overflow: 'hidden',
-        cursor: mode === 'view' ? 'pointer' : 'default',
-        userSelect: 'none',
-        touchAction: 'none',
-        boxSizing: 'border-box',
-        background: showBgColor && bgColor ? bgColor : (hasData ? '#1a2030' : 'transparent'),
-        ...(!hasData && !isStale && { border: '1.5px dashed #2a3344', opacity: 0.6 }),
-        ...(isStale && { opacity: 0.5, outline: '2px solid #ff8a3d', outlineOffset: '-2px' }),
-        ...(pressed && { transform: 'scale(0.97)', outline: '2.5px solid #ff5a5f', outlineOffset: '-2px' }),
-        transition: pressed ? 'none' : 'transform 0.08s, box-shadow 0.08s',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...(hasData && {
-          boxShadow: pressed
-            ? '0 1px 2px rgba(0,0,0,0.4)'
-            : '0 3px 8px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.3)',
-        }),
-      }
+  // Gemeinsame Interaktions-Props (alle Varianten)
+  const interaction: React.CSSProperties = {
+    cursor: mode === 'view' ? 'pointer' : 'default',
+    userSelect: 'none',
+    touchAction: 'none',
+    boxSizing: 'border-box',
+  }
+
+  // Opacity-/Stale-Overlay auf dem äußersten Container (alle Varianten)
+  const stateOverlay: React.CSSProperties = {
+    ...(!hasData && { opacity: 0.6 }),
+    ...(isStale && { opacity: 0.5, outline: '2px solid #ff8a3d', outlineOffset: '-2px' }),
+  }
 
   // ─── Text-Positionierung ──────────────────────────────────────────────────
   // Cap font size so text doesn't overflow small buttons
@@ -218,68 +143,27 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
     ...textPos,
   }
 
-  return (
-    <div
-      style={containerStyle}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerLeave}
-      onPointerCancel={handlePointerLeave}
-    >
-      {bitmapSrc && (
-        <img
-          src={bitmapSrc}
-          {...(scaleBitmap
-            ? { style: { display: 'block', width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'auto', pointerEvents: 'none' } }
-            : { width: bitmapSize, height: bitmapSize, style: { display: 'block', imageRendering: 'pixelated', pointerEvents: 'none', flexShrink: 0 } }
-          )}
-          alt=""
-          draggable={false}
-        />
+  // ─── Wiederverwendbare Kind-Elemente ───────────────────────────────────────
+  const bitmapImg = bitmapSrc ? (
+    <img
+      src={bitmapSrc}
+      {...(scaleBitmap
+        ? { style: { display: 'block', width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'auto', pointerEvents: 'none' } as React.CSSProperties }
+        : { width: bitmapSize, height: bitmapSize, style: { display: 'block', imageRendering: 'pixelated', pointerEvents: 'none', flexShrink: 0 } as React.CSSProperties }
       )}
+      alt=""
+      draggable={false}
+    />
+  ) : null
 
-      {/* Physical dome OR normal 3D bevel overlay */}
-      {physicalStyle ? (
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            inset: '9%',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            background: buildDomeBackground(bgColor, pressed),
-            // The gradient itself creates the dome edge; just a hairline ring for separation
-            boxShadow: '0 0 0 1px rgba(0,0,0,0.10)',
-            transform: pressed ? 'scale(0.97)' : undefined,
-            transition: pressed ? 'none' : 'transform 0.08s',
-          }}
-        />
-      ) : hasData ? (
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius,
-            pointerEvents: 'none',
-            boxShadow: pressed
-              ? 'inset 0 2px 5px rgba(0,0,0,0.65), inset 2px 0 4px rgba(0,0,0,0.45), inset 0 -1px 2px rgba(255,255,255,0.07), inset -1px 0 2px rgba(255,255,255,0.05)'
-              : 'inset 0 1.5px 2px rgba(255,255,255,0.22), inset 1.5px 0 2px rgba(255,255,255,0.11), inset 0 -2.5px 5px rgba(0,0,0,0.60), inset -2.5px 0 4px rgba(0,0,0,0.42)',
-            transition: pressed ? 'none' : 'box-shadow 0.08s',
-          }}
-        />
-      ) : null}
+  const textLines = text.split('\n').map((line, i, arr) =>
+    i < arr.length - 1
+      ? <React.Fragment key={i}>{line}<br /></React.Fragment>
+      : <React.Fragment key={i}>{line}</React.Fragment>,
+  )
 
-      {showText && text && (
-        <span style={textStyle}>
-          {text.split('\n').map((line, i, arr) =>
-            i < arr.length - 1
-              ? <React.Fragment key={i}>{line}<br /></React.Fragment>
-              : <React.Fragment key={i}>{line}</React.Fragment>
-          )}
-        </span>
-      )}
-
+  const indicators = (
+    <>
       {hostMissing && (
         <div
           title="Host nicht mehr in den Settings vorhanden"
@@ -294,15 +178,140 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
         </div>
       )}
       {mode === 'edit' && showHostLabels && (
-        <div style={{
-          position: 'absolute', bottom: 2, left: 2, right: 2,
-          fontSize: 8, color: 'rgba(255,255,255,0.75)', textAlign: 'center',
-          background: 'rgba(0,0,0,0.55)', borderRadius: 2, padding: '1px 2px',
-          pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {hostName}
-        </div>
+        <>
+          {/* Oben: Companion-Referenz (Page/Row/Col) — überlappend, wie das Host-Label */}
+          <div style={{
+            position: 'absolute', top: 2, left: 2, right: 2,
+            fontSize: 8, color: 'rgba(255,255,255,0.75)', textAlign: 'center',
+            background: 'rgba(0,0,0,0.55)', borderRadius: 2, padding: '1px 2px',
+            pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            P{ref.page} · R{ref.row}/C{ref.col}
+          </div>
+          {/* Unten: Host-Name */}
+          <div style={{
+            position: 'absolute', bottom: 2, left: 2, right: 2,
+            fontSize: 8, color: 'rgba(255,255,255,0.75)', textAlign: 'center',
+            background: 'rgba(0,0,0,0.55)', borderRadius: 2, padding: '1px 2px',
+            pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {hostName}
+          </div>
+        </>
       )}
+    </>
+  )
+
+  const pointerHandlers = {
+    onPointerDown: handlePointerDown,
+    onPointerUp: handlePointerUp,
+    onPointerLeave: handlePointerLeave,
+    onPointerCancel: handlePointerLeave,
+  }
+
+  // ─── Physischer Taster (Dome pro Button / Broadcast-LED global) ─────────────
+  // Struktur: Rand/Kragen (Vertiefung) → bewegliche Kappe → (bei Dome) konkave Mulde.
+  // Kein scale beim Drücken — der Hub (translateY) + kollabierende Schatten tragen die Physik.
+  // Keine rote Pressed-Outline im View-Mode — der Hub + Glow ersetzt sie (Spec Abschnitt 7).
+  if (physicalDome || broadcastLed) {
+    // Dome + forceBlackCap (LED-Modus): Dome-Geometrie bleibt, aber die Kappe wird
+    // vom Referenz-Schwarz #1d1f23 abgeleitet statt von der Companion-Farbe —
+    // dunkle Hardware-Optik wie die LED-Kappen (Referenz: „PV Programm Aximmetry").
+    const domeColor = forceBlackCap ? '#1d1f23' : bgColor
+    // Dome im LED-Modus + aktives Feedback: LED-Leuchten auch am Dome —
+    // Außen-Glow am Rand (Recess) + Leucht-Overlay über der Mulde (siehe unten).
+    const domeLedLit = !broadcastLed && ledModeActive && lit
+    let recess = broadcastLed ? LED_COLLAR_STYLE : buildDomeRecessStyle(domeColor)
+    if (domeLedLit) {
+      recess = { ...recess, boxShadow: `${recess.boxShadow}, ${ledGlowShadow(bgColor, pressed)}` }
+    }
+    // position:relative + overflow:hidden → Bitmap/Text sitzen in der Kappe und fahren den Hub mit
+    const cap: React.CSSProperties = {
+      ...(broadcastLed ? buildLedCapStyle(bgColor, pressed, lit, forceBlackCap) : buildDomeCapStyle(domeColor, pressed)),
+      position: 'relative',
+      overflow: 'hidden',
+    }
+    const outer: React.CSSProperties = {
+      ...positionBase,
+      // Kragen-Radius: Button-Radius + 4px (LED, Spec Abschnitt 2) bzw. + 5px (Dome)
+      borderRadius: borderRadius + (broadcastLed ? 4 : 5),
+      overflow: 'visible',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...interaction,
+      ...recess,
+      ...stateOverlay,
+    }
+    // Im LED-Modus (auch auf Domes): unlit glüht die Legende in ihrer eigenen
+    // Farbe (roter „CUT"-Schriftzug glüht rot); lit wird sie DURCHLEUCHTET —
+    // fast-weißes LED-Tint + zweischichtiger Glow in der LED-Farbe (bgColor).
+    // overflow MUSS hier 'visible' sein: overflow:hidden clippt den text-shadow
+    // hart an der Span-Box → farbiges Rechteck statt Glow. Die Kappe selbst
+    // clippt mit overflow:hidden — das ist die physische Lichtgrenze.
+    const legend = ledModeActive ? buildLedLegend(bgColor, textColor, pressed, lit, effectiveFontSize) : null
+    const ledText: React.CSSProperties = legend
+      ? { ...textStyle, overflow: 'visible', ...(legend.color && { color: legend.color }), textShadow: legend.textShadow }
+      : textStyle
+    return (
+      <div style={outer} {...pointerHandlers}>
+        <div style={cap}>
+          {bitmapImg}
+          {!broadcastLed && <div aria-hidden="true" style={buildDomeStyle(domeColor, pressed)} />}
+          {/* Aktives Feedback im LED-Modus: die LED durchleuchtet auch die Dome-Mulde */}
+          {domeLedLit && <div aria-hidden="true" style={buildDomeLedGlow(bgColor, pressed)} />}
+          {showText && text && <span style={ledText}>{textLines}</span>}
+        </div>
+        {indicators}
+      </div>
+    )
+  }
+
+  // ─── Standard-Button (kein physischer Stil) ─────────────────────────────────
+  const containerStyle: React.CSSProperties = {
+    ...positionBase,
+    borderRadius,
+    overflow: 'hidden',
+    ...interaction,
+    background: showBgColor && bgColor ? bgColor : (hasData ? '#1a2030' : 'transparent'),
+    ...(!hasData && !isStale && { border: '1.5px dashed #2a3344', opacity: 0.6 }),
+    ...(isStale && { opacity: 0.5, outline: '2px solid #ff8a3d', outlineOffset: '-2px' }),
+    ...(pressed && { transform: 'scale(0.97)', outline: '2.5px solid #ff5a5f', outlineOffset: '-2px' }),
+    transition: pressed ? 'none' : 'transform 0.08s, box-shadow 0.08s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...(hasData && {
+      boxShadow: pressed
+        ? '0 1px 2px rgba(0,0,0,0.4)'
+        : '0 3px 8px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.3)',
+    }),
+  }
+
+  return (
+    <div style={containerStyle} {...pointerHandlers}>
+      {bitmapImg}
+
+      {/* Normales 3D-Bevel-Overlay (nur wenn Daten vorhanden) */}
+      {hasData && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius,
+            pointerEvents: 'none',
+            boxShadow: pressed
+              ? 'inset 0 2px 5px rgba(0,0,0,0.65), inset 2px 0 4px rgba(0,0,0,0.45), inset 0 -1px 2px rgba(255,255,255,0.07), inset -1px 0 2px rgba(255,255,255,0.05)'
+              : 'inset 0 1.5px 2px rgba(255,255,255,0.22), inset 1.5px 0 2px rgba(255,255,255,0.11), inset 0 -2.5px 5px rgba(0,0,0,0.60), inset -2.5px 0 4px rgba(0,0,0,0.42)',
+            transition: pressed ? 'none' : 'box-shadow 0.08s',
+          }}
+        />
+      )}
+
+      {showText && text && <span style={textStyle}>{textLines}</span>}
+
+      {indicators}
     </div>
   )
 })

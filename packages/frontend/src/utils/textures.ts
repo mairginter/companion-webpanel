@@ -146,6 +146,40 @@ export const TEXTURES: TextureOption[] = [
       )`,
     ].join(', '),
   },
+  {
+    id: 'plastic',
+    label: 'Plastik (Spritzguss)',
+    // Feine Spritzguss-Körnung + sanfter Deckenlicht-Reflex von oben
+    css: [
+      `url("data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.07'/></svg>`,
+      )}")`,
+      `radial-gradient(130% 110% at 50% 0%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 55%, rgba(0,0,0,0.12) 100%)`,
+    ].join(', '),
+  },
+  {
+    id: 'abs',
+    label: 'ABS glänzend',
+    // Wie Plastik, zusätzlich ein schräger Glanzstreifen (glänzendes ABS)
+    css: [
+      `url("data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.05'/></svg>`,
+      )}")`,
+      `linear-gradient(115deg, rgba(255,255,255,0) 32%, rgba(255,255,255,0.045) 44%, rgba(255,255,255,0) 52%)`,
+      `radial-gradient(130% 110% at 50% 0%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 55%, rgba(0,0,0,0.10) 100%)`,
+    ].join(', '),
+  },
+  {
+    id: 'matt',
+    label: 'Plastik matt genarbt',
+    // Stärkere Narbung + feine horizontale Riffelung (matte Struktur)
+    css: [
+      `url("data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.12'/></svg>`,
+      )}")`,
+      `repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px)`,
+    ].join(', '),
+  },
 ]
 
 export const TEXTURE_MAP = new Map(TEXTURES.map((t) => [t.id, t]))

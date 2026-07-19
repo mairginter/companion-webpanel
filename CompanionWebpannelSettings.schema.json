@@ -59,6 +59,25 @@
     "settingsPath": {
       "type": "string",
       "description": "Custom path to this file (~-normalized). Machine-specific; set by main process."
+    },
+    "buttonStyle": {
+      "type": "string",
+      "enum": [
+        "default",
+        "broadcast-led"
+      ],
+      "default": "default",
+      "description": "Globaler Button-Render-Style (app-weit): 'default' = Buttons rendern wie konfiguriert; 'broadcast-led' = Broadcast-LED-Overlay über alle CompanionButtons — die Companion-bgColor wird zur LED-Signalfarbe (durchleuchtet die dunkle Kappe im Metallkragen + färbt den Text-Glow), textColor bleibt Legenden-Farbe, dunkle Farben = LED aus. Unabhängig von render.physicalStyle (Dome, pro Button)."
+    },
+    "physicalButtons": {
+      "type": "string",
+      "enum": [
+        "off",
+        "dome",
+        "led"
+      ],
+      "deprecated": true,
+      "description": "DEPRECATED: kurzlebiges Zwischen-Feld während v1.5.0-Entwicklung, ersetzt durch buttonStyle (global) + render.physicalStyle (pro Button). Wird ignoriert."
     }
   },
   "$defs": {
@@ -406,6 +425,25 @@
                   "minimum": 0,
                   "maximum": 1,
                   "default": 1
+                },
+                "physicalStyle": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Physischer Taster (Dome) — pro Button, unabhängig vom globalen buttonStyle: matte Gummi-/Kunststoff-Kappe in Vertiefung mit konkaver Mulde. Hat Vorrang vor dem Broadcast-LED-Style."
+                },
+                "physicalVariant": {
+                  "type": "string",
+                  "enum": [
+                    "dome",
+                    "led"
+                  ],
+                  "deprecated": true,
+                  "description": "DEPRECATED: kurzlebiges Zwischen-Feld während v1.5.0-Entwicklung. Wird ignoriert; bleibt im Schema damit ältere Settings-Dateien valide bleiben."
+                },
+                "forceBlackCap": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Nur wirksam bei globalem buttonStyle 'broadcast-led': Kappe bleibt IMMER auf Referenz-Schwarz #1d1f23 — die Companion-Farbe wirkt nur noch als LED (Radial-/Außen-/Text-Glow), auch im Aktiv-Zustand."
                 }
               }
             }
@@ -483,6 +521,15 @@
                   "minimum": 0,
                   "maximum": 100,
                   "default": 10
+                },
+                "finish": {
+                  "type": "string",
+                  "enum": [
+                    "flat",
+                    "plastic"
+                  ],
+                  "default": "flat",
+                  "description": "Oberflächen-Finish: 'flat' = flach, 'plastic' = Kunststoff-Relief mit Glanz und Körnung."
                 }
               }
             }
