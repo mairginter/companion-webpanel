@@ -63,7 +63,20 @@ Canvas-Konfiguration:
 - Die letzten 5 verwendeten Canvas-Größen werden gespeichert
 - "Verfügbaren Bereich übernehmen": setzt Canvas auf die aktuelle Fenstergröße minus Toolbar
 - Hintergrundfarbe des Canvas
+- Textur: CSS-basierte Hintergrund-Textur (keine, Leder, Carbon, Metall, Leinen, Perforiert, Waben, Beton, Plastik/Spritzguss, ABS glänzend, Plastik matt genarbt)
 - DPI-Hinweis bei Windows-Skalierung: Canvas-Größe in logischen CSS-px eingeben, nicht physischen Pixeln
+
+**Broadcast-LED-Style (global, `buttonStyle`):** In den Canvas-Einstellungen (PropertiesPanel ohne Selektion, Edit-Modus) wählbar: "Standard" oder "Broadcast-LED". Gilt app-weit für alle CompanionButtons in allen Panels. Der Broadcast-LED-Style ist ein Overlay-Style, der sich über alle Buttons stülpt und die Companion-Farben re-interpretiert — er ersetzt keine Button-Daten:
+- Die Companion-**Hintergrundfarbe (bgColor) wird zur LED-Signalfarbe**: Sie füllt nicht mehr die Fläche, sondern durchleuchtet die dunkle Plastik-Kappe (#1d1f23, im Metallkragen) von innen.
+- Die Companion-**Textfarbe bleibt die Legenden-Farbe** bei inaktiven Buttons — die Legende glüht dort in ihrer **eigenen Farbe**: rote "CUT"-Schrift glüht rot auch auf dunklem Button. Bei **aktiven** Buttons wird die Legende durchleuchtet: Die Textfarbe wird auf ein fast-weißes Tint der LED-Farbe gehoben und glüht zweischichtig in der LED-Farbe — der Aktiv-Zustand ist dadurch auch bei "Schwarzer Kappe" klar erkennbar.
+- **Dunkle Companion-Farben (Schwarz/Grau) = LED aus** → schlichte dunkle Kappe. **Helle/gesättigte Feedback-Farben (Rot, Grün, Gelb) = voll durchleuchtet** mit Außen-Glow. Companion-Feedback (Farbwechsel bei aktiv) wird so automatisch zu "LED blüht auf" — ideal für Live-Produktion.
+- Beim Drücken fährt die Kappe 3,5 px nach unten und die LED blüht auf (kein roter Pressed-Rahmen mehr).
+- Funktioniert mit jedem bestehenden Button ohne Datenmigration.
+
+In der Settings-JSON: Top-Level-Feld `"buttonStyle": "broadcast-led"` (weglassen = Standard).
+Empfehlung dazu: Canvas-Textur "Plastik matt genarbt" auf dunklem Grund (#1a1c1f).
+
+**Unabhängig davon** gibt es den physischen Dome-Taster **pro Button** (`render.physicalStyle`, siehe CompanionButton-Properties) — ein Button mit Dome-Stil behält seine Dome-Optik auch bei aktivem Broadcast-LED-Style.
 
 Zoom:
 - Ctrl+Scroll oder Zoom-Control in der Toolbar (20%–200%)
@@ -105,19 +118,20 @@ Konfigurierbare Properties:
 - Row: Zeile auf der Companion-Seite
 - Col: Spalte auf der Companion-Seite
 - Border-Radius: abgerundete Ecken (px)
-- Physical Style: aktiviert einen silber-metallischen Rahmen mit konkaver Dom-Fläche (3D-Optik). Im View-Modus skaliert die Dom beim Drücken leicht ein.
 - Text-Align: Textausrichtung (left, center, right)
 - Bitmap skalieren (scaleBitmap): Companion-Bitmap füllt den Button, auch wenn er größer als 72×72px ist
 - Bitmap-Auflösung (bitmapSize): Auflösung der von Companion angeforderten Bitmap — Werte: 72 / 100 / 144 / 200 px (Standard: 72). Nur sichtbar wenn "Bitmap anzeigen" aktiv ist. Höhere Auflösung verbessert die Bildqualität bei großen Buttons, erhöht aber den Datenverbrauch (quadratisch: 144px = 4× mehr Daten als 72px). Das Backend subscribed Companion mit dem gesetzten Wert (`ADD-SUB BITMAP=N`) und führt bei Auflösungsänderung automatisch einen Re-Subscribe durch.
 - Hintergrundfarbe anzeigen (showBgColor): Companion-Hintergrundfarbe als Button-Hintergrund verwenden
 - Text anzeigen (showText): Companion-Button-Text einblenden
 - Schriftgröße: wird bei kleinen Buttons automatisch auf min. 7px begrenzt
+- Physischer Taster / Dome (physicalStyle): PRO BUTTON — matte Gummi-/Kunststoff-Kappe in einer Vertiefung mit konkaver Mulde; die Companion-Hintergrundfarbe tönt Kappe und Mulde. Ein Dome-Button behält im Broadcast-LED-Modus seine Dome-Geometrie, bekommt dort aber den Legenden-Glow.
+- Schwarze Kappe (forceBlackCap): PRO BUTTON — Checkbox ist immer sichtbar/setzbar, wirkt aber nur bei aktivem globalem Broadcast-LED-Style. Die Kappe bleibt IMMER auf dem Referenz-Schwarz #1d1f23, die Companion-Farbe wirkt nur noch als LED (Innen-Schein, Außen-Glow, Text-Glow), auch im Aktiv-Zustand. Gilt für LED-Kappen UND Dome-Buttons (schwarzer Dome mit glühender Legende). Zweck: einheitlich schwarze Hardware-Optik, Farben tragen nur Signal-Bedeutung (z.B. rot glühende "CUT"-Legende auf schwarzer Kappe).
 
 Im View-Modus: Klick/Touch löst KEY-PRESS in Companion aus.
 
-**Multi-Button-Editing:** Wenn ≥2 CompanionButtons selektiert sind, erscheint im PropertiesPanel ein Batch-Edit-Panel. Felder mit gemischten Werten zeigen "—" (indeterminate). Nur geänderte Felder werden auf alle selektierten Buttons angewendet. Editierbare Felder im Batch-Modus: Host, showBgColor, showBitmap, bitmapSize, showText, textAlign, borderRadius, physicalStyle, fontSize.
+**Multi-Button-Editing:** Wenn ≥2 CompanionButtons selektiert sind, erscheint im PropertiesPanel ein Batch-Edit-Panel. Felder mit gemischten Werten zeigen "—" (indeterminate). Nur geänderte Felder werden auf alle selektierten Buttons angewendet. Editierbare Felder im Batch-Modus: Host, showBgColor, showBitmap, bitmapSize, showText, textAlign, borderRadius, physicalStyle, forceBlackCap, fontSize.
 
-**Host-Labels im Edit-Modus:** Label-Icon-Button in der Toolbar (Edit-Modus) blendet semi-transparente Host-Name-Labels (8px, unten) auf allen CompanionButtons ein. Nützlich zur Kontrolle welcher Button zu welchem Host gehört.
+**Host-Labels im Edit-Modus:** Label-Icon-Button in der Toolbar (Edit-Modus) blendet auf allen CompanionButtons zwei semi-transparente Overlays ein: unten den Host-Namen, oben die Companion-Referenz als "P{Page} · R{Row}/C{Col}". Nützlich zur Kontrolle welcher Button zu welchem Host/Companion-Button gehört.
 
 ### Shape
 
@@ -129,6 +143,7 @@ Konfigurierbare Properties:
 - Stroke-Breite (px)
 - Border-Radius (px)
 - Textur: CSS-basierte Canvas-Textur (keiner, Carbon, Leder, Metall, etc.)
+- Oberfläche (finish): "Flach" (Standard) oder "Kunststoff" — Kunststoff fügt Spritzguss-Körnung, Glanzverlauf und 3D-Relief hinzu (wie eine Konsolen-Frontplatte)
 - Opacity (0–100%)
 
 Shape-Elemente reagieren nicht auf Klicks im View-Modus.
@@ -185,6 +200,41 @@ Nicht benötigte Werte einfach weglassen (Index auf -1 setzen oder Variable im T
 
 Fader-Bedienung: vertikales Drag mit Maus oder Touch sendet ebenfalls SUB-ROTATE an Companion.
 Drum-Wheel: alternatives Scrollrad-Element, ein/ausblendbar mit `showWheel`-Option.
+
+#### Empfohlenes Pattern: Template-Button mit lokaler Kanal-Variable (Companion 5.0)
+
+Statt für jeden Kanal drei/vier Modul-Variablen einzeln über die Variablen-Suche in den Button-Text einzufügen, baut man **einen Template-Button pro Modul** und dupliziert ihn pro Kanal — geändert wird nur eine Zahl.
+
+**Schritt 1 — Lokale Variable auf dem Button definieren:** z.B. `ch = 1`.
+
+**Schritt 2 — Button-Text als Expression** (Expression-Modus aktivieren). Die Variablen-Referenzen werden dynamisch zusammengebaut und mit `parseVariables()` aufgelöst:
+
+```
+parseVariables(concat(
+  '$(vmix:audio_meter_', $(local:ch), ')|',
+  '$(vmix:audio_meter_', $(local:ch), ')|',
+  '$(vmix:volume_',      $(local:ch), ')|',
+  '$(vmix:input_',       $(local:ch), '_name)'
+))
+```
+
+Laufzeit-Ergebnis z.B. `67|67|82|Kamera 1` — passt exakt auf die Standard-Indizes (meterL=0, meterR=1, level=2, name=3).
+
+Wichtige Regeln dabei:
+- **Mute NICHT in den Text aufnehmen.** Das Panel liest den Mute-Status aus der **Hintergrundfarbe** des Buttons (Companion-Feedback), nicht aus dem Text — ein Mute-Wert im Text wird ignoriert und verschiebt nur die Indizes.
+- **Trennzeichen = Panel-Einstellung.** Standard im ChannelStrip ist `|`. Wer `;` o.ä. im Template nutzt, muss den Separator im ChannelStrip identisch setzen.
+- **Mono-Quellen:** dieselbe Meter-Variable für Slot 0 und 1 senden (wie oben) — oder nur einen Meter-Slot senden und im Panel `meterRIndex = -1` setzen.
+- **Wertebereiche:** Meter und Fader erwartet das Panel als **0–100**. Liefert ein Modul 0–1 (z.B. `0.75`), in der Expression skalieren: `round($(…) * 100)`. `-oo`/`-inf` aus Mixer-Modulen wird automatisch als −∞ verstanden.
+- **Kanalname direkt mitsenden** (Slot 3) statt ihn im Panel zu pflegen — beim Duplizieren stimmt er dann automatisch.
+
+**Schritt 3 — Die lokale Variable überall im Button nutzen, nicht nur im Text.** Das ist der eigentliche Zeitgewinn — der komplette Button wird kanal-agnostisch:
+- **Press-Action** (Mute-Toggle): Input/Kanal = `$(local:ch)`
+- **Rotary-Actions** links/rechts (Volume ∓/±): Input = `$(local:ch)` — Rotary-Actions müssen am Button **aktiviert** sein, sonst funktioniert weder Fader-Drag noch Drum-Wheel (SUB-ROTATE). Die Schrittweite der Rotary-Action ist die Basis-Granularität; Shift+Scroll im Panel multipliziert sie mit dem Coarse Multiplier.
+- **Mute-Feedback** (bgColor, z.B. „Audio muted" → rot): Input = `$(local:ch)` — damit stimmt die Mute-Anzeige im Panel automatisch.
+
+**Schritt 4 — Kanal 2–16:** Button in Companion kopieren, nur `ch` ändern. Im Panel das ChannelStrip-Element duplizieren (Ctrl+D) und nur die Button-Referenz auf den neuen Button zeigen lassen.
+
+Dasselbe Pattern gilt für den optionalen **Button 2** (Solo/Pan): gleiche lokale Variable, Press = Solo-Toggle, Rotary = Pan, Solo-Feedback auf bgColor.
 
 #### Button 2 (optional — für Solo/PFL und Pan)
 
