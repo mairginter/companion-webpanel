@@ -20,11 +20,11 @@ I have hands-on experience with the interfaces and APIs involved — Satellite A
 
 **Live production panel** — Companion buttons with Broadcast LED and dome styles, channel strips for vMix Audio, grouped with shapes and labels, plus a Virtual Companion Deck (bottom right):
 
-![Panel Screenshot](docs/screenshot-panel-v1.5.png)
+![Panel Screenshot](docs/screenshots/panel-live-production.png)
 
 **Desktop app start window** — port, config file, host status and the "Download Help" link below the version:
 
-![Start Window](docs/screenshot-startup-window.png)
+![Start Window](docs/screenshots/electron-start-window.png)
 
 ---
 
