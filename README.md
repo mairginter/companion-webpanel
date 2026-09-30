@@ -16,9 +16,43 @@ I have hands-on experience with the interfaces and APIs involved — Satellite A
 
 ---
 
-## Screenshot
+## Screenshots
 
-![Panel Screenshot](docs/CompanionWebpannel_example.png)
+**Live production panel** — Companion buttons with Broadcast LED and dome styles, channel strips for vMix Audio, grouped with shapes and labels, plus a Virtual Companion Deck (bottom right):
+
+![Panel Screenshot](docs/screenshot-panel-v1.5.png)
+
+**Desktop app start window** — port, config file, host status and the "Download Help" link below the version:
+
+![Start Window](docs/screenshot-startup-window.png)
+
+---
+
+## Download
+
+Get the latest portable Windows build (`CompanionWebpanel-x.y.z.exe`, no installation needed) from the **[Releases page](https://github.com/mairginter/companion-webpanel/releases/latest)**.
+
+The build is unsigned — Windows SmartScreen may ask for confirmation on first start.
+
+---
+
+## Help & AI Assistant
+
+All features, settings and typical pitfalls are documented in a single file that is written for both humans and AI assistants:
+
+📄 **[help-me-KI-by_alex.md](packages/frontend/public/help-me-KI-by_alex.md)**
+
+**Just hand this file to an AI agent** (ChatGPT, Claude, Gemini, Copilot, …) — upload it or paste its content into the chat — and ask your questions in plain language, e.g.:
+
+- *"How do I connect my panel to Companion at 192.168.1.20?"*
+- *"How do I build an audio channel strip for my X32?"*
+- *"Why does my host dot stay orange?"*
+
+The file contains a **Getting Started** section (requirements, first panel in 6 steps, common first-time problems) and **built-in instructions for the AI agent**: it sticks to documented features, separates what happens in Companion from what happens in the panel, asks follow-up questions when information is missing, and gives copy-ready button texts and expressions.
+
+You can download the file directly from the app:
+- **Desktop app:** "Download Help" in the start window, below the version number
+- **Panel (browser or app):** `?` icon in the toolbar → "AI Context" tab
 
 ---
 
@@ -81,7 +115,8 @@ All elements are freely positionable, resizable, and snap to grid. Each has its 
 The core element — mirrors a live Companion button in real time.
 - Real-time bitmap, background color, and text overlay from Companion
 - Configurable text alignment, font size, and scale
-- **Physical button style** — metallic frame with concave dome surface, tinted by Companion's background color
+- **Physical dome style** (per button) — matte rubber cap in a concave well, tinted by Companion's background color
+- **Broadcast LED style** (global) — the Companion color becomes an LED that backlights a dark cap in a metal bezel; dark colors = LED off, feedback colors light up with glow; optional **black cap** per button for a uniform hardware look
 - Press animation (scale on touch/click), instant key-press routing back to Companion
 
 ### 🎚️ Channel Strip
@@ -125,16 +160,19 @@ Static text for annotating sections of your panel.
 ### Electron Desktop App
 - Single-instance, system tray icon with connection status
 - Embedded backend (no separate Node process needed)
-- Startup window shows version and connection status
-- Builds for Windows (NSIS installer) and macOS (DMG)
+- Start window shows version, port, config file and connection status — plus "Download Help" for the AI help file
+- Builds for Windows (portable .exe) and macOS (DMG)
 
 ---
 
 ## Requirements
 
-- **Bitfocus Companion 4.3.0 or newer**
-- In Companion settings: `satellite_subscriptions_enabled = true`
+- **Bitfocus Companion 4.3.0 or newer** (5.0+ recommended: WebP bitmaps, non-square buttons, mDNS auto-discovery, page names in the picker)
+- In Companion: enable the **Button Subscriptions API** (Settings → Protocols)
+- Network: TCP 16623 (Satellite API) from the panel computer to Companion; panel port 8080 open for other devices on the LAN
 - Node.js 18+ (for development / standalone mode)
+
+See the [help file](packages/frontend/public/help-me-KI-by_alex.md) for the full Getting Started guide.
 
 ---
 
