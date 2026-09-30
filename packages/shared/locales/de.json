@@ -241,6 +241,8 @@
     "newConfig": "Neue leere Konfiguration",
     "newConfigDesc": "Leere Konfigurationsdatei erstellen",
     "configFile": "Konfigurationsdatei",
+    "downloadHelp": "Hilfe herunterladen",
+    "downloadHelpDesc": "KI-Hilfedatei (Markdown) speichern — einfach einem KI-Agenten geben und Fragen stellen",
     "configMissing": "⚠ Konfigurationsdatei nicht gefunden.\nDatei oben auswählen (⋯) oder neue erstellen."
   },
   "errors": {

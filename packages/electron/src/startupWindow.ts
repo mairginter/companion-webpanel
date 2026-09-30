@@ -32,7 +32,7 @@ export class StartupWindow {
 
     this.win = new BrowserWindow({
       width: 400,
-      height: 350,
+      height: 365,  // +15 px für den "Hilfe herunterladen"-Link unter der Version
       resizable: false,
       maximizable: false,
       fullscreenable: false,

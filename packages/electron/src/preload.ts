@@ -16,6 +16,7 @@
  *   getSettingsPath()        → current settings file path (~-normalized)
  *   chooseSettingsPath()     → opens file picker, returns chosen path or null
  *   applySettingsPath(path)  → saves new path + relaunches app
+ *   downloadHelp()           → speichert help-me-KI-by_alex.md per Save-Dialog (true = gespeichert)
  */
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppStatus } from './types'
@@ -65,4 +66,7 @@ contextBridge.exposeInMainWorld('cwpApi', {
 
   newSettingsFile: (): Promise<string | null> =>
     ipcRenderer.invoke('new-settings-file'),
+
+  downloadHelp: (): Promise<boolean> =>
+    ipcRenderer.invoke('download-help'),
 })

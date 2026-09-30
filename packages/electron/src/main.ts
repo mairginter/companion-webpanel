@@ -202,7 +202,29 @@ async function main(): Promise<void> {
     newConfigDesc:        t('startup.newConfigDesc'),
     configFile:           t('startup.configFile'),
     configMissing:        t('startup.configMissing'),
+    downloadHelp:         t('startup.downloadHelp'),
+    downloadHelpDesc:     t('startup.downloadHelpDesc'),
   }))
+
+  // Hilfe-Download: kopiert help-me-KI-by_alex.md aus dem gebauten Frontend
+  // (Vite übernimmt public/ 1:1 nach dist/) an einen vom User gewählten Ort.
+  // Rückgabe: true = gespeichert, false = abgebrochen / Datei nicht vorhanden.
+  ipcMain.handle('download-help', async () => {
+    const helpFile = 'help-me-KI-by_alex.md'
+    const src = path.join(frontendDir, helpFile)
+    if (!fs.existsSync(src)) {
+      console.warn('[Electron] Hilfedatei nicht gefunden:', src)
+      return false
+    }
+    const result = await dialog.showSaveDialog({
+      defaultPath: path.join(app.getPath('downloads'), helpFile),
+      filters: [{ name: 'Markdown', extensions: ['md'] }],
+    })
+    if (result.canceled || !result.filePath) return false
+    await fs.promises.copyFile(src, result.filePath)
+    shell.showItemInFolder(result.filePath)
+    return true
+  })
 
   // Fix #4: Fenster beim Open Panel nicht schließen
   ipcMain.handle('open-settings-folder', () => {
