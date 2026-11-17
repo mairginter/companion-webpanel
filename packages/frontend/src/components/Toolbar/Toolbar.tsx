@@ -1,6 +1,20 @@
+/**
+ * Toolbar.tsx
+ *
+ * Kopfleiste der App (56 px). Der Inhalt hängt vom Modus ab:
+ *
+ *  View-Mode  — reduziert auf das, was im Live-Betrieb gebraucht wird:
+ *               Panel-Wechsel (ohne Verwaltung), Mode-Toggle, Zoom, Show-Lock,
+ *               Kiosk, Geräte-Links, Host-Status, Hilfe. Speichern erscheint nur bei ungespeicherten Änderungen.
+ *  Edit-Mode  — zusätzlich Panel-Verwaltung (Umbenennen/Duplizieren/Löschen/Neu),
+ *               Speichern, Element hinzufügen, Host-Labels, Sprache.
+ *
+ * Zoom/Fit, Kiosk und Show-Lock sind geräte-lokal (siehe utils/deviceView.ts).
+ */
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useAppStore } from '../../store/useAppStore'
+import { useAppStore, selectDirty, selectZoom, selectAutoZoom } from '../../store/useAppStore'
+import { hasFixedCanvas } from '../../utils/deviceView'
 import { AddElementMenu } from '../AddElement/AddElementMenu'
 import { ZoomControl } from './ZoomControl'
 import { LanguageSwitcher } from './LanguageSwitcher'
@@ -10,8 +24,26 @@ interface ToolbarProps {
   onToggleMode: () => void
   onOpenHostManager?: () => void
   onOpenHelp?: () => void
-  onSave?: () => void
+  /** Öffnet den Geräte-Links-Dialog (Kiosk-/Lock-Adressen) */
+  onOpenDeviceLinks?: () => void
+  /** Speichert die Settings; liefert (falls async) true bei Erfolg */
+  onSave?: () => void | Promise<boolean>
 }
+
+/** Icon-Button in den Zeilen des Panel-Dropdowns (28×28 — auch per Touch treffbar) */
+const rowIconButton = (color: string, disabled = false): React.CSSProperties => ({
+  width: 28, height: 28, padding: 0,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  background: 'none', border: 'none', borderRadius: 4,
+  color, cursor: disabled ? 'default' : 'pointer',
+})
+
+/** Quadratischer Icon-Button in der Toolbar (aufbauend auf modeButtonStyle) */
+const iconButtonStyle = (active: boolean): React.CSSProperties => ({
+  ...modeButtonStyle(active),
+  width: 32, padding: 0, flexShrink: 0,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+})
 
 type SessionStatus = 'connecting' | 'connected' | 'stale' | 'error' | 'caps-disabled'
 
@@ -72,7 +104,7 @@ const modeButtonStyle = (active: boolean): React.CSSProperties => ({
   height: 32,
 })
 
-export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onSave }: ToolbarProps) {
+export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onOpenDeviceLinks, onSave }: ToolbarProps) {
   const { t } = useTranslation()
   const panels = useAppStore((s) => s.settings?.panels ?? [])
   const activePanelId = useAppStore((s) => s.activePanelId)
@@ -114,15 +146,31 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
   const activePanel = panels.find((p) => p.id === activePanelId)
   const setZoom = useAppStore((s) => s.setZoom)
   const setAutoZoom = useAppStore((s) => s.setAutoZoom)
-  const zoom = activePanel?.zoom ?? 1
-  const autoZoom = activePanel?.autoZoom ?? false
-  const [saveFlash, setSaveFlash] = useState(false)
+  // Zoom/Fit, Kiosk, Lock: geräte-lokal
+  const zoom = useAppStore(selectZoom)
+  const autoZoom = useAppStore(selectAutoZoom)
+  const dirty = useAppStore(selectDirty)
+  const locked = useAppStore((s) => s.locked)
+  const setLocked = useAppStore((s) => s.setLocked)
+  const setKiosk = useAppStore((s) => s.setKiosk)
+  // Rückmeldung am Save-Button: grün = gespeichert, rot = fehlgeschlagen
+  const [saveFlash, setSaveFlash] = useState<'ok' | 'fail' | null>(null)
+  // Panel-ID, deren Löschen gerade bestätigt werden muss (zweiter Klick löscht)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
-  const handleSaveClick = useCallback(() => {
-    onSave?.()
-    setSaveFlash(true)
-    setTimeout(() => setSaveFlash(false), 600)
+  const handleSaveClick = useCallback(async () => {
+    // Erst das Ergebnis abwarten — vorher blinkte der Button auch bei Fehlschlag grün
+    const ok = (await onSave?.()) !== false
+    setSaveFlash(ok ? 'ok' : 'fail')
+    setTimeout(() => setSaveFlash(null), 600)
   }, [onSave])
+
+  // Lösch-Bestätigung verfällt wenn das Dropdown schließt
+  useEffect(() => {
+    if (!dropdownOpen) setConfirmDeleteId(null)
+  }, [dropdownOpen])
+
+  const saveColor = saveFlash === 'ok' ? '#21d07a' : saveFlash === 'fail' ? '#ff5a5f' : null
 
   // Schließen bei Klick außerhalb
   useEffect(() => {
@@ -154,7 +202,9 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
           <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {activePanel?.name ?? t('toolbar.noPanel')}
           </span>
-          <span style={{ fontSize: 10, color: '#4a5568' }}>{dropdownOpen ? '▲' : '▼'}</span>
+          <span className="material-icons" style={{ fontSize: 18, color: '#4a5568' }}>
+            {dropdownOpen ? 'expand_less' : 'expand_more'}
+          </span>
         </button>
 
         {dropdownOpen && (
@@ -214,41 +264,68 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
                       {panel.name}
                     </div>
                   )}
-                  {!isRenaming && (
-                    <div style={{ display: 'flex', gap: 2, paddingRight: 6, flexShrink: 0 }}>
-                      <button
-                        title={t('toolbar.rename')}
-                        onClick={(e) => { e.stopPropagation(); setRenameValue(panel.name); setRenamingId(panel.id) }}
-                        style={{ background: 'none', border: 'none', color: '#4a5568', cursor: 'pointer', fontSize: 13, padding: '2px 4px', borderRadius: 3 }}
-                      >
-                        ✎
-                      </button>
-                      <button
-                        title={t('toolbar.duplicatePanel')}
-                        onClick={(e) => { e.stopPropagation(); duplicatePanel(panel.id); onSave?.(); setDropdownOpen(false) }}
-                        style={{ background: 'none', border: 'none', color: '#4a5568', cursor: 'pointer', fontSize: 13, padding: '2px 4px', borderRadius: 3 }}
-                      >
-                        ⧉
-                      </button>
-                      <button
-                        title={panels.length <= 1 ? t('toolbar.cannotDeleteLast') : t('toolbar.deletePanel')}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (deletePanel(panel.id)) onSave?.()
-                        }}
-                        disabled={panels.length <= 1}
-                        style={{ background: 'none', border: 'none', color: panels.length <= 1 ? '#2a3344' : '#ff5a5f', cursor: panels.length <= 1 ? 'default' : 'pointer', fontSize: 13, padding: '2px 4px', borderRadius: 3 }}
-                      >
-                        ✕
-                      </button>
+                  {/* Panel-Verwaltung nur im Edit-Mode — im View-Mode ist das Dropdown ein reiner Umschalter */}
+                  {!isRenaming && mode === 'edit' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2, paddingRight: 6, flexShrink: 0 }}>
+                      {confirmDeleteId === panel.id ? (
+                        // Zweistufiges Löschen: erster Klick fragt nach, zweiter löscht
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setConfirmDeleteId(null)
+                              if (deletePanel(panel.id)) onSave?.()
+                            }}
+                            style={{
+                              height: 28, padding: '0 8px', borderRadius: 4, cursor: 'pointer',
+                              background: 'rgba(255,90,95,0.15)', border: '1px solid #ff5a5f',
+                              color: '#ff5a5f', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {t('toolbar.confirmDeletePanel')}
+                          </button>
+                          <button
+                            title={t('toolbar.cancelShortcut')}
+                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null) }}
+                            style={rowIconButton('#8896aa')}
+                          >
+                            <span className="material-icons" style={{ fontSize: 16 }}>close</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            title={t('toolbar.rename')}
+                            onClick={(e) => { e.stopPropagation(); setRenameValue(panel.name); setRenamingId(panel.id) }}
+                            style={rowIconButton('#8896aa')}
+                          >
+                            <span className="material-icons" style={{ fontSize: 16 }}>edit</span>
+                          </button>
+                          <button
+                            title={t('toolbar.duplicatePanel')}
+                            onClick={(e) => { e.stopPropagation(); duplicatePanel(panel.id); onSave?.(); setDropdownOpen(false) }}
+                            style={rowIconButton('#8896aa')}
+                          >
+                            <span className="material-icons" style={{ fontSize: 16 }}>content_copy</span>
+                          </button>
+                          <button
+                            title={panels.length <= 1 ? t('toolbar.cannotDeleteLast') : t('toolbar.deletePanel')}
+                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(panel.id) }}
+                            disabled={panels.length <= 1}
+                            style={rowIconButton(panels.length <= 1 ? '#2a3344' : '#ff5a5f', panels.length <= 1)}
+                          >
+                            <span className="material-icons" style={{ fontSize: 16 }}>delete</span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
               )
             })}
 
-            {/* Trennlinie + Neues Panel */}
-            <div style={{ borderTop: '1px solid #2a3344', padding: '6px 8px' }}>
+            {/* Trennlinie + Neues Panel (nur Edit-Mode) */}
+            {mode === 'edit' && <div style={{ borderTop: '1px solid #2a3344', padding: '6px 8px' }}>
               {creatingPanel ? (
                 <div style={{ display: 'flex', gap: 4 }}>
                   <input
@@ -295,7 +372,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
                       fontSize: 16, cursor: newPanelName.trim() ? 'pointer' : 'default',
                     }}
                   >
-                    ✓
+                    <span className="material-icons" style={{ fontSize: 16, verticalAlign: 'middle' }}>check</span>
                   </button>
                   <button
                     title={t('toolbar.cancelShortcut')}
@@ -306,7 +383,7 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
                       color: '#4a5568', fontSize: 14, cursor: 'pointer',
                     }}
                   >
-                    ✕
+                    <span className="material-icons" style={{ fontSize: 16, verticalAlign: 'middle' }}>close</span>
                   </button>
                 </div>
               ) : (
@@ -320,38 +397,53 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
                   {t('toolbar.newPanel')}
                 </button>
               )}
-            </div>
+            </div>}
           </div>
         )}
       </div>
 
-      {/* Speichern — direkt neben Panel-Dropdown */}
-      <button
-        onClick={handleSaveClick}
-        title={t('toolbar.save')}
-        style={{
-          width: 32, height: 32, padding: 0,
-          borderRadius: 6,
-          border: `1px solid ${saveFlash ? '#21d07a' : '#2a3344'}`,
-          background: saveFlash ? 'rgba(33,208,122,0.18)' : '#1a2030',
-          color: saveFlash ? '#21d07a' : '#8896aa',
-          cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-          transform: saveFlash ? 'scale(0.92)' : 'scale(1)',
-          flexShrink: 0,
-        }}
-      >
-        <span className="material-icons" style={{ fontSize: 18 }}>save</span>
-      </button>
+      {/* Speichern — im Edit-Mode immer, im View-Mode nur wenn es etwas zu speichern gibt.
+          Der orange Punkt zeigt ungespeicherte Änderungen an. */}
+      {(mode === 'edit' || dirty) && (
+        <button
+          onClick={handleSaveClick}
+          title={dirty ? `${t('toolbar.save')} — ${t('toolbar.unsavedChanges')}` : t('toolbar.save')}
+          style={{
+            width: 32, height: 32, padding: 0,
+            borderRadius: 6,
+            border: `1px solid ${saveColor ?? (dirty ? '#ff8a3d' : '#2a3344')}`,
+            background: saveFlash === 'ok' ? 'rgba(33,208,122,0.18)' : saveFlash === 'fail' ? 'rgba(255,90,95,0.18)' : '#1a2030',
+            color: saveColor ?? (dirty ? '#e9edf2' : '#8896aa'),
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+            transform: saveFlash ? 'scale(0.92)' : 'scale(1)',
+            flexShrink: 0,
+            position: 'relative',
+          }}
+        >
+          <span className="material-icons" style={{ fontSize: 18 }}>save</span>
+          {dirty && !saveFlash && (
+            <span style={{
+              position: 'absolute', top: -3, right: -3, width: 9, height: 9,
+              borderRadius: '50%', background: '#ff8a3d', border: '2px solid #161e2e',
+            }} />
+          )}
+        </button>
+      )}
 
       <div style={dividerStyle} />
 
-      {/* Mode Toggle */}
+      {/* Mode Toggle — Edit ist bei aktivem Show-Lock gesperrt */}
       <button style={modeButtonStyle(mode === 'view')} onClick={() => mode !== 'view' && onToggleMode()} title={t('toolbar.viewMode')}>
         {t('toolbar.viewMode')}
       </button>
-      <button style={modeButtonStyle(mode === 'edit')} onClick={() => mode !== 'edit' && onToggleMode()} title={t('toolbar.editMode')}>
+      <button
+        style={{ ...modeButtonStyle(mode === 'edit'), ...(locked ? { opacity: 0.4, cursor: 'not-allowed' } : {}) }}
+        onClick={() => mode !== 'edit' && onToggleMode()}
+        disabled={locked}
+        title={locked ? t('toolbar.editLocked') : t('toolbar.editMode')}
+      >
         {t('toolbar.editMode')}
       </button>
 
@@ -360,22 +452,15 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
           <div style={dividerStyle} />
           <button
             ref={addBtnRef}
-            style={{
-              ...modeButtonStyle(addMenuOpen),
-              width: 32, padding: 0, textAlign: 'center', fontSize: 18,
-            }}
+            style={iconButtonStyle(addMenuOpen)}
             onClick={handleAddClick}
             title={t('toolbar.addElement')}
           >
-            +
+            <span className="material-icons" style={{ fontSize: 20 }}>add</span>
           </button>
 
           <button
-            style={{
-              ...modeButtonStyle(showHostLabels),
-              width: 32, padding: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
+            style={iconButtonStyle(showHostLabels)}
             onClick={() => setShowHostLabels(!showHostLabels)}
             title={showHostLabels ? t('toolbar.hideHostLabels') : t('toolbar.showHostLabels')}
           >
@@ -394,12 +479,53 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
         onAutoZoomChange={(v) => {
           if (activePanel) setAutoZoom(activePanel.id, v)
         }}
+        fitAvailable={hasFixedCanvas(activePanel)}
       />
+
+      {/* Live-Betrieb (nur View-Mode): Show-Lock + Kiosk */}
+      {mode === 'view' && (
+        <>
+          <button
+            style={{
+              ...iconButtonStyle(locked),
+              ...(locked ? { borderColor: '#ff8a3d', color: '#ff8a3d', background: 'rgba(255,138,61,0.12)' } : {}),
+            }}
+            onClick={() => setLocked(!locked)}
+            title={locked ? t('toolbar.unlock') : t('toolbar.lock')}
+          >
+            <span className="material-icons" style={{ fontSize: 18 }}>{locked ? 'lock' : 'lock_open'}</span>
+          </button>
+          <button
+            style={iconButtonStyle(false)}
+            onClick={() => setKiosk(true)}
+            title={t('toolbar.kioskEnter')}
+          >
+            <span className="material-icons" style={{ fontSize: 18 }}>fullscreen</span>
+          </button>
+        </>
+      )}
+
+      {/* Geräte-Links: Adressen für Tablet/Kiosk/Show-Lock erzeugen. In beiden Modi sichtbar —
+          im View-Mode mit Beschriftung (dort ist Platz), im Edit-Mode nur als Icon. */}
+      <button
+        style={{
+          ...modeButtonStyle(false),
+          display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
+          ...(mode === 'edit' ? { width: 32, padding: 0, justifyContent: 'center' } : {}),
+        }}
+        onClick={onOpenDeviceLinks}
+        title={t('toolbar.deviceLinksTitle')}
+      >
+        <span className="material-icons" style={{ fontSize: 18 }}>devices</span>
+        {mode === 'view' && t('toolbar.deviceLinks')}
+      </button>
 
       <div style={{ flex: 1 }} />
 
-      {/* Host Status Dots — nur Hosts mit showInToolbar !== false */}
-      {hosts.some(h => h.showInToolbar !== false) && (
+      {/* Host Status Dots — nur Hosts mit showInToolbar !== false.
+          Das Zahnrad steht bewusst immer da sobald es Hosts gibt: früher verschwand es,
+          wenn alle Hosts showInToolbar=false hatten — die Host-Verwaltung war dann unerreichbar. */}
+      {hosts.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {hosts.filter(h => h.showInToolbar !== false).map((host) => {
             const status = sessionStatus[host.id]
@@ -481,21 +607,26 @@ export function Toolbar({ mode, onToggleMode, onOpenHostManager, onOpenHelp, onS
             cursor: 'default',
           }}
         >
-          <span style={{ fontSize: 14 }}>!</span>
+          <span className="material-icons" style={{ fontSize: 16 }}>warning</span>
           {t('status.capsDisabled')}
         </div>
       )}
 
-      <LanguageSwitcher />
-      <div style={dividerStyle} />
+      {/* Sprache ist eine Einrichtungs-Einstellung → nur im Edit-Mode */}
+      {mode === 'edit' && (
+        <>
+          <LanguageSwitcher />
+          <div style={dividerStyle} />
+        </>
+      )}
 
       {/* Help */}
       <button
-        style={{ ...modeButtonStyle(false), width: 32, padding: 0, textAlign: 'center' }}
+        style={iconButtonStyle(false)}
         title={t('toolbar.keyboardShortcuts')}
         onClick={onOpenHelp}
       >
-        ?
+        <span className="material-icons" style={{ fontSize: 18 }}>help_outline</span>
       </button>
 
       {addMenuOpen && activePanel && (

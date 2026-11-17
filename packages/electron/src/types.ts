@@ -21,4 +21,8 @@ export interface AppStatus {
   hosts: HostStatus[]
   /** true wenn die konfigurierte Settings-Datei nicht gefunden wurde (verschoben/gelöscht) */
   configMissing?: boolean
+  /** Aktuelle Sprache von Startfenster + Tray ('en' | 'de') */
+  language?: string
+  /** Nicht-interne IPv4-Adressen dieses Rechners — für die Netzwerk-Adresse im Startfenster */
+  lanAddresses?: string[]
 }

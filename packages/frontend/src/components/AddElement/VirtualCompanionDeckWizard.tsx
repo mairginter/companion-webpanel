@@ -9,6 +9,7 @@
  * onConfirm liefert ein fertiges VirtualCompanionDeckElement (ohne id) zurück.
  */
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { VirtualCompanionDeckElement } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { NumericInput } from '../PropertiesPanel/NumericInput'
@@ -29,6 +30,7 @@ function generateDeviceId(): string {
 }
 
 export function VirtualCompanionDeckWizard({ canvasPos, onConfirm, onClose }: Props) {
+  const { t } = useTranslation()
   const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
 
@@ -158,7 +160,7 @@ export function VirtualCompanionDeckWizard({ canvasPos, onConfirm, onClose }: Pr
         <div style={bodyStyle}>
           {step === 1 && (
             <div>
-              <label style={labelStyle}>Surface-Name (erscheint in Companions Surface-Config)</label>
+              <label style={labelStyle}>{t('vdeckWizard.surfaceName')}</label>
               <input
                 style={inputStyle}
                 value={surfaceName}
@@ -170,7 +172,7 @@ export function VirtualCompanionDeckWizard({ canvasPos, onConfirm, onClose }: Pr
 
           {step === 2 && (
             <div>
-              <label style={labelStyle}>Grid-Größe (Spalten × Zeilen)</label>
+              <label style={labelStyle}>{t('vdeckWizard.gridSize')}</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <NumericInput value={cols} onChange={setCols} min={1} max={32} compact />
                 <span style={{ color: '#555', fontSize: 14 }}>{'\u00d7'}</span>
@@ -196,9 +198,9 @@ export function VirtualCompanionDeckWizard({ canvasPos, onConfirm, onClose }: Pr
 
           {step === 3 && (
             <div>
-              <label style={labelStyle}>Companion-Host auswählen</label>
+              <label style={labelStyle}>{t('vdeckWizard.selectHost')}</label>
               {hosts.length === 0 && (
-                <div style={{ color: '#888', fontSize: 12 }}>Keine Hosts konfiguriert. Bitte zuerst einen Host hinzufügen.</div>
+                <div style={{ color: '#888', fontSize: 12 }}>{t('hostManager.noHosts')}</div>
               )}
               {hosts.map(host => (
                 <div
@@ -226,7 +228,7 @@ export function VirtualCompanionDeckWizard({ canvasPos, onConfirm, onClose }: Pr
 
         <div style={footerStyle}>
           <button style={btnSecondary} onClick={step === 1 ? onClose : () => setStep((s) => (s - 1) as Step)}>
-            {step === 1 ? 'Abbrechen' : 'Zur\u00fcck'}
+            {step === 1 ? t('addElement.cancel') : t('addElement.back')}
           </button>
           {step < 3 ? (
             <button
@@ -234,7 +236,7 @@ export function VirtualCompanionDeckWizard({ canvasPos, onConfirm, onClose }: Pr
               disabled={step === 1 && !surfaceName.trim()}
               onClick={() => setStep((s) => (s + 1) as Step)}
             >
-              Weiter {'\u2192'}
+              {t('addElement.next')} {'\u2192'}
             </button>
           ) : (
             <button
@@ -242,7 +244,7 @@ export function VirtualCompanionDeckWizard({ canvasPos, onConfirm, onClose }: Pr
               disabled={!selectedHostId}
               onClick={handleCreate}
             >
-              Erstellen {'\u2713'}
+              {t('addElement.create')} {'\u2713'}
             </button>
           )}
         </div>

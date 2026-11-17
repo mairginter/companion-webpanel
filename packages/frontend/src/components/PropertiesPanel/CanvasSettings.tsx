@@ -230,7 +230,7 @@ export function CanvasSettings({ panel, panelId }: Props) {
           onChange={(e) => updateCanvas({ texture: e.target.value === 'none' ? undefined : e.target.value })}
         >
           {TEXTURES.map((tex) => (
-            <option key={tex.id} value={tex.id}>{tex.label}</option>
+            <option key={tex.id} value={tex.id}>{t(`textures.${tex.id}`, tex.label)}</option>
           ))}
         </select>
       </div>

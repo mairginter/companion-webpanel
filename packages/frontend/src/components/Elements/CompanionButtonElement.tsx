@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import { CompanionButtonElement as CompanionButtonElementType, defaultLayerFor } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
+import i18n from '../../i18n'
 import { rawRgbBase64ToDataUrl } from '../../utils/bitmap'
 import {
   buildDomeRecessStyle,
@@ -166,7 +167,7 @@ export const CompanionButtonElement = React.memo(function CompanionButtonElement
     <>
       {hostMissing && (
         <div
-          title="Host nicht mehr in den Settings vorhanden"
+          title={i18n.t('propertiesPanel.hostMissing')}
           style={{ position: 'absolute', top: 2, right: 4, fontSize: 11, pointerEvents: 'none' }}
         >
           ⛔

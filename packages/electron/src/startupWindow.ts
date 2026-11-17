@@ -1,7 +1,7 @@
 /**
  * startupWindow.ts — Startup-Fenster Management
  *
- * Kleines Fenster (400×350px) das beim Start erscheint, Port + Host-Status zeigt,
+ * Kleines Fenster (400×425px) das beim Start erscheint, Port, Netzwerk-Adresse + Host-Status zeigt,
  * und sich versteckt wenn der User "Open Panel" klickt oder das Fenster schließt.
  * Kann über show() wieder eingeblendet werden (z.B. aus dem Tray-Menü).
  */
@@ -32,7 +32,7 @@ export class StartupWindow {
 
     this.win = new BrowserWindow({
       width: 400,
-      height: 365,  // +15 px für den "Hilfe herunterladen"-Link unter der Version
+      height: 425,  // inkl. Zeilen "Netzwerk:" + "Geräte-Links & Kiosk…" unter dem Port
       resizable: false,
       maximizable: false,
       fullscreenable: false,

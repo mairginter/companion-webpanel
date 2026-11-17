@@ -18,7 +18,9 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 import { AnyElement, defaultLayerFor } from '@cwp/shared'
-import { useAppStore } from '../../store/useAppStore'
+import { useTranslation } from 'react-i18next'
+import { useAppStore, selectZoom, selectAutoZoom } from '../../store/useAppStore'
+import { computeFitZoom, MANUAL_ZOOM_MIN, MANUAL_ZOOM_MAX } from '../../utils/deviceView'
 import { getTextureCss, getTextureBackgroundSize } from '../../utils/textures'
 import { DragDeltaContext } from '../../context/DragDeltaContext'
 import { createMagneticSnapModifier } from '../../canvas/snapModifier'
@@ -54,8 +56,10 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
 
   const setZoom = useAppStore((s) => s.setZoom)
   const setAutoZoom = useAppStore((s) => s.setAutoZoom)
-  const zoom = panel?.zoom ?? 1
-  const autoZoom = panel?.autoZoom ?? false
+  // Zoom + Fit sind geräte-lokal (store.viewPrefs) — nicht mehr Teil des Panels
+  const zoom = useAppStore(selectZoom)
+  const autoZoom = useAppStore(selectAutoZoom)
+  const { t } = useTranslation()
   const scrollWrapperRef = useRef<HTMLDivElement>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -93,8 +97,9 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
       const currentPanel = useAppStore.getState().getActivePanel()
       if (!currentPanel) return
       // Ctrl+Scroll schaltet autoZoom aus — User übernimmt manuelle Kontrolle
-      if (currentPanel.autoZoom) setAutoZoom(currentPanel.id, false)
-      const newZoom = Math.max(0.2, Math.min(2.0, (currentPanel.zoom ?? 1) + delta))
+      const state = useAppStore.getState()
+      if (selectAutoZoom(state)) setAutoZoom(currentPanel.id, false)
+      const newZoom = Math.max(MANUAL_ZOOM_MIN, Math.min(MANUAL_ZOOM_MAX, state.getZoom() + delta))
       setZoom(currentPanel.id, newZoom)
     }
     el.addEventListener('wheel', handler, { passive: false })
@@ -107,13 +112,25 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
   // am alten (entfernten) Node hängen und nie mehr feuern. Außerdem sendet der Browser
   // beim Entfernen eines beobachteten Elements contentRect={0,0} → Guard verhindert,
   // dass dieser Null-Fire den Zoom auf das Minimum (20%) setzt.
+  //
+  // Beobachtet wird der ÄUSSERE Container (outerRef): dessen Größe wird nie durch
+  // Scrollleisten verkleinert, der Fit-Wert ist damit stabil. autoZoom ist nur bei
+  // fixer Canvas-Größe aktiv (siehe effectiveAutoZoom) — width/height sind hier gesetzt.
+  // Der Fit-Zoom ist nicht auf 200% begrenzt (setZoom(..., fit=true)), damit ein
+  // iPad-großes Panel auch einen 27"-Schirm füllt.
   useEffect(() => {
-    if (!autoZoom || !scrollWrapperRef.current || !panel) return
+    const el = outerRef.current
+    const canvasW = panel?.canvas?.width
+    const canvasH = panel?.canvas?.height
+    if (!autoZoom || !el || !panel || !canvasW || !canvasH) return
 
-    const canvasW = panel.canvas?.width ?? 1920
-    const canvasH = panel.canvas?.height ?? 1080
+    let debounceTimer: ReturnType<typeof setTimeout> | undefined
+    let first = true
 
-    let debounceTimer: ReturnType<typeof setTimeout>
+    const apply = (width: number, height: number) => {
+      const currentPanel = useAppStore.getState().getActivePanel()
+      if (currentPanel) setZoom(currentPanel.id, computeFitZoom(canvasW, canvasH, width, height), true)
+    }
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
@@ -121,14 +138,17 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
       const { width, height } = entry.contentRect
       if (width <= 0 || height <= 0) return
       clearTimeout(debounceTimer)
-      debounceTimer = setTimeout(() => {
-        const fitZoom = Math.min(width / canvasW, height / canvasH)
-        const currentPanel = useAppStore.getState().getActivePanel()
-        if (currentPanel) setZoom(currentPanel.id, fitZoom)
-      }, 50)
+      // Erster Aufruf sofort (kein sichtbarer Sprung beim Laden/Panel-Wechsel),
+      // danach entprellt — Fenster-Resize feuert sehr häufig.
+      if (first) {
+        first = false
+        apply(width, height)
+        return
+      }
+      debounceTimer = setTimeout(() => apply(width, height), 50)
     })
 
-    observer.observe(scrollWrapperRef.current)
+    observer.observe(el)
     return () => {
       observer.disconnect()
       clearTimeout(debounceTimer)
@@ -163,7 +183,7 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
       const panelId = (event.active.data.current as { panelId: string }).panelId
       const currentPanel = useAppStore.getState().getActivePanel()
       if (!currentPanel) return
-      const currentZoom = currentPanel.zoom ?? 1
+      const currentZoom = useAppStore.getState().getZoom()
       for (const id of useAppStore.getState().selectedIds) {
         const el = currentPanel.elements.find((e) => e.id === id)
         if (!el) continue
@@ -240,6 +260,7 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
   const canvasBackground = panel?.canvas?.background ?? '#0f141a'
   const canvasWidth = panel?.canvas?.width
   const canvasHeight = panel?.canvas?.height
+  const isFixedCanvas = !!canvasWidth && !!canvasHeight
   const textureCss = getTextureCss(panel?.canvas?.texture)
 
   // Scrollbarsteuerung: overflow:hidden wenn Canvas in den verfügbaren Bereich passt,
@@ -290,9 +311,23 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
 
   // Äußerer Container: position:relative — PropertiesPanel als absolute Overlay-Sibling
   const content = (
-    <div ref={outerRef} style={{ flex: 1, overflow: 'hidden', background: '#0a0e14', position: 'relative' }}>
-      {/* Scrollbarer Canvas-Bereich */}
-      <div ref={scrollWrapperRef} style={{ position: 'absolute', inset: 0, overflow: overflowMode }}>
+    <div
+      ref={outerRef}
+      style={{
+        flex: 1, overflow: 'hidden', position: 'relative',
+        // View-Mode: Letterbox-Ränder (anderes Seitenverhältnis als der Canvas) in der
+        // Canvas-Farbe — das Panel wirkt randlos. Edit-Mode: dunkler Kontrast, damit die
+        // Canvas-Grenze beim Layouten sichtbar bleibt.
+        background: mode === 'view' && isFixedCanvas ? canvasBackground : '#0a0e14',
+      }}
+    >
+      {/* Scrollbarer Canvas-Bereich. Bei fixem Canvas als Flex-Container: margin:auto am Kind
+          zentriert den Canvas wenn er kleiner als der Bereich ist und bleibt — anders als
+          justify-content:center — beim Überlauf vollständig scrollbar. */}
+      <div
+        ref={scrollWrapperRef}
+        style={{ position: 'absolute', inset: 0, overflow: overflowMode, display: isFixedCanvas ? 'flex' : 'block' }}
+      >
         {/* Größen-Reserve: reserviert scroll-Platz entsprechend dem skalierten Canvas.
             Bei fixem Canvas: KEIN minWidth/minHeight — sonst entsteht ein Feedback-Loop:
             Scrollleiste erscheint (1px Overflow) → reduziert clientWidth → 100% schrumpft
@@ -302,6 +337,8 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
           style={canvasWidth && canvasHeight ? {
             width: canvasWidth * zoom,
             height: canvasHeight * zoom,
+            margin: 'auto',
+            flexShrink: 0,
           } : {
             width: '100%',
             height: '100%',
@@ -342,8 +379,8 @@ export function Canvas({ sendPress, sendRotate, sendVPress, onSave }: CanvasProp
                   textAlign: 'center', color: '#4a5568', fontSize: 13, pointerEvents: 'none',
                 }}>
                   <div style={{ fontSize: 32, marginBottom: 12 }}>⚡</div>
-                  <div style={{ fontWeight: 600, color: '#8896aa', marginBottom: 4 }}>Kein Panel geladen</div>
-                  <div style={{ fontSize: 12 }}>Backend verbinden und Settings konfigurieren</div>
+                  <div style={{ fontWeight: 600, color: '#8896aa', marginBottom: 4 }}>{t('canvas.noPanelTitle')}</div>
+                  <div style={{ fontSize: 12 }}>{t('canvas.noPanelHint')}</div>
                 </div>
               ) : (
                 renderElements(panel.elements, panel.id, mode, sendPress, sendRotate, sendVPress)

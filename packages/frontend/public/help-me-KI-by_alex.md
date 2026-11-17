@@ -27,7 +27,7 @@ It is readable by humans, but primarily optimized for AI assistants.
 
 1. **Prepare Companion:** Start Companion and enable the "Button Subscriptions API" under Settings → Protocols. Create at least one page with buttons.
 2. **Start Webpanel:** Launch the desktop app (`CompanionWebpanel-x.y.z.exe`). The start window opens, showing the port (default 8080) and the config file. On first start choose **"New Empty Config"** (the app never creates a file on its own) — or load an existing `.json` via `⋯`.
-3. **Open the panel:** "Open in App" (own window) or "Open in Browser". Other devices on the LAN open `http://<IP-of-panel-computer>:8080`.
+3. **Open the panel:** "Open in App" (own window) or "Open in Browser". Other devices on the LAN open `http://<IP-of-panel-computer>:8080` — the start window shows this address in the **"Network:"** line (copy button next to it).
 4. **Add a host:** Toolbar → Hosts icon → "Add host": name, IP of the Companion computer, port 16623. With Companion 5.0, instances on the same subnet appear automatically under "Discovered Companion instances" → "Add". Green dot in the toolbar = connected.
 5. **Place buttons:** Edit mode (`E`) → toolbar "Add element" → CompanionButton → in the Properties panel choose Host, Page, Row, Col (the picker shows the Companion pages). Resize with the handles; group and label with Shapes and Labels.
 6. **Operate & save:** `Ctrl+S` saves. View mode (`V`) → click/touch triggers the Companion button. For live use, optionally enable the Broadcast LED style in the canvas settings.
@@ -35,7 +35,8 @@ It is readable by humans, but primarily optimized for AI assistants.
 ### Common first-time problems
 
 - **Host dot stays orange/red:** wrong IP/port, Companion not running, firewall blocks TCP 16623, or Button Subscriptions not enabled in Companion.
-- **Other devices can't reach the panel:** allow port 8080 in the firewall of the panel computer; `localhost` only works on the panel computer itself — use its LAN IP from other devices.
+- **Other devices can't reach the panel:** allow port 8080 in the firewall of the panel computer; `localhost` only works on the panel computer itself — use its LAN IP from other devices (shown as "Network:" in the start window and offered in the **Device links** dialog).
+- **The UI is in the wrong language:** the default is English. Switch with the language button (start window: globe button in the title bar; panel: globe menu in the edit-mode toolbar) or open the panel once with `?lang=de` / `?lang=en`.
 - **Buttons show nothing:** check Host/Page/Row/Col (the "Show host labels" toggle in the toolbar overlays `P·R/C`); the Companion button must exist.
 - **Page names missing in the picker:** Companion HTTP API / port 8000 not reachable — numbers still work.
 - **"Config file not found":** the file was moved/deleted (e.g. by OneDrive sync) — choose it again via `⋯` in the start window or create a new one.
@@ -132,8 +133,27 @@ Recommended in combination: canvas texture "plastic matte grained" on a dark bac
 **Independently of this**, there is the physical dome button **per button** (`render.physicalStyle`, see CompanionButton properties) — a button with dome style keeps its dome look even when the Broadcast LED style is active.
 
 Zoom:
-- Ctrl+Scroll or the zoom control in the toolbar (20%–200%)
-- **Auto-zoom (fit to window):** "Fit" button in the zoom flyout of the toolbar. When active, the canvas computes the zoom automatically so the whole canvas fits the window. The zoom adapts on every window resize. Ctrl+Scroll disables auto-zoom and takes over the current zoom value for manual zooming. Auto-zoom is stored per panel.
+- Ctrl+Scroll or the zoom control in the toolbar (manual range 20%–200%)
+- **Auto-zoom (fit to window):** the default for every panel with a fixed canvas size. The canvas is scaled so the whole panel fits the window (not limited to 200%), centered, and adapts on every window resize — a 27" monitor and an iPad show the same panel, just scaled. Ctrl+Scroll disables auto-zoom and takes over the current zoom value for manual zooming; the "Fit" button in the zoom flyout turns it back on.
+- **Zoom and fit are stored per device** (browser localStorage, per panel) — not in the settings JSON. The fields `zoom` / `autoZoom` on a panel are deprecated and ignored.
+
+Per-device view (URL parameters — the address works as a bookmark / PWA start URL per device):
+- `?panel=<name or id>` — panel shown on start (otherwise: the panel last used on this device)
+- `?kiosk=1` — hides the toolbar in view mode; a small handle at the top center brings it back
+- `?lock=1` — show lock: edit mode and all keyboard shortcuts are disabled (protects against accidental input during a live show)
+- `?lang=de` or `?lang=en` — sets the UI language of this device (stored on the device, then removed from the address)
+- Example: `http://<host>:8080/?panel=Audio&kiosk=1&lock=1`. Any URL without `kiosk`/`lock` is a full admin view. Lock and kiosk can also be toggled with the lock / fullscreen buttons in the view-mode toolbar.
+
+**Device links dialog — the easy way to get these addresses** (nobody has to type parameters by hand):
+- Open it with the **"Device links"** button in the toolbar (devices icon; labelled in view mode, icon-only in edit mode) or from the Electron start window via **"Device links & kiosk…"**.
+- Choose: address of this computer (the network addresses are listed, `localhost` is marked "this computer only"), panel, kiosk, show lock and optionally the language. The finished link is shown below.
+- **Copy** puts the link on the clipboard, **Open in new tab** tests it. On the target device (tablet, second PC, kiosk monitor) save it as a bookmark, home-screen icon or browser start page.
+- **Apply on this device** switches the current device to the chosen panel with kiosk / show lock immediately — the quickest way to start kiosk mode.
+- Leaving kiosk: small handle at the top center of the screen. Releasing the show lock: lock button in the toolbar.
+
+Multiple devices:
+- When one device saves, all other connected devices reload the settings automatically. A device with unsaved changes gets a warning instead and decides itself ("Reload" discards its local changes).
+- An orange dot on the save button marks unsaved changes; a failed save is shown as an error message.
 
 Grid:
 - Visual grid lines (major + minor), toggle with the G key
@@ -377,7 +397,9 @@ Settings are stored in a JSON file. Default path in the Electron app: `userData/
 
 Configurable settings:
 - Server port (default: 8080): which port the backend runs on
-- Language (language): de (German) or en (English) — applies to all UI strings
+- Language (language): de (German) or en (English) — global default for all devices that have not chosen a language themselves. Without it the UI is **English**.
+
+Language priority in the panel (highest first): `?lang=` URL parameter → language chosen on this device (language menu, stored in the browser) → `language` from the settings file → English. The browser language is not auto-detected.
 - Hosts: list of all Companion connections (see "Setting up connections")
 - Panels: all canvas panels with their elements and canvas settings
 - settingsPath: optional ~-normalized path to the settings file (for a custom settings path; written into the file itself for cross-device sync)
@@ -391,7 +413,10 @@ Configurable settings:
 The Electron version runs as a desktop application:
 
 - Tray icon in the taskbar: right-click opens the context menu with quick access
-- Start window (400×365 px): shows connection status, port and quick-access buttons
+- Start window (400×425 px): shows connection status, port, network address and quick-access buttons
+  - **Language button** (globe, title bar): switches the start window and tray menu between English and German. Default is English. The choice is stored per computer (`userData/meta.json`) and is passed on to the panel when it is opened from the start window or tray.
+  - **"Network:" line:** the address other devices on the LAN use to reach the panel (first network address, all others in the tooltip) with a copy button
+  - **"Device links & kiosk…":** opens the panel window with the Device links dialog (addresses for tablet, kiosk and show lock — see "Per-device view")
   - **"Download Help"** (below the version number, top right): saves this help file (`help-me-KI-by_alex.md`) via a save dialog, default folder "Downloads"
   - Port field: change port → Apply → app restarts with the new port
   - **"Config File" section:** shows the active settings file

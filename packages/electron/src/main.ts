@@ -11,13 +11,13 @@
  *  7. IPC-Handler registrieren
  *  8. app.on('window-all-closed') → nicht beenden (Tray-App)
  */
-import { app, ipcMain, shell, dialog, session } from 'electron'
+import { app, ipcMain, shell, dialog, session, clipboard } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
-import { createBackend } from '@cwp/backend'
+import { createBackend, getLanAddresses } from '@cwp/backend'
 import { loadSettingsFile, saveSettingsFile, getSettingsPath, getDefaultSettings } from './settingsHelper'
 import { loadMeta, saveMeta, normalizePath, expandPath } from './metaConfig'
-import { initElectronI18n, t } from './i18n'
+import { initElectronI18n, t, ELECTRON_LANGUAGES, DEFAULT_LANGUAGE } from './i18n'
 import { findFreePort } from './portCheck'
 import { StartupWindow } from './startupWindow'
 import { AppTray } from './tray'
@@ -41,7 +41,13 @@ async function main(): Promise<void> {
   const userDataPath = app.getPath('userData')
 
   // ─── Settings-Pfad auflösen (meta.json → settings.settingsPath → Backwards-Compat) ─
-  const meta = loadMeta(userDataPath)
+  // meta.json: rechner-lokale Daten (Settings-Pfad, Sprache des Startfensters)
+  let meta = loadMeta(userDataPath)
+  // Schreibt einzelne Felder in meta.json, ohne die übrigen zu verlieren
+  const updateMeta = (patch: Partial<typeof meta>): void => {
+    meta = { ...meta, ...patch }
+    saveMeta(userDataPath, meta)
+  }
   const defaultSettingsPath = getSettingsPath(userDataPath)
   // Backwards-Compat: bestehende settings.json beim Upgrade erhalten
   const legacyPath = path.join(userDataPath, 'settings.json')
@@ -70,12 +76,16 @@ async function main(): Promise<void> {
     if (fromSettings !== activeSettingsPath && fs.existsSync(fromSettings)) {
       activeSettingsPath = fromSettings
       settings = loadSettingsFile(activeSettingsPath)
-      saveMeta(userDataPath, { settingsPath: normalizePath(activeSettingsPath) })
+      updateMeta({ settingsPath: normalizePath(activeSettingsPath) })
     }
   }
 
-  // Initialise Electron i18n with the language from settings (fallback: 'de')
-  await initElectronI18n(settings.language ?? 'de')
+  // Sprache von Startfenster + Tray:
+  //   1. im Startfenster gewählt (meta.json, rechner-lokal)
+  //   2. globale Vorgabe Settings.language
+  //   3. Default Englisch
+  let uiLanguage = meta.language ?? settings.language ?? DEFAULT_LANGUAGE
+  await initElectronI18n(uiLanguage)
 
   const settingsPath = activeSettingsPath
   const configuredPort = settings.server?.port ?? 8080
@@ -92,6 +102,9 @@ async function main(): Promise<void> {
     port: actualPort ?? 0,
     portAuto,
     configMissing: configMissing || undefined,
+    language: uiLanguage,
+    // Netzwerk-Adressen für die Zeile "Netzwerk:" im Startfenster (Tablet/zweiter PC)
+    lanAddresses: getLanAddresses(),
     hosts: configMissing
       ? []
       : settings.hosts
@@ -171,9 +184,21 @@ async function main(): Promise<void> {
     if (response === 0) shutdown()
   }
 
+  /**
+   * Adresse des Panels auf diesem Rechner. Wurde die Sprache im Startfenster ausdrücklich
+   * gewählt, wird sie als ?lang= mitgegeben — das Panel übernimmt sie dann als Geräte-Wahl,
+   * Startfenster und Panel sprechen dieselbe Sprache. Ohne Wahl bleibt die Adresse neutral.
+   */
+  const panelUrl = (extra: Record<string, string> = {}): string => {
+    const params = new URLSearchParams(extra)
+    if (meta.language) params.set('lang', meta.language)
+    const query = params.toString()
+    return `http://localhost:${appStatus.port}/${query ? `?${query}` : ''}`
+  }
+
   const tray = new AppTray(
-    () => panelWindow.open(`http://localhost:${appStatus.port}`),
-    () => shell.openExternal(`http://localhost:${appStatus.port}`),
+    () => panelWindow.open(panelUrl()),
+    () => shell.openExternal(panelUrl()),
     () => startupWindow.show(),
     () => askQuit(),
   )
@@ -185,6 +210,29 @@ async function main(): Promise<void> {
 
   ipcMain.handle('get-status', () => appStatus)
   ipcMain.handle('get-version', () => app.getVersion())
+
+  // Sprache des Startfensters wechseln: rechner-lokal merken, Tray-Menü neu aufbauen.
+  // Der Renderer holt sich danach die Strings neu (get-i18n-strings).
+  ipcMain.handle('set-language', async (_event, lang: string) => {
+    if (!ELECTRON_LANGUAGES.includes(lang)) return uiLanguage
+    uiLanguage = lang
+    updateMeta({ language: lang })
+    await initElectronI18n(lang)
+    appStatus.language = lang
+    tray.updateStatus(appStatus)
+    return uiLanguage
+  })
+
+  // Text in die Zwischenablage (Netzwerk-Adresse im Startfenster)
+  ipcMain.handle('copy-text', (_event, text: string) => {
+    clipboard.writeText(String(text ?? ''))
+    return true
+  })
+
+  // Panel im App-Fenster öffnen und dort direkt den Geräte-Links-Dialog zeigen
+  ipcMain.handle('open-device-links', () => {
+    panelWindow.open(panelUrl({ links: '1' }))
+  })
 
   ipcMain.handle('get-i18n-strings', () => ({
     panelRunsOn:          t('startup.panelRunsOn'),
@@ -204,6 +252,14 @@ async function main(): Promise<void> {
     configMissing:        t('startup.configMissing'),
     downloadHelp:         t('startup.downloadHelp'),
     downloadHelpDesc:     t('startup.downloadHelpDesc'),
+    network:              t('startup.network'),
+    noNetwork:            t('startup.noNetwork'),
+    copyAddress:          t('startup.copyAddress'),
+    copied:               t('startup.copied'),
+    deviceLinks:          t('startup.deviceLinks'),
+    deviceLinksDesc:      t('startup.deviceLinksDesc'),
+    switchLanguage:       t('startup.switchLanguage'),
+    portTitle:            t('startup.portTitle'),
   }))
 
   // Hilfe-Download: kopiert help-me-KI-by_alex.md aus dem gebauten Frontend
@@ -246,7 +302,7 @@ async function main(): Promise<void> {
   ipcMain.handle('apply-settings-path', async (_event, normalizedNewPath: string) => {
     // Nur meta.json aktualisieren — keine Dateien anlegen oder überschreiben.
     // showOpenDialog liefert nur existierende Dateien, daher kein Copy nötig.
-    saveMeta(userDataPath, { settingsPath: normalizedNewPath })
+    updateMeta({ settingsPath: normalizedNewPath })
     app.relaunch()
     app.exit(0)
   })
@@ -259,18 +315,18 @@ async function main(): Promise<void> {
     if (result.canceled || !result.filePath) return null
     const newAbsPath = result.filePath
     saveSettingsFile(newAbsPath, getDefaultSettings())
-    saveMeta(userDataPath, { settingsPath: normalizePath(newAbsPath) })
+    updateMeta({ settingsPath: normalizePath(newAbsPath) })
     app.relaunch()
     app.exit(0)
     return normalizePath(newAbsPath)
   })
 
   ipcMain.handle('open-panel', () => {
-    shell.openExternal(`http://localhost:${appStatus.port}`)
+    shell.openExternal(panelUrl())
   })
 
   ipcMain.handle('open-panel-app', () => {
-    panelWindow.open(`http://localhost:${appStatus.port}`)
+    panelWindow.open(panelUrl())
   })
 
   ipcMain.on('hide-window', () => startupWindow.hide())

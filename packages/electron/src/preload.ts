@@ -17,6 +17,9 @@
  *   chooseSettingsPath()     → opens file picker, returns chosen path or null
  *   applySettingsPath(path)  → saves new path + relaunches app
  *   downloadHelp()           → speichert help-me-KI-by_alex.md per Save-Dialog (true = gespeichert)
+ *   setLanguage(lang)        → Sprache von Startfenster + Tray wechseln ('en' | 'de')
+ *   copyText(text)           → Text in die Zwischenablage
+ *   openDeviceLinks()        → Panel-Fenster mit Geräte-Links-Dialog öffnen
  */
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppStatus } from './types'
@@ -69,4 +72,16 @@ contextBridge.exposeInMainWorld('cwpApi', {
 
   downloadHelp: (): Promise<boolean> =>
     ipcRenderer.invoke('download-help'),
+
+  // Sprache von Startfenster + Tray wechseln; liefert die danach aktive Sprache
+  setLanguage: (lang: string): Promise<string> =>
+    ipcRenderer.invoke('set-language', lang),
+
+  // Text in die Zwischenablage legen (Netzwerk-Adresse)
+  copyText: (text: string): Promise<boolean> =>
+    ipcRenderer.invoke('copy-text', text),
+
+  // Panel im App-Fenster öffnen, Geräte-Links-Dialog direkt anzeigen
+  openDeviceLinks: (): Promise<void> =>
+    ipcRenderer.invoke('open-device-links'),
 })

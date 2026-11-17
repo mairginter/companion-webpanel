@@ -10,6 +10,7 @@
  * Beim Schließen werden diese Subscriptions per DELETE /api/preview-page entfernt.
  */
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../../store/useAppStore'
 import { pageKey } from '@cwp/shared'
 import type { CompanionRef } from '@cwp/shared'
@@ -90,9 +91,10 @@ function saveLastPage(hostId: string, page: number): void {
 }
 
 export function CompanionButtonPickerDialog({
-  onConfirm, onClose, confirmLabel = 'Hinzufügen', initialRef, usedCells, alignSide, panelWidth = 320,
+  onConfirm, onClose, confirmLabel, initialRef, usedCells, alignSide, panelWidth = 320,
   initialGridCols, initialGridRows,
 }: Props) {
+  const { t } = useTranslation()
   const settings = useAppStore((s) => s.settings)
   const sessionStatus = useAppStore((s) => s.sessionStatus)
   const buttons = useAppStore((s) => s.buttons)
@@ -271,18 +273,18 @@ export function CompanionButtonPickerDialog({
   return (
     <div style={overlayStyle(alignSide, panelWidth)} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div style={DIALOG}>
-        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Companion Button wählen</div>
+        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>{t('addElement.pickerTitle')}</div>
 
         {connectedHosts.length === 0 ? (
           <div style={{ color: '#8896aa', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>
-            Kein Host verbunden
+            {t('addElement.noHosts')}
           </div>
         ) : (
           <>
             {/* Host + Page */}
             <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
               <div style={{ flex: 1 }}>
-                <div style={LABEL_STYLE}>Host</div>
+                <div style={LABEL_STYLE}>{t('propertiesPanel.host')}</div>
                 <select style={SELECT_STYLE} value={hostId} onChange={(e) => handleHostChange(e.target.value)}>
                   {connectedHosts.map((h) => (
                     <option key={h.id} value={h.id}>{h.name}</option>
@@ -290,7 +292,7 @@ export function CompanionButtonPickerDialog({
                 </select>
               </div>
               <div style={{ flex: 1 }}>
-                <div style={LABEL_STYLE}>Page</div>
+                <div style={LABEL_STYLE}>{t('addElement.page')}</div>
                 {(() => {
                   const host = settings?.hosts.find((h) => h.id === hostId)
                   const maxP = host?.maxPages ?? 99
@@ -320,7 +322,7 @@ export function CompanionButtonPickerDialog({
             <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
               <div style={{ flex: 1 }}>
                 <NumericInput
-                  label="Spalten"
+                  label={t('propertiesPanel.columns')}
                   value={keysPerRow}
                   min={1}
                   onChange={(v) => { setKeysPerRow(v); setSelectedCells(new Set()); lastClickedCell.current = null }}
@@ -329,7 +331,7 @@ export function CompanionButtonPickerDialog({
               </div>
               <div style={{ flex: 1 }}>
                 <NumericInput
-                  label="Zeilen"
+                  label={t('propertiesPanel.rowsCount')}
                   value={rows}
                   min={1}
                   onChange={(v) => { setRows(v); setSelectedCells(new Set()); lastClickedCell.current = null }}
@@ -341,7 +343,7 @@ export function CompanionButtonPickerDialog({
             {/* Mini-Grid */}
             <div style={{ marginBottom: 16 }}>
               <div style={{ ...LABEL_STYLE, marginBottom: 6 }}>
-                Button wählen{loadingPreview ? ' (Vorschau lädt…)' : ''}
+                {t('addElement.selectButton')}{loadingPreview ? ` (${t('addElement.previewLoading')})` : ''}
               </div>
               <div style={{
                 display: 'grid',
@@ -406,15 +408,15 @@ export function CompanionButtonPickerDialog({
                           const [r, c] = [...selectedCells][0].split(':').map(Number)
                           return `R${r} / C${c}`
                         })()
-                      : `${selectedCells.size} Buttons ausgewählt`
+                      : t('addElement.selectedCount', { count: selectedCells.size })
                     : ''}
                 </div>
                 <div style={{ display: 'flex', gap: 10, fontSize: 10, color: '#8896aa' }}>
                   {initialRef?.row !== undefined && (
-                    <span><span style={{ color: '#f59e0b' }}>■</span> aktuell</span>
+                    <span><span style={{ color: '#f59e0b' }}>■</span> {t('addElement.current')}</span>
                   )}
                   {usedCells && usedCells.size > 0 && (
-                    <span><span style={{ color: '#22c55e' }}>✓</span> im Panel</span>
+                    <span><span style={{ color: '#22c55e' }}>✓</span> {t('addElement.inPanel')}</span>
                   )}
                 </div>
               </div>
@@ -431,12 +433,12 @@ export function CompanionButtonPickerDialog({
               background: '#121821', color: '#8896aa', fontSize: 13, cursor: 'pointer',
             }}
           >
-            Abbrechen
+            {t('addElement.cancel')}
           </button>
           <button
             onClick={handleInsertPage}
             disabled={configuredCells.length === 0}
-            title={configuredCells.length === 0 ? 'Keine konfigurierten Buttons auf dieser Seite' : undefined}
+            title={configuredCells.length === 0 ? t('addElement.noConfiguredButtons') : undefined}
             style={{
               padding: '7px 16px', borderRadius: 6, border: '1px solid #2a3344',
               background: configuredCells.length > 0 ? 'rgba(74,158,255,0.08)' : '#1a2030',
@@ -444,7 +446,7 @@ export function CompanionButtonPickerDialog({
               fontSize: 13, cursor: configuredCells.length > 0 ? 'pointer' : 'not-allowed',
             }}
           >
-            Seite einfügen
+            {t('addElement.insertPage')}
           </button>
           <button
             onClick={handleConfirm}
@@ -457,7 +459,7 @@ export function CompanionButtonPickerDialog({
               fontWeight: 600,
             }}
           >
-            {confirmLabel}
+            {confirmLabel ?? t('addElement.add')}
           </button>
         </div>
       </div>

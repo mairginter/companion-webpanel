@@ -1,6 +1,34 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { BackendToFrontend, FrontendToBackend } from '@cwp/shared'
-import { useAppStore } from '../store/useAppStore.js'
+import { useAppStore, selectDirty } from '../store/useAppStore.js'
+import { CLIENT_ID, reloadSettings } from '../api/useSettings'
+import i18n from '../i18n'
+
+/**
+ * Ein anderes Gerät hat die Settings gespeichert (oder wir waren kurz offline).
+ *  - Keine lokalen Änderungen → Server-Stand still übernehmen (im Edit-Mode mit Hinweis).
+ *  - Ungespeicherte lokale Änderungen → NICHT automatisch überschreiben, sondern den
+ *    User per Toast entscheiden lassen ("Neu laden" verwirft die lokalen Änderungen).
+ */
+function handleRemoteSettingsChange(): void {
+  const store = useAppStore.getState()
+  // Settings noch nie geladen → der initiale Fetch in useSettings erledigt das
+  if (!store.settings) return
+  if (selectDirty(store)) {
+    store.showToast({
+      kind: 'warn',
+      text: i18n.t('toast.remoteChangedDirty'),
+      action: { label: i18n.t('toast.reload'), run: () => void reloadSettings() },
+      sticky: true,
+    })
+    return
+  }
+  void reloadSettings().then((ok) => {
+    if (ok && useAppStore.getState().mode === 'edit') {
+      useAppStore.getState().showToast({ kind: 'info', text: i18n.t('toast.remoteApplied') })
+    }
+  })
+}
 
 const WS_URL = import.meta.env.DEV
   ? `ws://${window.location.hostname}:8080`
@@ -18,6 +46,8 @@ export function useWebSocket(): {
   sendVPress: (deviceId: string, keyIndex: number, pressed: boolean) => void
 } {
   const ws = useRef<WebSocket | null>(null)
+  /** true sobald einmal verbunden — unterscheidet Erst-Connect von Reconnect */
+  const hadConnection = useRef(false)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const applyDelta = useAppStore((s) => s.applyDelta)
   const applySnapshot = useAppStore((s) => s.applySnapshot)
@@ -39,6 +69,10 @@ export function useWebSocket(): {
 
     socket.onopen = () => {
       console.log('[WS] Verbunden mit Backend')
+      // Nach einem RE-connect könnten Settings-Änderungen verpasst worden sein → nachladen.
+      // (Beim allerersten Connect lädt useSettings ohnehin.)
+      if (hadConnection.current) handleRemoteSettingsChange()
+      hadConnection.current = true
       if (reconnectTimer.current) {
         clearTimeout(reconnectTimer.current)
         reconnectTimer.current = null
@@ -49,6 +83,10 @@ export function useWebSocket(): {
       try {
         const msg = JSON.parse(event.data as string) as BackendToFrontend
         switch (msg.t) {
+          case 'settingsChanged':
+            // Eigener Speichervorgang → nichts zu tun
+            if (msg.clientId !== CLIENT_ID) handleRemoteSettingsChange()
+            break
           case 'delta':
             applyDelta(msg)
             break

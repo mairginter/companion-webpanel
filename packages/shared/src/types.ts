@@ -239,8 +239,12 @@ export type AnyElement =
 export interface Panel {
   id: string
   name: string
+  /**
+   * @deprecated Zoom ist geräte-lokal (localStorage, siehe frontend utils/deviceView.ts).
+   * Das Feld bleibt aus Schema-Kompatibilität bestehen, wird aber nicht mehr gelesen.
+   */
   zoom: number
-  /** When true, zoom is auto-calculated to fit the window. Stored per-panel. */
+  /** @deprecated Fit-to-Window ist geräte-lokal — wird nicht mehr gelesen. */
   autoZoom?: boolean
   defaultMode: 'view' | 'edit'
   grid: { enabled: boolean; size: number; snap: boolean }
@@ -384,7 +388,19 @@ export interface DiscoveryMessage {
   hosts: DiscoveredHost[]
 }
 
+/**
+ * Backend → Frontend: die Settings wurden (von irgendeinem Client) gespeichert.
+ * Andere Clients laden daraufhin neu — sonst würde ein Gerät mit altem Stand
+ * beim nächsten Speichern die Änderungen des anderen überschreiben.
+ */
+export interface SettingsChangedMessage {
+  t: 'settingsChanged'
+  /** ID des speichernden Clients (Query-Parameter ?client= am POST) — dieser ignoriert die Nachricht */
+  clientId?: string
+}
+
 export type BackendToFrontend =
+  | SettingsChangedMessage
   | DeltaMessage
   | SnapshotMessage
   | SessionStatusMessage

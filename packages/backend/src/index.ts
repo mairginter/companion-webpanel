@@ -10,6 +10,9 @@ import { ClientServer } from './server/ClientServer'
 import { HostManager } from './HostManager'
 import { DiscoveryService } from './discovery/DiscoveryService'
 
+// LAN-Adressen dieses Rechners — auch vom Electron-Startfenster genutzt
+export { getLanAddresses } from './server/netInfo'
+
 // ─── createBackend() Factory ───────────────────────────────────────────────
 
 /**

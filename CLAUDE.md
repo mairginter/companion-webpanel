@@ -111,6 +111,7 @@ CompanionWebpannel/
     │   ├── state/StateStore.ts                   ← In-Memory State + Delta-Logik
     │   ├── server/ClientServer.ts                ← HTTP (/api/settings, /api/preview-page, /api/discovery/*, /api/page-name(s)) + WS-Server
     │   ├── server/pageNames.ts                   ← PageNameResolver: Companion-HTTP-API-Proxy, Batch + TTL-Cache
+    │   ├── server/netInfo.ts                     ← getLanAddresses(): LAN-IPv4 für Geräte-Links (/api/server-info, Startfenster)
     │   ├── HostManager.ts                        ← Orchestrierung: 1 Client pro Host, Subscription-Diff (realSubDims "WxH")
     │   ├── index.ts                              ← createBackend() Factory für Electron
     │   └── standalone.ts                         ← Standalone Entry Point (npm start/dev)
@@ -123,6 +124,7 @@ CompanionWebpannel/
     │   ├── App.tsx + main.tsx                    ← App-Shell mit Keyboard-Shortcuts
     │   └── components/
     │       ├── Toolbar/                          ← Mode-Toggle, Panel-CRUD, ZoomControl, Status-Dots, Copy-to-Panel
+    │       ├── DeviceLinks/DeviceLinksModal.tsx  ← Geräte-Links: URL-Profile (Panel/Kiosk/Lock/Sprache) erzeugen, kopieren, anwenden
     │       ├── HostManager/HostManagerModal.tsx  ← Host Add/Edit/Delete/Connect + HostEditModal (dediziertes Edit-Overlay)
     │       ├── Canvas/Canvas.tsx                 ← Element-Rendering + Textur-Layering + Zoom
     │       ├── PropertiesPanel/CompanionButtonMultiProps.tsx ← Batch-Edit für ≥2 selektierte CompanionButtons
@@ -130,7 +132,7 @@ CompanionWebpannel/
     └── electron/
         ├── src/main.ts                           ← Entry Point + IPC-Handler
         ├── src/preload.ts                        ← contextBridge (cwpApi)
-        ├── src/startupWindow.ts                  ← 400×240 frameless Startup-Fenster
+        ├── src/startupWindow.ts                  ← 400×425 frameless Startup-Fenster
         ├── src/panelWindow.ts                    ← APP-Modus Panel (1280×720)
         ├── src/tray.ts                           ← Tray-Icon + Kontextmenü
         ├── src/portCheck.ts                      ← isPortFree() + findFreePort()
@@ -147,6 +149,23 @@ CompanionWebpannel/
 - ✅ **mDNS-Auto-Discovery** — `DiscoveryService` (@julusian/bonjour-service), Browse-on-demand via HostManagerModal, `POST /api/discovery/start|stop`, „Gefundene Companion-Instanzen"-Sektion mit Übernehmen-Button; live-verifiziert (Commit ec1f5b7)
 - ✅ **Non-square Bitmaps (STYLE, API 1.11)** — `deriveBitmapDims()` quantisiert Element-Geometrie auf Aspect-Stufen; HostManager `realSubDims` ("WxH"), SatelliteClient STYLE-Branch mit Legacy-Fallback für 4.3; live-verifiziert (Commit bc08f07)
 - ✅ **Phase E: Seitennamen im Picker via HTTP-API** — Schema-Bump 1.7.0→1.8.0 (`httpPort?` auf HostProfile + Migration); `PageNameResolver` (TTL-Cache 30 s, Timeout 1,5 s, graceful bei 403/404/Timeout) + `GET /api/page-name?hostId&page` in ClientServer; Picker holt Companion-Namen lazy beim Seitenwechsel (lokale `pageNames` haben Vorrang); httpPort-Feld im HostEditModal; live-verifiziert (Seite 1 = „PTZ Canon Control")
+
+### Multi-Device / Live-Betrieb (v1.6.0 — committet + gepusht, `CompanionWebpanel-1.6.0.exe` lokal gebaut, kein Tag / GitHub-Release)
+- ✅ **Zoom/Fit geräte-lokal** — `utils/deviceView.ts` + `store.viewPrefs` (localStorage); Fit ist Default bei fixem Canvas, zentriert, nicht auf 200 % begrenzt; `Panel.zoom`/`autoZoom` deprecated (kein Schema-Bump)
+- ✅ **URL als Geräte-Profil** — `?panel=<Name|ID>&kiosk=1&lock=1`; zuletzt aktives Panel pro Gerät gemerkt
+- ✅ **Show-Lock + Kiosk** — Lock sperrt Edit + Shortcuts; Kiosk blendet Toolbar im View-Mode aus
+- ✅ **Settings-Sync** — WS-Nachricht `settingsChanged`; andere Geräte laden neu, Warn-Toast bei ungespeicherten Änderungen
+- ✅ **Dirty-Indikator + Toast** (`components/Toast/Toast.tsx`), Speicherfehler sichtbar, Panel-Löschen zweistufig, Zahnrad immer sichtbar, Cmd-Shortcuts auf Mac
+- ✅ **Toolbar nach Modus getrennt** — View: Panel-Wechsel, Zoom, Lock, Kiosk, Status; Edit: zusätzlich Panel-Verwaltung, Speichern, Add, Sprache; Icons einheitlich Material
+- ✅ **Geräte-Links-Dialog** — `components/DeviceLinks/DeviceLinksModal.tsx`; Toolbar-Button `devices` (View: mit Text, Edit: Icon); erzeugt `?panel=…&kiosk=1&lock=1&lang=…` mit LAN-Adresse (`GET /api/server-info`, `backend/server/netInfo.ts`), Kopieren / neuer Tab / „Auf diesem Gerät anwenden“; `?links=1` öffnet den Dialog direkt
+- ✅ **Sprache: Default Englisch** — Frontend-Priorität `?lang=` → localStorage `cwp-lang` → `Settings.language` → `en` (keine Browser-Erkennung mehr); Electron `meta.json.language` → `Settings.language` → `en`
+- ✅ **Startfenster** — Sprach-Button (Globus, Titelleiste), Zeile „Netzwerk:“ mit Kopier-Button, Link „Geräte-Links & Kiosk…“ (IPC `set-language`, `copy-text`, `open-device-links`); Fenster 400×425
+- ✅ **Übersetzungen vollständig** — Wizards, Button-Picker, GeometryBlock, Textur-Namen über `shared/locales`; Tray/Startfenster auch deutsch
+- ⬜ QR-Code im Geräte-Links-Dialog (bräuchte eine QR-Bibliothek, offline gebündelt)
+- ⬜ `components/Sidebar/Sidebar.tsx` ist toter Code (nirgends importiert, enthält noch deutsche Texte) — entfernen
+- ⬜ Panel-Wechsel als Tabs im View-Mode (bei wenigen Panels), geführter Leer-Zustand, Panel-Varianten mit Auto-Auswahl nach Seitenverhältnis
+- ⬜ `Panel.defaultMode` wird nirgends gelesen — nutzen oder deprecaten
+- ⬜ URL-Parameter `panel` wird beim Umbenennen des aktiven Panels nicht nachgeführt (Fallback über localStorage-ID greift)
 
 ### Electron
 - ⬜ Host-Settings Live-Update im Tray ohne App-Neustart (File-Watcher auf settings.json)
@@ -275,6 +294,13 @@ Plan-Datei mit vollständigen Fix-Details: [docs/plans/2026-04-19-code-review-v1
 - **`BITMAP_FORMAT` nur senden wenn in CAPS `BITMAP_FORMATS` annonciert** → Feature-Detection immer via CAPS-Keys, nie via ApiVersion; nicht annoncierte Formate fallen server-seitig stumm auf raw-RGB zurück. Format-Status bei jedem `connect()` resetten — Reconnect kann auf älteren Companion treffen.
 - **mDNS-Discovery (UDP 5353)** → erster Browse löst den Windows-Firewall-Prompt für Node/Electron aus; mDNS kreuzt keine Subnetze/VPN-Routen (Host kann per IP erreichbar sein, taucht aber nicht in der Discovery auf) — manuelles Anlegen bleibt der Primärweg. Browse läuft nur solange das HostManagerModal offen ist (`POST /api/discovery/start|stop`, Watchdog 5 min).
 - **electron-builder `buildResources` ≠ `files`** → `buildResources` zeigt nur wo Build-Ressourcen (icon.ico) für den Installer liegen. Dateien die die App zur Laufzeit braucht (z.B. `assets/tray-*.png`) müssen explizit in `files` stehen.
+- **node_modules via OneDrive zwischen ARM64- und x64-Rechner** → native Bindings (`@rolldown/binding-win32-*`, `@rollup/rollup-win32-*`, `@esbuild/win32-*`) liegen nur für die Architektur vor, auf der `npm install` lief; auf dem anderen Rechner scheitern vitest/vite mit `Cannot find module './rolldown-binding.win32-x64-msvc.node'`. Fix: `npm install` auf dem jeweiligen Rechner oder die fehlenden Bindings additiv per `npm pack` + entpacken nachlegen.
+- **Neue UI-Texte immer in BEIDE Locale-Dateien** → `packages/shared/locales/de.json` + `en.json` müssen schlüsselgleich sein; keine Texte fest im JSX. Startfenster-Texte zusätzlich in `get-i18n-strings` (main.ts) + `applyI18n()` (startup.html) eintragen.
+- **Sprach-Key ist `cwp-lang`, nicht `cwp-language`** → unter dem alten Key liegen automatisch erkannte Werte (z.B. `de-DE`); nur `setDeviceLanguage()` / `?lang=` schreiben den neuen Key.
+- **Kein Seiteneffekt im `useState`-Initializer** → React-StrictMode ruft Initializer doppelt auf; `consumeLinksParam()` (entfernt den URL-Parameter) läuft deshalb einmalig auf Modul-Ebene in `App.tsx`.
+- **`saveMeta()` nie mit Teil-Objekt aufrufen** → `meta.json` enthält `settingsPath` UND `language`; in `main.ts` immer `updateMeta({…})` verwenden, sonst geht das jeweils andere Feld verloren.
+- **`navigator.clipboard` fehlt über `http://<LAN-IP>`** → nur in sicheren Kontexten (https/localhost) vorhanden; Kopier-Funktionen brauchen den `execCommand('copy')`-Fallback (siehe DeviceLinksModal).
+- **Zoom nie aus `panel.zoom` lesen** → geräte-lokal: `useAppStore(selectZoom)` bzw. `useAppStore.getState().getZoom()` in Event-Handlern.
 - **`text-shadow` + `overflow: hidden`** → overflow:hidden clippt den text-shadow hart an der Span-Box — bei mehrzeiligem Text mit großem Glow-Radius entsteht ein gefülltes farbiges RECHTECK statt Glow. LED-Text braucht `overflow: 'visible'` (Clipping übernimmt die Kappe); Glow-Radien mit der Schriftgröße skalieren (`buildLedTextShadow(color, strong, fontSize)`). Und: Style-Previews müssen den EXAKTEN Komponenten-Style nachbauen (position/overflow/lineHeight), sonst sieht die Preview richtig aus, die App nicht.
 
 ---

@@ -6,6 +6,7 @@
  * Aufgaben:
  *  - GET  /api/settings  → liefert die geladenen Settings als JSON
  *  - POST /api/settings  → speichert neue Settings (atomisch, tmp→rename)
+ *  - GET  /api/server-info → { port, addresses } — LAN-Adressen für Geräte-Links
  *  - POST /api/preview-page  → startet temporäre Subscriptions für den Button-Picker-Dialog
  *  - DELETE /api/preview-page → beendet temporäre Subscriptions (Picker geschlossen)
  *  - WebSocket-Verbindungen verwalten (connect, disconnect, broadcast)
@@ -27,6 +28,7 @@ import {
   VSnapshotMessage,
 } from '@cwp/shared'
 import { PageNameResolver } from './pageNames'
+import { getLanAddresses } from './netInfo'
 
 export type PressHandler = (hostId: string, page: number, row: number, col: number, pressed: boolean) => void
 export type RotateHandler = (hostId: string, page: number, row: number, col: number, direction: 1 | -1) => void
@@ -125,7 +127,17 @@ export class ClientServer {
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(json)
 
-      } else if (req.method === 'POST' && req.url === '/api/settings') {
+      } else if (req.method === 'GET' && req.url?.split('?')[0] === '/api/server-info') {
+        // Netzwerk-Adressen dieses Rechners — der Geräte-Links-Dialog baut daraus
+        // Adressen, die auch von anderen Geräten im LAN erreichbar sind (statt localhost).
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ port, addresses: getLanAddresses() }))
+
+      } else if (req.method === 'POST' && req.url?.split('?')[0] === '/api/settings') {
+        // Optionaler Query-Parameter ?client=<id>: identifiziert den speichernden Browser,
+        // damit dieser den anschließenden settingsChanged-Broadcast ignorieren kann.
+        const savingClientId =
+          new URLSearchParams(req.url.split('?')[1] ?? '').get('client')?.slice(0, 64) || undefined
         let body = ''
         let aborted = false
         req.on('data', (chunk) => {
@@ -155,6 +167,10 @@ export class ClientServer {
 
             this.settings = incoming
             this.onSettingsUpdate?.(incoming)
+
+            // Alle verbundenen Browser informieren — andere Geräte laden die Settings neu,
+            // statt mit veraltetem Stand weiterzuarbeiten (Last-Write-Wins-Schutz).
+            this.broadcast({ t: 'settingsChanged', clientId: savingClientId })
 
             console.log('[ClientServer] Settings gespeichert')
             res.writeHead(200, { 'Content-Type': 'application/json' })

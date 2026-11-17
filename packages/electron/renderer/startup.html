@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -43,9 +43,28 @@
       color: #e9edf2;
     }
 
+    /* Sprach-Umschalter in der Titelleiste (wechselt EN ↔ DE, gilt für Startfenster + Tray) */
+    .lang-btn {
+      -webkit-app-region: no-drag;
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 24px;
+      border-radius: 4px;
+      border: 1px solid #2a3344;
+      background: #1a2030;
+      color: #8896aa;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .lang-btn:hover { color: #4a9eff; border-color: #4a9eff55; opacity: 1; }
+    .lang-btn:hover path, .lang-btn:hover circle { stroke: #4a9eff; }
+
     /* Rechte Titelleisten-Spalte: Version + darunter Hilfe-Download */
     .titlebar-meta {
-      margin-left: auto;
+      margin-left: 10px;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
@@ -86,6 +105,67 @@
       flex-direction: column;
       gap: 16px;
     }
+
+    /* Adress-Block: Port-Zeile, Netzwerk-Adresse, Geräte-Links */
+    .addr-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Netzwerk-Adresse (für Tablet / zweiten PC) mit Kopier-Button */
+    .lan-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 22px;
+    }
+    .lan-url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #4a9eff;
+      user-select: text;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .lan-url.none { color: #4a5568; font-family: inherit; font-size: 12px; }
+    .lan-copy-btn {
+      width: 24px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      border: 1px solid #2a3344;
+      background: #1a2030;
+      cursor: pointer;
+    }
+    .lan-copy-btn:hover { border-color: #4a9eff55; opacity: 1; }
+    .lan-copy-btn:hover path, .lan-copy-btn:hover rect { stroke: #4a9eff; }
+    .lan-copied {
+      font-size: 10px;
+      color: #21d07a;
+      visibility: hidden;
+    }
+
+    /* Text-Link: öffnet das Panel mit dem Geräte-Links-Dialog */
+    .device-links-btn {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      font-weight: 500;
+      color: #8896aa;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.15s;
+    }
+    .device-links-btn:hover { color: #4a9eff; opacity: 1; }
+    .device-links-btn:hover path, .device-links-btn:hover rect { stroke: #4a9eff; }
 
     /* Port-Zeile */
     .port-row {
@@ -303,6 +383,10 @@
 
     /* Overrides für Config-Sektion-Buttons (kein flex:1, kein padding override) */
     .preffile-dots-btn, .config-new-btn { flex: none; padding: revert; }
+    /* Kompakte Buttons: die allgemeine button-Regel (flex:1, großes Padding) zurücknehmen */
+    .lang-btn { flex: none; padding: 0 8px; font-size: 11px; font-weight: 600; }
+    .lan-copy-btn { flex: none; padding: 0; }
+    .device-links-btn { flex: none; padding: 0; font-size: 12px; }
 
     .btn-primary {
       background: #4a9eff;
@@ -338,6 +422,14 @@
   <div class="titlebar">
     <img class="titlebar-icon" src="../assets/icon-256.png" alt="" />
     <span class="titlebar-title">Companion Webpanel</span>
+    <!-- Sprach-Umschalter: zeigt die aktive Sprache, Klick wechselt zur nächsten -->
+    <button class="lang-btn" id="btnLanguage">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <circle cx="6" cy="6" r="4.8" stroke="#8896aa" stroke-width="1.1"/>
+        <path d="M1.2 6h9.6M6 1.2c1.6 1.4 1.6 8.2 0 9.6M6 1.2c-1.6 1.4-1.6 8.2 0 9.6" stroke="#8896aa" stroke-width="1.1" stroke-linecap="round"/>
+      </svg>
+      <span id="btnLanguageLabel">EN</span>
+    </button>
     <div class="titlebar-meta">
       <span class="titlebar-version" id="version"></span>
       <!-- Lädt help-me-KI-by_alex.md herunter (Save-Dialog im Main-Prozess) -->
@@ -351,6 +443,7 @@
   </div>
 
   <div class="content">
+    <div class="addr-group">
     <!-- Port-Zeile -->
     <div class="port-row">
       <span class="port-label">…</span>
@@ -362,10 +455,33 @@
         min="1024"
         max="65535"
         value="8080"
-        title="Port ändern und Enter drücken"
       />
       <span class="port-auto-badge" id="autoBadge" style="display:none">auto</span>
       <button class="port-apply" id="btnApplyPort">Apply</button>
+    </div>
+
+    <!-- Netzwerk-Adresse: unter dieser Adresse erreichen andere Geräte das Panel -->
+    <div class="lan-row">
+      <span class="port-label" id="lanLabel">Network:</span>
+      <span class="lan-url" id="lanUrl">…</span>
+      <button class="lan-copy-btn" id="btnCopyLan">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <rect x="4" y="4" width="6.5" height="6.5" rx="1" stroke="#8896aa" stroke-width="1.1"/>
+          <path d="M2.5 8H2a.8.8 0 01-.8-.8V2A.8.8 0 012 1.2h5.2A.8.8 0 018 2v.5" stroke="#8896aa" stroke-width="1.1" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <span class="lan-copied" id="lanCopied">Copied</span>
+    </div>
+
+    <!-- Öffnet das Panel-Fenster mit dem Geräte-Links-Dialog (Kiosk-/Lock-Adressen) -->
+    <button class="device-links-btn" id="btnDeviceLinks">
+      <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+        <rect x="0.8" y="1" width="8.4" height="6.4" rx="1" stroke="#8896aa" stroke-width="1.1"/>
+        <path d="M3 10h4" stroke="#8896aa" stroke-width="1.1" stroke-linecap="round"/>
+        <rect x="9.8" y="4" width="3.4" height="7" rx="0.8" stroke="#8896aa" stroke-width="1.1" fill="#0f141a"/>
+      </svg>
+      <span id="btnDeviceLinksLabel">Device links &amp; kiosk…</span>
+    </button>
     </div>
 
     <hr class="separator" />
@@ -424,7 +540,8 @@
 
     // ─── i18n ────────────────────────────────────────────────────────────────
 
-    api.getI18nStrings().then((s) => {
+    // Wird beim Start und nach jedem Sprachwechsel aufgerufen
+    function applyI18n(s) {
       document.querySelector('.port-label').textContent = s.panelRunsOn
       document.getElementById('errorBanner').textContent = s.noPortAvailable
       document.getElementById('btnApplyPort').textContent = s.apply
@@ -432,19 +549,64 @@
       document.getElementById('btnOpen').textContent = s.openInBrowser
       document.getElementById('btnHide').textContent = s.hide
       document.getElementById('btnQuit').textContent = s.quit
-      document.getElementById('initialHostMsg').textContent = s.waitingForConnection
+      // Platzhalter existiert nur bis zum ersten Status-Update (renderStatus ersetzt ihn)
+      const initialMsg = document.getElementById('initialHostMsg')
+      if (initialMsg) initialMsg.textContent = s.waitingForConnection
       document.getElementById('configSectionHeader').textContent = s.configFile
       document.getElementById('btnLoadPref').title = s.loadPreferenceFile
       document.getElementById('btnNewConfigLabel').textContent = s.newConfig
       document.getElementById('btnNewConfigDesc').textContent  = s.newConfigDesc
       document.getElementById('btnDownloadHelpLabel').textContent = s.downloadHelp
       document.getElementById('btnDownloadHelp').title = s.downloadHelpDesc
+      document.getElementById('lanLabel').textContent = s.network
+      document.getElementById('btnCopyLan').title = s.copyAddress
+      document.getElementById('lanCopied').textContent = s.copied
+      document.getElementById('btnDeviceLinksLabel').textContent = s.deviceLinks
+      document.getElementById('btnDeviceLinks').title = s.deviceLinksDesc
+      document.getElementById('btnLanguage').title = s.switchLanguage
+      document.getElementById('portInput').title = s.portTitle
       window._i18n = s
+      // Status-abhängige Texte (keine Hosts, Config fehlt, keine Netzwerk-Adresse) neu zeichnen
+      if (window._status) renderStatus(window._status)
+    }
+
+    api.getI18nStrings().then(applyI18n)
+
+    // ─── Sprache ─────────────────────────────────────────────────────────────
+
+    // Reihenfolge, in der der Sprach-Button durchschaltet
+    const LANGUAGES = ['en', 'de']
+    let currentLang = 'en'
+
+    function showLanguage(lang) {
+      currentLang = LANGUAGES.includes(lang) ? lang : 'en'
+      document.getElementById('btnLanguageLabel').textContent = currentLang.toUpperCase()
+      document.documentElement.lang = currentLang
+    }
+
+    document.getElementById('btnLanguage').addEventListener('click', async () => {
+      const next = LANGUAGES[(LANGUAGES.indexOf(currentLang) + 1) % LANGUAGES.length]
+      // Main-Prozess merkt die Wahl (meta.json) und baut das Tray-Menü neu
+      showLanguage(await api.setLanguage(next))
+      applyI18n(await api.getI18nStrings())
     })
 
     // ─── Status rendern ──────────────────────────────────────────────────────
 
     function renderStatus(status) {
+      window._status = status
+      if (status.language) showLanguage(status.language)
+
+      // Netzwerk-Adresse: erste LAN-Adresse anzeigen, alle weiteren im Tooltip
+      const lanEl = document.getElementById('lanUrl')
+      const addrs = (status.lanAddresses || []).map((a) => `http://${a}:${status.port}`)
+      const hasLan = addrs.length > 0 && status.port !== 0
+      lanEl.textContent = hasLan ? addrs[0] : (window._i18n?.noNetwork ?? '—')
+      lanEl.title = hasLan ? addrs.join('\n') : ''
+      lanEl.classList.toggle('none', !hasLan)
+      document.getElementById('btnCopyLan').style.display = hasLan ? '' : 'none'
+      window._lanUrl = hasLan ? addrs[0] : null
+
       // Port
       document.getElementById('portInput').value = status.port
       const autoBadge = document.getElementById('autoBadge')
@@ -468,8 +630,8 @@
       }
 
       if (!status.hosts || status.hosts.length === 0) {
-        const msg = window._i18n?.noHostsConfigured ?? 'Keine Hosts konfiguriert'
-        hostsEl.innerHTML = `<div class="no-hosts">${msg}</div>`
+        const msg = window._i18n?.noHostsConfigured ?? 'No hosts configured'
+        hostsEl.innerHTML = `<div class="no-hosts">${esc(msg)}</div>`
         return
       }
 
@@ -536,6 +698,16 @@
     document.getElementById('btnHide').addEventListener('click', () => api.hideWindow())
     document.getElementById('btnQuit').addEventListener('click', () => api.quit())
     document.getElementById('btnDownloadHelp').addEventListener('click', () => api.downloadHelp())
+    document.getElementById('btnDeviceLinks').addEventListener('click', () => api.openDeviceLinks())
+
+    // Netzwerk-Adresse kopieren + kurze Bestätigung einblenden
+    document.getElementById('btnCopyLan').addEventListener('click', async () => {
+      if (!window._lanUrl) return
+      await api.copyText(window._lanUrl)
+      const hint = document.getElementById('lanCopied')
+      hint.style.visibility = 'visible'
+      setTimeout(() => { hint.style.visibility = 'hidden' }, 1500)
+    })
   </script>
 </body>
 </html>

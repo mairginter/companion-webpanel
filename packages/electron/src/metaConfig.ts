@@ -2,10 +2,11 @@
  * metaConfig.ts — Machine-local meta configuration
  *
  * Stores machine-specific data that must NOT be synced to cloud.
- * Currently: the path to the active settings file (custom or default).
+ * Currently: the path to the active settings file (custom or default) and the
+ * language chosen in the startup window.
  *
  * Path: userData/meta.json
- * Format: { settingsPath?: string }  (normalized with ~, expanded on read)
+ * Format: { settingsPath?: string, language?: string }  (path normalized with ~, expanded on read)
  */
 import * as fs from 'fs'
 import * as path from 'path'
@@ -14,6 +15,8 @@ import * as os from 'os'
 export interface MetaConfig {
   /** ~-normalized path to the active settings file. Machine-specific. */
   settingsPath?: string
+  /** Language explicitly chosen in the startup window ('en' | 'de'). Unset = follow Settings.language / default. */
+  language?: string
 }
 
 /** Replaces os.homedir() prefix with ~ for portable storage. */

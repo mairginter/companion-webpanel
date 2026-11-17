@@ -6,15 +6,19 @@
  * Bei Zoom ≠ 100% oder autoZoom: blauer Tint.
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface ZoomControlProps {
   zoom: number
   onZoomChange: (zoom: number) => void
   autoZoom: boolean
   onAutoZoomChange: (value: boolean) => void
+  /** false wenn das Panel keine feste Canvas-Größe hat — Fit ist dann nicht möglich */
+  fitAvailable?: boolean
 }
 
-export function ZoomControl({ zoom, onZoomChange, autoZoom, onAutoZoomChange }: ZoomControlProps) {
+export function ZoomControl({ zoom, onZoomChange, autoZoom, onAutoZoomChange, fitAvailable = true }: ZoomControlProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const pct = Math.round(zoom * 100)
@@ -53,7 +57,7 @@ export function ZoomControl({ zoom, onZoomChange, autoZoom, onAutoZoomChange }: 
       {/* Icon-Button */}
       <button
         onClick={() => setOpen((o) => !o)}
-        title="Zoom (Ctrl+Scroll)"
+        title={t('zoom.title')}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -105,7 +109,8 @@ export function ZoomControl({ zoom, onZoomChange, autoZoom, onAutoZoomChange }: 
               min={20}
               max={200}
               step={5}
-              value={pct}
+              // Fit-Zoom kann außerhalb des Slider-Bereichs liegen → für die Anzeige klemmen
+              value={Math.max(20, Math.min(200, pct))}
               onChange={handleSlider}
               disabled={autoZoom}
               style={{
@@ -132,7 +137,7 @@ export function ZoomControl({ zoom, onZoomChange, autoZoom, onAutoZoomChange }: 
           <div style={{ display: 'flex', gap: 6 }}>
             <button
               onClick={handleReset}
-              title={autoZoom ? 'Fit deaktivieren + auf 100% zurücksetzen' : 'Auf 100% zurücksetzen'}
+              title={autoZoom ? t('zoom.resetFromFit') : t('zoom.reset')}
               style={{
                 padding: '3px 10px',
                 borderRadius: 5,
@@ -147,7 +152,8 @@ export function ZoomControl({ zoom, onZoomChange, autoZoom, onAutoZoomChange }: 
             </button>
             <button
               onClick={handleFitToggle}
-              title="Fit to Window — passt Zoom automatisch ans Fenster an"
+              title={fitAvailable ? t('zoom.fitHint') : t('zoom.fitUnavailable')}
+              disabled={!fitAvailable}
               style={{
                 display: 'flex',
                 alignItems: 'center',

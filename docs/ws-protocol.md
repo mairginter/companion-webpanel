@@ -88,6 +88,7 @@ Settings-Pfad: `../../CompanionWebpannelSettings.json` oder `SETTINGS_PATH` env
 |---|---|
 | `GET /api/settings` | Aktuelle Settings als JSON (kompakt, kein pretty-print) |
 | `POST /api/settings` | Settings speichern (atomisch tmp→rename); prüft Schema-Version, max. 1 MB Body |
+| `GET /api/server-info` | `{ port, addresses }` — nicht-interne IPv4-Adressen des Backend-Rechners (`netInfo.ts`); Quelle für die Adress-Auswahl im Geräte-Links-Dialog |
 | `POST /api/preview-page` | Temporäre Picker-Subscriptions starten — Body `{ hostId, page, keysPerRow, rows }` |
 | `DELETE /api/preview-page?hostId&page` | Picker-Subscriptions beenden |
 | `POST /api/discovery/start` / `.../stop` | mDNS-Browse an/aus (Browse-on-demand, HostManagerModal-Lifecycle; Watchdog stoppt nach 5 min automatisch). Ergebnisse kommen als `discovery`-WS-Broadcast |

@@ -10,7 +10,7 @@ import React, { useCallback } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { AnyElement, defaultLayerFor } from '@cwp/shared'
-import { useAppStore } from '../../store/useAppStore'
+import { useAppStore, selectZoom } from '../../store/useAppStore'
 import { useDragDelta } from '../../context/DragDeltaContext'
 import { ResizeHandles } from '../Elements/ResizeHandles'
 
@@ -27,7 +27,7 @@ export function EditableElement({ element, panelId, children }: Props) {
   const isOnlySelected = isSelected && selectedIds.size === 1
 
   const dragDelta = useDragDelta()
-  const zoom = useAppStore((s) => s.getActivePanel()?.zoom ?? 1)
+  const zoom = useAppStore(selectZoom)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: element.id,

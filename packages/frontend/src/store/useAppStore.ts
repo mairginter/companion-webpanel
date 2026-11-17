@@ -17,16 +17,68 @@ import {
   pageKey,
   defaultLayerFor,
 } from '@cwp/shared'
+import {
+  ViewPref,
+  loadViewPrefs,
+  saveViewPrefs,
+  effectiveAutoZoom,
+  pickInitialPanelId,
+  rememberActivePanel,
+  loadKiosk,
+  persistKiosk,
+  loadLocked,
+  persistLocked,
+  MANUAL_ZOOM_MIN,
+  MANUAL_ZOOM_MAX,
+  FIT_ZOOM_MIN,
+  FIT_ZOOM_MAX,
+} from '../utils/deviceView'
 
 type SessionStatus = SessionStatusMessage['status']
 
-interface AppStore {
+/** Kurze Rückmeldung am unteren Bildschirmrand (Speicherfehler, Remote-Änderung, …) */
+export interface Toast {
+  /** Fortlaufende ID — neuer Toast ersetzt den alten und startet den Auto-Dismiss neu */
+  id: number
+  kind: 'info' | 'warn' | 'error'
+  text: string
+  /** Optionaler Aktions-Button (z.B. "Neu laden") */
+  action?: { label: string; run: () => void }
+  /** true = bleibt stehen bis der User ihn schließt */
+  sticky?: boolean
+}
+
+export interface AppStore {
   // ─── Settings ────────────────────────────────────────────────────────────
   settings: Settings | null
   activePanelId: string | null
   setSettings: (s: Settings) => void
   setActivePanelId: (id: string) => void
   getActivePanel: () => Panel | null
+  /**
+   * Zuletzt gespeicherter/geladener Settings-Stand (Referenz).
+   * settings !== savedSettings ⇒ es gibt ungespeicherte Änderungen (siehe selectDirty).
+   */
+  savedSettings: Settings | null
+  /** Markiert einen Settings-Stand als gespeichert (nach Laden bzw. erfolgreichem POST). */
+  markSaved: (s: Settings) => void
+
+  // ─── Geräte-lokale Ansicht (localStorage + URL, NICHT in settings.json) ────
+  /** key: panelId → Zoom/Fit dieses Geräts */
+  viewPrefs: Record<string, ViewPref>
+  /** Effektiver Zoom des aktiven Panels (für nicht-reaktive Zugriffe in Event-Handlern) */
+  getZoom: () => number
+  /** Kiosk: Toolbar im View-Mode ausgeblendet */
+  kiosk: boolean
+  setKiosk: (v: boolean) => void
+  /** Show-Lock: Edit-Mode und Tastatur-Shortcuts gesperrt (Schutz im Live-Betrieb) */
+  locked: boolean
+  setLocked: (v: boolean) => void
+
+  // ─── Toast ────────────────────────────────────────────────────────────────
+  toast: Toast | null
+  showToast: (t: Omit<Toast, 'id'>) => void
+  clearToast: () => void
 
   // ─── Canvas Mode ─────────────────────────────────────────────────────────
   mode: 'view' | 'edit'
@@ -79,9 +131,12 @@ interface AppStore {
   renamePanel: (panelId: string, name: string) => void
   /** Panel löschen. Falls aktiv, wird das nächste Panel aktiviert. Gibt false zurück wenn es das letzte Panel ist. */
   deletePanel: (panelId: string) => boolean
-  /** Setzt den Zoom-Faktor eines Panels. Klemmt auf [0.2, 2.0]. */
-  setZoom: (panelId: string, zoom: number) => void
-  /** Aktiviert/Deaktiviert Auto-Zoom (Fit-to-Window) für ein Panel. */
+  /**
+   * Setzt den Zoom-Faktor eines Panels — geräte-lokal (viewPrefs), nicht in settings.
+   * Manuell: klemmt auf [0.2, 2.0]. fit=true (vom Fit-Observer): weiter Bereich [0.05, 10].
+   */
+  setZoom: (panelId: string, zoom: number, fit?: boolean) => void
+  /** Aktiviert/Deaktiviert Auto-Zoom (Fit-to-Window) für ein Panel — geräte-lokal. */
   setAutoZoom: (panelId: string, value: boolean) => void
   /** Dupliziert ein Panel mit allen Elementen (neue IDs), wechselt dazu. */
   duplicatePanel: (panelId: string) => Panel
@@ -143,21 +198,66 @@ interface AppStore {
   hostExists: (hostId: string) => boolean
 }
 
+/** true wenn es ungespeicherte Änderungen an den Settings gibt */
+export const selectDirty = (s: AppStore): boolean =>
+  s.settings !== null && s.settings !== s.savedSettings
+
+/** Effektiver Zoom des aktiven Panels auf diesem Gerät */
+export const selectZoom = (s: AppStore): number =>
+  (s.activePanelId ? s.viewPrefs[s.activePanelId]?.zoom : undefined) ?? 1
+
+/** Effektiver Fit-Zustand des aktiven Panels (Default: Fit bei fixem Canvas) */
+export const selectAutoZoom = (s: AppStore): boolean => {
+  const panel = s.settings?.panels.find((p) => p.id === s.activePanelId)
+  return effectiveAutoZoom(panel, s.activePanelId ? s.viewPrefs[s.activePanelId] : undefined)
+}
+
+let toastCounter = 0
+
 export const useAppStore = create<AppStore>((set, get) => ({
   // ─── Settings ─────────────────────────────────────────────────────────────
   settings: null,
   activePanelId: null,
+  savedSettings: null,
 
   setSettings: (settings) => {
-    set((s) => {
-      // activePanelId nur ändern wenn das aktuelle Panel nicht mehr in den neuen Settings existiert
-      const stillExists = settings.panels.some((p) => p.id === s.activePanelId)
-      const activePanelId = stillExists ? s.activePanelId : (settings.panels[0]?.id ?? null)
-      return { settings, activePanelId }
-    })
+    const prevActive = get().activePanelId
+    // activePanelId nur ändern wenn das aktuelle Panel nicht mehr in den neuen Settings existiert.
+    // Beim ersten Laden entscheidet das Gerät: URL-Parameter → zuletzt aktives Panel → erstes Panel.
+    const stillExists = settings.panels.some((p) => p.id === prevActive)
+    const activePanelId = stillExists ? prevActive : pickInitialPanelId(settings.panels)
+    set({ settings, activePanelId })
+    if (!stillExists) rememberActivePanel(settings.panels.find((p) => p.id === activePanelId))
   },
 
-  setActivePanelId: (id) => set({ activePanelId: id }),
+  markSaved: (settings) => set({ savedSettings: settings }),
+
+  setActivePanelId: (id) => {
+    set({ activePanelId: id })
+    rememberActivePanel(get().settings?.panels.find((p) => p.id === id))
+  },
+
+  // ─── Geräte-lokale Ansicht ────────────────────────────────────────────────
+  viewPrefs: loadViewPrefs(),
+  getZoom: () => selectZoom(get()),
+
+  kiosk: loadKiosk(),
+  setKiosk: (v) => {
+    persistKiosk(v)
+    set({ kiosk: v })
+  },
+
+  locked: loadLocked(),
+  setLocked: (v) => {
+    persistLocked(v)
+    // Sperren erzwingt den View-Mode — sonst bliebe ein offener Edit-Mode bedienbar
+    set((s) => (v ? { locked: true, mode: 'view', selectedIds: new Set<string>() } : { ...s, locked: false }))
+  },
+
+  // ─── Toast ────────────────────────────────────────────────────────────────
+  toast: null,
+  showToast: (t) => set({ toast: { ...t, id: ++toastCounter } }),
+  clearToast: () => set({ toast: null }),
 
   getActivePanel: () => {
     const { settings, activePanelId } = get()
@@ -167,8 +267,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   // ─── Mode ─────────────────────────────────────────────────────────────────
   mode: 'view',
-  setMode: (mode) => set({ mode }),
-  toggleMode: () => set((s) => ({ mode: s.mode === 'view' ? 'edit' : 'view' })),
+  // Show-Lock: Wechsel in den Edit-Mode wird ignoriert solange gesperrt
+  setMode: (mode) => set((s) => (s.locked && mode === 'edit' ? s : { mode })),
+  toggleMode: () => set((s) => (s.locked ? s : { mode: s.mode === 'view' ? 'edit' : 'view' })),
 
   // ─── Buttons ──────────────────────────────────────────────────────────────
   buttons: {},
@@ -341,6 +442,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         activePanelId: panel.id,
       }
     })
+    rememberActivePanel(panel)
     return panel
   },
 
@@ -361,34 +463,32 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const remaining = settings.panels.filter((p) => p.id !== panelId)
     const nextActive = activePanelId === panelId ? (remaining[0]?.id ?? null) : activePanelId
     set({ settings: { ...settings, panels: remaining }, activePanelId: nextActive })
+    rememberActivePanel(remaining.find((p) => p.id === nextActive))
     return true
   },
 
-  setZoom: (panelId, zoom) =>
+  // Zoom/Fit sind geräte-lokal: sie landen in viewPrefs (localStorage), NICHT in settings.
+  // Dadurch überschreibt ein Gerät nie den Zoom eines anderen, und Zoomen macht
+  // die Settings nicht "dirty". Panel.zoom/autoZoom im Schema sind deprecated.
+  setZoom: (panelId, zoom, fit = false) =>
     set((s) => {
-      if (!s.settings) return s
-      const clamped = Math.max(0.2, Math.min(2.0, zoom))
-      return {
-        settings: {
-          ...s.settings,
-          panels: s.settings.panels.map((p) =>
-            p.id !== panelId ? p : { ...p, zoom: clamped },
-          ),
-        },
-      }
+      if (!s.settings?.panels.some((p) => p.id === panelId)) return s
+      const [min, max] = fit ? [FIT_ZOOM_MIN, FIT_ZOOM_MAX] : [MANUAL_ZOOM_MIN, MANUAL_ZOOM_MAX]
+      const clamped = Math.max(min, Math.min(max, zoom))
+      const prev = s.viewPrefs[panelId]
+      if (prev?.zoom === clamped) return s
+      const viewPrefs = { ...s.viewPrefs, [panelId]: { ...prev, zoom: clamped } }
+      saveViewPrefs(viewPrefs)
+      return { viewPrefs }
     }),
 
   setAutoZoom: (panelId, value) =>
     set((s) => {
-      if (!s.settings) return s
-      return {
-        settings: {
-          ...s.settings,
-          panels: s.settings.panels.map((p) =>
-            p.id !== panelId ? p : { ...p, autoZoom: value },
-          ),
-        },
-      }
+      if (!s.settings?.panels.some((p) => p.id === panelId)) return s
+      const prev = s.viewPrefs[panelId]
+      const viewPrefs = { ...s.viewPrefs, [panelId]: { zoom: prev?.zoom ?? 1, autoZoom: value } }
+      saveViewPrefs(viewPrefs)
+      return { viewPrefs }
     }),
 
   duplicatePanel: (panelId) => {
@@ -406,6 +506,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       settings: { ...s.settings!, panels: [...s.settings!.panels, newPanel] },
       activePanelId: newPanel.id,
     }))
+    rememberActivePanel(newPanel)
     return newPanel
   },
 

@@ -1,4 +1,18 @@
+/**
+ * App.tsx
+ *
+ * App-Shell: Toolbar + Canvas + Modals + Toast, dazu die globalen Tastatur-Shortcuts.
+ *
+ * Live-Betrieb (geräte-lokal, siehe utils/deviceView.ts):
+ *  - Geräte-Links: Dialog, der Adressen mit Panel/Kiosk/Lock/Sprache erzeugt
+ *               (components/DeviceLinks/DeviceLinksModal.tsx).
+ *  - Kiosk:     im View-Mode wird die Toolbar ausgeblendet; ein kleiner Griff oben
+ *               mittig holt sie zurück.
+ *  - Show-Lock: sperrt Edit-Mode UND alle Tastatur-Shortcuts — ein versehentliches
+ *               "E" schaltet sonst mitten in der Show in den Edit-Mode.
+ */
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useWebSocket } from './ws/useWebSocket'
 import { useSettings } from './api/useSettings'
 import { useAppStore } from './store/useAppStore'
@@ -6,6 +20,9 @@ import { Toolbar } from './components/Toolbar/Toolbar'
 import { Canvas } from './components/Canvas/Canvas'
 import { HostManagerModal } from './components/HostManager/HostManagerModal'
 import { HelpModal } from './components/HelpModal/HelpModal'
+import { Toast } from './components/Toast/Toast'
+import { DeviceLinksModal } from './components/DeviceLinks/DeviceLinksModal'
+import { consumeLinksParam } from './utils/deviceView'
 
 const styles: Record<string, React.CSSProperties> = {
   app: {
@@ -25,6 +42,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
 }
 
+// Einmal beim Laden des Moduls auswerten — NICHT im useState-Initializer: der Aufruf
+// entfernt den Parameter aus der Adresse (Seiteneffekt), und React ruft Initializer im
+// StrictMode doppelt auf; der zweite Aufruf sähe den Parameter nicht mehr.
+const OPEN_LINKS_ON_START = consumeLinksParam()
+
 export function App() {
   const { sendPress, sendRotate, sendVPress } = useWebSocket()
   const { saveSettings } = useSettings()
@@ -32,10 +54,18 @@ export function App() {
   const toggleMode = useAppStore((s) => s.toggleMode)
   const [hostManagerOpen, setHostManagerOpen] = useState(false)
   const [helpModalOpen, setHelpModalOpen] = useState(false)
+  // Geräte-Links-Dialog — ?links=1 öffnet ihn direkt (Aufruf aus dem Electron-Startfenster)
+  const [deviceLinksOpen, setDeviceLinksOpen] = useState(OPEN_LINKS_ON_START)
 
-  const handleSave = useCallback(() => {
+  const kiosk = useAppStore((s) => s.kiosk)
+  const setKiosk = useAppStore((s) => s.setKiosk)
+  const { t } = useTranslation()
+  // Kiosk gilt nur im View-Mode — im Edit-Mode wird die Toolbar immer gebraucht
+  const toolbarHidden = kiosk && mode === 'view'
+
+  const handleSave = useCallback(async (): Promise<boolean> => {
     const s = useAppStore.getState().settings
-    if (s) saveSettings(s)
+    return s ? saveSettings(s) : false
   }, [saveSettings])
 
   // Vollständige Keyboard-Shortcuts
@@ -45,15 +75,17 @@ export function App() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
 
       const store = useAppStore.getState()
+      // Show-Lock: sämtliche Shortcuts gesperrt (Schutz vor Fehleingaben im Live-Betrieb)
+      if (store.locked) return
       const inEdit = store.mode === 'edit'
 
-      // Ctrl-Shortcuts
-      if (e.ctrlKey) {
+      // Ctrl-Shortcuts (auf dem Mac: Cmd)
+      if (e.ctrlKey || e.metaKey) {
         switch (e.key.toLowerCase()) {
           case 's': {
             e.preventDefault()
             const s = store.settings
-            if (s) saveSettings(s)
+            if (s) void saveSettings(s)
             return
           }
           case 'z':
@@ -187,7 +219,26 @@ export function App() {
 
   return (
     <div style={styles.app}>
-      <Toolbar mode={mode} onToggleMode={toggleMode} onOpenHostManager={() => setHostManagerOpen(true)} onOpenHelp={() => setHelpModalOpen(true)} onSave={handleSave} />
+      {!toolbarHidden && (
+        <Toolbar mode={mode} onToggleMode={toggleMode} onOpenHostManager={() => setHostManagerOpen(true)} onOpenHelp={() => setHelpModalOpen(true)} onOpenDeviceLinks={() => setDeviceLinksOpen(true)} onSave={handleSave} />
+      )}
+      {/* Kiosk-Griff: unauffällig oben mittig, blendet die Toolbar wieder ein */}
+      {toolbarHidden && (
+        <button
+          onClick={() => setKiosk(false)}
+          title={t('toolbar.kioskExit')}
+          aria-label={t('toolbar.kioskExit')}
+          style={{
+            position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 900, width: 56, height: 16, padding: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(30,40,64,0.55)', color: 'rgba(233,237,242,0.7)',
+            border: 'none', borderRadius: '0 0 8px 8px', cursor: 'pointer',
+          }}
+        >
+          <span className="material-icons" style={{ fontSize: 16 }}>expand_more</span>
+        </button>
+      )}
       <div style={styles.body}>
         <Canvas sendPress={sendPress} sendRotate={sendRotate} sendVPress={sendVPress} onSave={handleSave} />
       </div>
@@ -200,6 +251,10 @@ export function App() {
       {helpModalOpen && (
         <HelpModal onClose={() => setHelpModalOpen(false)} />
       )}
+      {deviceLinksOpen && (
+        <DeviceLinksModal onClose={() => setDeviceLinksOpen(false)} />
+      )}
+      <Toast />
     </div>
   )
 }

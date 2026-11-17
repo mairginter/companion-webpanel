@@ -12,6 +12,7 @@
  */
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { ChannelStripElement, CompanionRef } from '@cwp/shared'
 import { CompanionButtonPickerDialog } from './CompanionButtonPickerDialog'
 import { ColorPicker } from '../PropertiesPanel/ColorPicker'
@@ -68,6 +69,7 @@ const fieldInput: React.CSSProperties = {
 }
 
 export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
+  const { t } = useTranslation()
   const settings = useAppStore((s) => s.settings)
   const [step, setStep] = useState(1)
   const [pickerTarget, setPickerTarget] = useState<'button' | 'solo' | 'pan' | null>(null)
@@ -110,7 +112,15 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
     onConfirm(draft)
   }
 
-  const TITLES = ['', 'Haupt-Button', 'Text-Variablen', 'Optionale Refs', 'Style', 'Zusammenfassung']
+  // Schritt-Titel (Index = Schrittnummer, 0 unbenutzt)
+  const TITLES = [
+    '',
+    t('channelStripWizard.stepButton'),
+    t('channelStripWizard.stepText'),
+    t('channelStripWizard.stepRefs'),
+    t('channelStripWizard.stepStyle'),
+    t('channelStripWizard.stepSummary'),
+  ]
 
   return (
     <>
@@ -120,10 +130,10 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
           <div style={header}>
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: '#e9edf2' }}>
-                Channel Strip einrichten
+                {t('channelStripWizard.title')}
               </div>
               <div style={{ fontSize: 12, color: '#8896aa', marginTop: 2 }}>
-                Schritt {step} von 5 — {TITLES[step]}
+                {t('channelStripWizard.stepOf', { step, total: 5, title: TITLES[step] })}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -136,34 +146,34 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
           {step === 1 && (
             <div style={body}>
               <div style={infoBox}>
-                <strong style={{ color: '#e9edf2' }}>Ein Companion-Button steuert den ganzen Channel Strip.</strong>
+                <strong style={{ color: '#e9edf2' }}>{t('channelStripWizard.intro')}</strong>
                 <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div>
                     <span style={{ color: '#ff5a5f', fontWeight: 600 }}>▶ Press-Action</span>
-                    {' '}= Mute umschalten (Toggle).<br />
+                    {' '}{t('channelStripWizard.pressDesc')}<br />
                     <span style={{ color: '#8896aa', fontSize: 11 }}>
                       vMix: <code>Input Mute</code> · Wing: <code>Ch Mute Toggle</code> · X32: <code>Channel Mute Toggle</code>
                     </span>
                   </div>
                   <div>
                     <span style={{ color: '#4a9eff', fontWeight: 600 }}>↻ Rotate-Action</span>
-                    {' '}= Fader-Level ändern (Companionreiter: Rotate).<br />
+                    {' '}{t('channelStripWizard.rotateDesc')}<br />
                     <span style={{ color: '#8896aa', fontSize: 11 }}>
-                      vMix: <code>Input Volume Adjust</code> (Schritt ~0.01) · Wing: <code>Ch Fader Adjust</code> · X32: <code>Channel Fader Adjust</code>
+                      vMix: <code>Input Volume Adjust</code> ({t('channelStripWizard.stepHint')}) · Wing: <code>Ch Fader Adjust</code> · X32: <code>Channel Fader Adjust</code>
                     </span>
                   </div>
                   <div>
                     <span style={{ color: '#21d07a', fontWeight: 600 }}>■ Feedback bgColor</span>
-                    {' '}= Mute-State anzeigen.<br />
+                    {' '}{t('channelStripWizard.feedbackDesc')}<br />
                     <span style={{ color: '#8896aa', fontSize: 11 }}>
-                      vMix: <code>Input Is Muted</code> (Farbe bei aktiv) · Wing/X32: <code>Mute Active</code> Feedback
+                      vMix: <code>Input Is Muted</code> ({t('channelStripWizard.colorWhenActive')}) · Wing/X32: <code>Mute Active</code> Feedback
                     </span>
                   </div>
                   <div>
-                    <span style={{ color: '#ff8a3d', fontWeight: 600 }}>T Text-Variable</span>
-                    {' '}= Messwerte (Meter, Level, Name) als einzelner <code>|</code>-getrennter String.<br />
+                    <span style={{ color: '#ff8a3d', fontWeight: 600 }}>{t('channelStripWizard.textVar')}</span>
+                    {' '}{t('channelStripWizard.textVarDesc')}<br />
                     <span style={{ color: '#8896aa', fontSize: 11 }}>
-                      Im nächsten Schritt werden die Indizes konfiguriert.
+                      {t('channelStripWizard.textVarNext')}
                     </span>
                   </div>
                 </div>
@@ -171,7 +181,7 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
 
               {/* vMix Beispiel */}
               <div style={{ ...infoBox, borderColor: '#1e3a5a' }}>
-                <div style={{ color: '#4a9eff', fontWeight: 600, marginBottom: 4, fontSize: 11 }}>Beispiel: vMix</div>
+                <div style={{ color: '#4a9eff', fontWeight: 600, marginBottom: 4, fontSize: 11 }}>{t('channelStripWizard.example', { name: 'vMix' })}</div>
                 <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#8896aa', lineHeight: 1.8 }}>
                   Text: <code style={{ color: '#e9edf2' }}>$(vmix:input_1_meterf1)|$(vmix:input_1_meterf2)|$(vmix:input_1_volume)|$(vmix:input_1_short_title)</code><br />
                   → Index 0 = Meter L (dB) · 1 = Meter R · 2 = Volume (0–100) · 3 = Name
@@ -180,7 +190,7 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
 
               {/* Wing Beispiel */}
               <div style={{ ...infoBox, borderColor: '#1e3a2a' }}>
-                <div style={{ color: '#21d07a', fontWeight: 600, marginBottom: 4, fontSize: 11 }}>Beispiel: Behringer Wing / X32</div>
+                <div style={{ color: '#21d07a', fontWeight: 600, marginBottom: 4, fontSize: 11 }}>{t('channelStripWizard.example', { name: 'Behringer Wing / X32' })}</div>
                 <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#8896aa', lineHeight: 1.8 }}>
                   Text: <code style={{ color: '#e9edf2' }}>$(wing:ch1_meter_l)|$(wing:ch1_meter_r)|$(wing:ch1_fader_db)|$(wing:ch1_name)</code><br />
                   → Index 0 = Meter L · 1 = Meter R · 2 = Fader dB · 3 = Channel Name<br />
@@ -189,14 +199,14 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
               </div>
 
               <div style={{ color: '#8896aa', fontSize: 11 }}>
-                💡 Tipp: Button in Companion anlegen → Reiter "Feedbacks" → bgColor-Feedback hinzufügen → Reiter "Actions" → Rotate-Action wählen → dann hier auswählen.
+                {t('channelStripWizard.tip')}
               </div>
 
               <button
                 style={{ ...btnPrimary, alignSelf: 'flex-start' }}
                 onClick={() => setPickerTarget('button')}
               >
-                {buttonRef ? `✓ Button: ${buttonRef.page}/${buttonRef.row}/${buttonRef.col}` : 'Button wählen...'}
+                {buttonRef ? `✓ Button: ${buttonRef.page}/${buttonRef.row}/${buttonRef.col}` : t('channelStripWizard.chooseButton')}
               </button>
               {buttonRef && (
                 <div style={{ fontSize: 12, color: '#21d07a' }}>Host: {buttonRef.hostId}</div>
@@ -209,15 +219,18 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
             <div style={body}>
               {/* Index explanation */}
               <div style={infoBox}>
-                <strong style={{ color: '#e9edf2' }}>Index = Position im Text (0-basiert)</strong>
+                <strong style={{ color: '#e9edf2' }}>{t('channelStripWizard.indexTitle')}</strong>
                 <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#8896aa' }}>
-                  Text-Feld: <code style={{ color: '#e9edf2' }}>Wert0{separator}Wert1{separator}Wert2{separator}Wert3</code><br />
-                  <span style={{ color: '#4a9eff' }}>Index 0</span> = erstes Feld · <span style={{ color: '#4a9eff' }}>1</span> = zweites · usw.
+                  {t('channelStripWizard.textField')}{' '}
+                  <code style={{ color: '#e9edf2' }}>
+                    {[0, 1, 2, 3].map((i) => `${t('channelStripWizard.valueWord')}${i}`).join(separator)}
+                  </code><br />
+                  <span style={{ color: '#4a9eff' }}>Index 0</span> {t('channelStripWizard.indexFirst')} · <span style={{ color: '#4a9eff' }}>1</span> {t('channelStripWizard.indexSecond')}
                 </div>
               </div>
 
               <div style={fieldRow}>
-                <span style={fieldLbl}>Separator</span>
+                <span style={fieldLbl}>{t('propertiesPanel.separator')}</span>
                 <input
                   style={{ ...fieldInput, width: 60 }}
                   value={separator}
@@ -227,7 +240,7 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
 
               {parsedPreview && buttonState?.text && (
                 <div style={{ ...infoBox, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>
-                  <strong style={{ color: '#e9edf2' }}>Live-Vorschau:</strong><br />
+                  <strong style={{ color: '#e9edf2' }}>{t('channelStripWizard.livePreview')}</strong><br />
                   {buttonState.text.split(separator).map((v, i) => (
                     <span key={i} style={{ marginRight: 8 }}>
                       <span style={{ color: '#4a9eff' }}>[{i}]</span>{' '}
@@ -244,29 +257,29 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
               )}
 
               <div style={fieldRow}>
-                <span style={fieldLbl}>Meter L — Index (Pflicht)</span>
+                <span style={fieldLbl}>{t('channelStripWizard.meterL')}</span>
                 <input type="number" min={0} style={fieldInput}
                   value={meterLIndex}
                   onChange={(e) => setMeterLIndex(Math.max(0, parseInt(e.target.value, 10) || 0))}
                 />
               </div>
               <div style={fieldRow}>
-                <span style={fieldLbl}>Meter R — Index (optional, leer = Mono)</span>
-                <input type="number" min={0} placeholder="leer" value={meterRIndex ?? ''}
+                <span style={fieldLbl}>{t('channelStripWizard.meterR')}</span>
+                <input type="number" min={0} placeholder={t('propertiesPanel.emptyOptional')} value={meterRIndex ?? ''}
                   style={fieldInput}
                   onChange={(e) => setMeterRIndex(e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10)))}
                 />
               </div>
               <div style={fieldRow}>
-                <span style={fieldLbl}>Fader Level — Index (optional)</span>
-                <input type="number" min={0} placeholder="leer" value={levelIndex ?? ''}
+                <span style={fieldLbl}>{t('channelStripWizard.level')}</span>
+                <input type="number" min={0} placeholder={t('propertiesPanel.emptyOptional')} value={levelIndex ?? ''}
                   style={fieldInput}
                   onChange={(e) => setLevelIndex(e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10)))}
                 />
               </div>
               <div style={fieldRow}>
-                <span style={fieldLbl}>Channel Name — Index (optional)</span>
-                <input type="number" min={0} placeholder="leer" value={nameIndex ?? ''}
+                <span style={fieldLbl}>{t('channelStripWizard.name')}</span>
+                <input type="number" min={0} placeholder={t('propertiesPanel.emptyOptional')} value={nameIndex ?? ''}
                   style={fieldInput}
                   onChange={(e) => setNameIndex(e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10)))}
                 />
@@ -278,29 +291,29 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
           {step === 3 && (
             <div style={body}>
               <div>
-                <div style={{ fontSize: 12, color: '#8896aa', marginBottom: 6 }}>Solo-Button (optional)</div>
+                <div style={{ fontSize: 12, color: '#8896aa', marginBottom: 6 }}>{t('channelStripWizard.soloLabel')}</div>
                 <button style={{ ...btnSecondary, fontSize: 12 }} onClick={() => setPickerTarget('solo')}>
-                  {soloRef ? `Solo: ${soloRef.page}/${soloRef.row}/${soloRef.col}` : 'Solo-Button wählen...'}
+                  {soloRef ? `Solo: ${soloRef.page}/${soloRef.row}/${soloRef.col}` : t('channelStripWizard.chooseSolo')}
                 </button>
                 {soloRef && (
                   <button style={{ ...btnSecondary, fontSize: 11, marginLeft: 8 }} onClick={() => setSoloRef(undefined)}>
-                    entfernen
+                    {t('addElement.remove')}
                   </button>
                 )}
-                <div style={{ ...infoBox, marginTop: 8 }}>Ohne Solo-Button: Solo-Taste ausgegraut</div>
+                <div style={{ ...infoBox, marginTop: 8 }}>{t('channelStripWizard.soloHint')}</div>
               </div>
               <div>
-                <div style={{ fontSize: 12, color: '#8896aa', marginBottom: 6 }}>Pan-Button (optional)</div>
+                <div style={{ fontSize: 12, color: '#8896aa', marginBottom: 6 }}>{t('channelStripWizard.panLabel')}</div>
                 <button style={{ ...btnSecondary, fontSize: 12 }} onClick={() => setPickerTarget('pan')}>
-                  {panRef ? `Pan: ${panRef.page}/${panRef.row}/${panRef.col}` : 'Pan-Button wählen...'}
+                  {panRef ? `Pan: ${panRef.page}/${panRef.row}/${panRef.col}` : t('channelStripWizard.choosePan')}
                 </button>
                 {panRef && (
                   <button style={{ ...btnSecondary, fontSize: 11, marginLeft: 8 }} onClick={() => setPanRef(undefined)}>
-                    entfernen
+                    {t('addElement.remove')}
                   </button>
                 )}
                 <div style={{ ...infoBox, marginTop: 8 }}>
-                  Pan aus Text-Variable, z.B. <code>$(vmix:input_1_pan)</code>. Formate: L20, R10, C, -0.5
+                  {t('channelStripWizard.panHint')}
                 </div>
               </div>
             </div>
@@ -310,29 +323,29 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
           {step === 4 && (
             <div style={body}>
               <div style={fieldRow}>
-                <span style={fieldLbl}>Stripe-Farbe</span>
+                <span style={fieldLbl}>{t('channelStripWizard.stripeColor')}</span>
                 <ColorPicker value={color} onChange={setColor} />
               </div>
               <div style={fieldRow}>
-                <span style={fieldLbl}>Channel-Name (Fallback)</span>
+                <span style={fieldLbl}>{t('channelStripWizard.nameFallback')}</span>
                 <input value={name} onChange={(e) => setName(e.target.value)}
-                  placeholder="z.B. Guitar"
+                  placeholder={t('channelStripWizard.namePlaceholder')}
                   style={{ ...fieldInput, width: 'auto', flex: 1 }}
                 />
               </div>
               <div style={fieldRow}>
-                <span style={fieldLbl}>Mono-Modus</span>
+                <span style={fieldLbl}>{t('propertiesPanel.monoMode')}</span>
                 <input type="checkbox" style={{ width: 20, height: 20 }} checked={mono} onChange={(e) => setMono(e.target.checked)} />
               </div>
               <div style={fieldRow}>
-                <span style={fieldLbl}>Mute invertieren</span>
+                <span style={fieldLbl}>{t('propertiesPanel.invertMute')}</span>
                 <input type="checkbox" style={{ width: 20, height: 20 }} checked={invertMute} onChange={(e) => setInvertMute(e.target.checked)} />
               </div>
               <div style={{ ...infoBox, fontSize: 11, color: '#6a7a8a' }}>
-                Mute invertieren: aktivieren wenn dein Companion-Modul eine Feedback-Farbe zeigt wenn der Kanal <em>nicht</em> gemutet ist.
+                {t('channelStripWizard.invertMuteHint')}
               </div>
               <div style={fieldRow}>
-                <span style={fieldLbl}>Clip-Schwellenwert (dBFS)</span>
+                <span style={fieldLbl}>{t('propertiesPanel.clipThreshold')}</span>
                 <input
                   type="number"
                   style={fieldInput}
@@ -345,14 +358,14 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
                 />
               </div>
               <div style={fieldRow}>
-                <span style={fieldLbl}>Coarse-Multiplier (Shift+Scroll)</span>
+                <span style={fieldLbl}>{t('channelStripWizard.coarse')}</span>
                 <input type="number" min={1} max={100} style={fieldInput}
                   value={coarseMultiplier}
                   onChange={(e) => setCoarseMultiplier(Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1)))}
                 />
               </div>
               <div style={infoBox}>
-                Shift+Scroll sendet {coarseMultiplier}× SUB-ROTATE. Passe an die Companion-Action-Schrittweite an.
+                {t('channelStripWizard.coarseHint', { n: coarseMultiplier })}
               </div>
             </div>
           )}
@@ -362,19 +375,19 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
             <div style={body}>
               <div style={{ ...infoBox, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div><strong style={{ color: '#e9edf2' }}>Button:</strong> {buttonRef ? `${buttonRef.page}/${buttonRef.row}/${buttonRef.col}` : '—'}</div>
-                <div><strong style={{ color: '#e9edf2' }}>Separator:</strong> "{separator}"</div>
+                <div><strong style={{ color: '#e9edf2' }}>{t('propertiesPanel.separator')}:</strong> "{separator}"</div>
                 <div><strong style={{ color: '#e9edf2' }}>Meter L/R:</strong> Index {meterLIndex} / {meterRIndex ?? '—'}</div>
                 <div><strong style={{ color: '#e9edf2' }}>Level:</strong> Index {levelIndex ?? '—'}</div>
                 <div><strong style={{ color: '#e9edf2' }}>Name:</strong> Index {nameIndex ?? '—'} (Fallback: "{name || '—'}")</div>
                 <div><strong style={{ color: '#e9edf2' }}>Solo:</strong> {soloRef ? `${soloRef.page}/${soloRef.row}/${soloRef.col}` : '—'}</div>
                 <div><strong style={{ color: '#e9edf2' }}>Pan:</strong> {panRef ? `${panRef.page}/${panRef.row}/${panRef.col}` : '—'}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <strong style={{ color: '#e9edf2' }}>Stripe-Farbe:</strong>
+                  <strong style={{ color: '#e9edf2' }}>{t('channelStripWizard.stripeColor')}:</strong>
                   <div style={{ width: 16, height: 16, borderRadius: 3, background: color, border: '1px solid #2a3344' }} />
                   {color}
                 </div>
                 <div>
-                  <strong style={{ color: '#e9edf2' }}>Mono:</strong> {mono ? 'Ja' : 'Nein'}{' '}·{' '}
+                  <strong style={{ color: '#e9edf2' }}>Mono:</strong> {mono ? t('addElement.yes') : t('addElement.no')}{' '}·{' '}
                   <strong style={{ color: '#e9edf2' }}>Clip:</strong> {clipThreshold} dBFS{' '}·{' '}
                   <strong style={{ color: '#e9edf2' }}>Coarse:</strong> {coarseMultiplier}×
                 </div>
@@ -385,7 +398,7 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
           {/* Footer */}
           <div style={footer}>
             <button style={btnSecondary} onClick={() => step > 1 ? setStep(step - 1) : onClose()}>
-              {step === 1 ? 'Abbrechen' : '← Zurück'}
+              {step === 1 ? t('addElement.cancel') : `← ${t('addElement.back')}`}
             </button>
             {step < 5 ? (
               <button
@@ -393,11 +406,11 @@ export function ChannelStripWizard({ canvasPos, onConfirm, onClose }: Props) {
                 disabled={step === 1 && !buttonRef}
                 onClick={() => setStep(step + 1)}
               >
-                Weiter →
+                {t('addElement.next')} →
               </button>
             ) : (
               <button style={btnPrimary} onClick={handleConfirm}>
-                Fertig — Element erstellen
+                {t('channelStripWizard.finish')}
               </button>
             )}
           </div>

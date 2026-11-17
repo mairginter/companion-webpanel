@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useAppStore } from './useAppStore'
+import { useAppStore, selectAutoZoom, selectDirty } from './useAppStore'
 import type { Settings } from '@cwp/shared'
 
 const makeSettings = (): Settings => ({
@@ -23,6 +23,10 @@ const makeSettings = (): Settings => ({
 })
 
 beforeEach(() => {
+  // Geräte-lokalen Zustand zurücksetzen — sonst wandern Zoom-Prefs/Lock zwischen Tests
+  localStorage.clear()
+  window.history.replaceState(null, '', '/')
+  useAppStore.setState({ viewPrefs: {}, locked: false, kiosk: false, mode: 'view' })
   useAppStore.getState().setSettings(makeSettings())
   useAppStore.getState().clearSelection()
 })
@@ -318,53 +322,88 @@ describe('hostExists', () => {
   })
 })
 
-describe('setZoom', () => {
-  it('setzt Zoom für ein Panel', () => {
+describe('setZoom (geräte-lokal)', () => {
+  it('setzt Zoom in viewPrefs, nicht in den Settings', () => {
+    const before = useAppStore.getState().settings
     useAppStore.getState().setZoom('panel-1', 1.5)
-    const panel = useAppStore.getState().settings?.panels.find((p) => p.id === 'panel-1')
-    expect(panel?.zoom).toBe(1.5)
+    expect(useAppStore.getState().viewPrefs['panel-1']?.zoom).toBe(1.5)
+    expect(useAppStore.getState().getZoom()).toBe(1.5)
+    // Settings-Referenz unverändert → Zoomen macht nicht "dirty" und wandert nicht in die Datei
+    expect(useAppStore.getState().settings).toBe(before)
   })
 
-  it('klemmt Zoom auf Minimum 0.2', () => {
+  it('klemmt manuellen Zoom auf Minimum 0.2', () => {
     useAppStore.getState().setZoom('panel-1', 0.05)
-    const panel = useAppStore.getState().settings?.panels.find((p) => p.id === 'panel-1')
-    expect(panel?.zoom).toBe(0.2)
+    expect(useAppStore.getState().viewPrefs['panel-1']?.zoom).toBe(0.2)
   })
 
-  it('klemmt Zoom auf Maximum 2.0', () => {
+  it('klemmt manuellen Zoom auf Maximum 2.0', () => {
     useAppStore.getState().setZoom('panel-1', 5.0)
-    const panel = useAppStore.getState().settings?.panels.find((p) => p.id === 'panel-1')
-    expect(panel?.zoom).toBe(2.0)
+    expect(useAppStore.getState().viewPrefs['panel-1']?.zoom).toBe(2.0)
   })
 
-  it('ignoriert unbekannte Panel-ID (kein Crash)', () => {
+  it('erlaubt Fit-Zoom über 2.0 (großer Schirm, kleines Panel)', () => {
+    useAppStore.getState().setZoom('panel-1', 3.2, true)
+    expect(useAppStore.getState().viewPrefs['panel-1']?.zoom).toBe(3.2)
+  })
+
+  it('ignoriert unbekannte Panel-ID (kein Crash, kein Eintrag)', () => {
     expect(() => useAppStore.getState().setZoom('no-such-panel', 1.5)).not.toThrow()
-    expect(useAppStore.getState().settings?.panels.length).toBe(1)
+    expect(useAppStore.getState().viewPrefs['no-such-panel']).toBeUndefined()
   })
 })
 
-describe('setAutoZoom', () => {
-  it('setzt autoZoom auf true', () => {
-    useAppStore.getState().setAutoZoom('panel-1', true)
-    expect(useAppStore.getState().getActivePanel()?.autoZoom).toBe(true)
+describe('setAutoZoom (geräte-lokal)', () => {
+  it('Default ohne Präferenz: Fit nur bei fixer Canvas-Größe', () => {
+    // Test-Panel hat keine canvas-Größe → kein Fit
+    expect(selectAutoZoom(useAppStore.getState())).toBe(false)
+    // createPanel legt 1920×1080 an und wird aktiv → Fit ist Default
+    useAppStore.getState().createPanel('Fixed')
+    expect(selectAutoZoom(useAppStore.getState())).toBe(true)
   })
 
-  it('setzt autoZoom auf false', () => {
-    useAppStore.getState().setAutoZoom('panel-1', true)
-    useAppStore.getState().setAutoZoom('panel-1', false)
-    expect(useAppStore.getState().getActivePanel()?.autoZoom).toBe(false)
+  it('explizites Abschalten überschreibt den Default', () => {
+    const p = useAppStore.getState().createPanel('Fixed')
+    useAppStore.getState().setAutoZoom(p.id, false)
+    expect(selectAutoZoom(useAppStore.getState())).toBe(false)
+    useAppStore.getState().setAutoZoom(p.id, true)
+    expect(selectAutoZoom(useAppStore.getState())).toBe(true)
   })
 
-  it('verändert andere Panels autoZoom nicht', () => {
-    const panel2 = useAppStore.getState().createPanel('Panel 2')
-    useAppStore.getState().setAutoZoom(panel2.id, true)
-    useAppStore.getState().setActivePanelId('panel-1')
-    expect(useAppStore.getState().getActivePanel()?.autoZoom).toBeUndefined()
+  it('verändert andere Panels nicht', () => {
+    const p2 = useAppStore.getState().createPanel('Panel 2')
+    useAppStore.getState().setAutoZoom(p2.id, false)
+    expect(useAppStore.getState().viewPrefs['panel-1']?.autoZoom).toBeUndefined()
   })
 
   it('ignoriert unbekannte Panel-ID (kein Crash)', () => {
     expect(() => useAppStore.getState().setAutoZoom('no-such-panel', true)).not.toThrow()
-    expect(useAppStore.getState().settings?.panels.length).toBe(1)
+    expect(useAppStore.getState().viewPrefs['no-such-panel']).toBeUndefined()
+  })
+})
+
+describe('Show-Lock', () => {
+  it('sperrt den Wechsel in den Edit-Mode und erzwingt View', () => {
+    useAppStore.getState().setMode('edit')
+    useAppStore.getState().setLocked(true)
+    expect(useAppStore.getState().mode).toBe('view')
+    useAppStore.getState().setMode('edit')
+    useAppStore.getState().toggleMode()
+    expect(useAppStore.getState().mode).toBe('view')
+    useAppStore.getState().setLocked(false)
+    useAppStore.getState().setMode('edit')
+    expect(useAppStore.getState().mode).toBe('edit')
+    useAppStore.getState().setMode('view')
+  })
+})
+
+describe('Dirty-Tracking', () => {
+  it('ist sauber nach markSaved und dirty nach einer Änderung', () => {
+    const s = useAppStore.getState().settings!
+    useAppStore.getState().markSaved(s)
+    expect(selectDirty(useAppStore.getState())).toBe(false)
+    useAppStore.getState().renamePanel('panel-1', 'Neu')
+    expect(selectDirty(useAppStore.getState())).toBe(true)
   })
 })
 

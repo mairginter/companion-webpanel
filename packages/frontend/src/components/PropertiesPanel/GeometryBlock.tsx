@@ -3,6 +3,7 @@
  * Multi-Select: gemeinsame Werte; null wenn unterschiedlich.
  */
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { AnyElement } from '@cwp/shared'
 import { useAppStore } from '../../store/useAppStore'
 import { NumericInput } from './NumericInput'
@@ -15,6 +16,7 @@ function commonValue(elements: AnyElement[], key: 'x' | 'y' | 'w' | 'h'): number
 }
 
 export function GeometryBlock({ elements, panelId }: Props) {
+  const { t } = useTranslation()
   const updateElementGeometry = useAppStore((s) => s.updateElementGeometry)
   const setAll = (patch: Partial<{ x: number; y: number; w: number; h: number }>) => {
     for (const el of elements) updateElementGeometry(panelId, el.id, patch)
@@ -28,15 +30,15 @@ export function GeometryBlock({ elements, panelId }: Props) {
   const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={sl}>{'Position & Größe'}</div>
+      <div style={sl}>{t('propertiesPanel.positionSize')}</div>
       <div style={group}>
         <div style={row}>
           <NumericInput label="X" value={commonValue(elements, 'x') ?? 0} onChange={(v) => setAll({ x: v })} compact />
           <NumericInput label="Y" value={commonValue(elements, 'y') ?? 0} onChange={(v) => setAll({ y: v })} compact />
         </div>
         <div style={row}>
-          <NumericInput label="Breite" value={commonValue(elements, 'w') ?? 0} min={8} onChange={(v) => setAll({ w: v })} compact />
-          <NumericInput label="Höhe" value={commonValue(elements, 'h') ?? 0} min={8} onChange={(v) => setAll({ h: v })} compact />
+          <NumericInput label={t('propertiesPanel.width')} value={commonValue(elements, 'w') ?? 0} min={8} onChange={(v) => setAll({ w: v })} compact />
+          <NumericInput label={t('propertiesPanel.height')} value={commonValue(elements, 'h') ?? 0} min={8} onChange={(v) => setAll({ h: v })} compact />
         </div>
       </div>
     </div>

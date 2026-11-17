@@ -2,11 +2,12 @@
  * LanguageSwitcher.tsx
  *
  * Kleines Dropdown in der Toolbar zum Wechseln der Anzeigesprache.
- * Schreibt die Wahl in localStorage ('cwp-language') und ruft i18n.changeLanguage() auf.
+ * Die Wahl gilt für dieses Gerät (setDeviceLanguage → localStorage 'cwp-lang').
  * Nur sichtbar wenn mehr als eine Sprache verfügbar ist.
  */
 import React, { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { setDeviceLanguage } from '../../i18n'
 
 const LANG_LABELS: Record<string, string> = {
   de: '🇩🇪 DE',
@@ -78,8 +79,7 @@ export function LanguageSwitcher() {
             <div
               key={lang}
               onClick={() => {
-                i18n.changeLanguage(lang)
-                localStorage.setItem('cwp-language', lang)
+                setDeviceLanguage(lang)
                 setOpen(false)
               }}
               style={{

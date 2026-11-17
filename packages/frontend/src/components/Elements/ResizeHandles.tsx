@@ -79,7 +79,7 @@ export function ResizeHandles({ element, panelId }: Props) {
       state.snapshotSaved = true
     }
     const panel = useAppStore.getState().getActivePanel()
-    const currentZoom = panel?.zoom ?? 1
+    const currentZoom = useAppStore.getState().getZoom()
     const dx = (e.clientX - state.startX) / currentZoom
     const dy = (e.clientY - state.startY) / currentZoom
     const minSize = MIN_SIZE[element.type] ?? 8
@@ -94,7 +94,7 @@ export function ResizeHandles({ element, panelId }: Props) {
     const state = resizeState.current
     if (!state) return
     const panel = useAppStore.getState().getActivePanel()
-    const currentZoom = panel?.zoom ?? 1
+    const currentZoom = useAppStore.getState().getZoom()
     const dx = (e.clientX - state.startX) / currentZoom
     const dy = (e.clientY - state.startY) / currentZoom
     const minSize = MIN_SIZE[element.type] ?? 8
