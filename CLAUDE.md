@@ -150,7 +150,7 @@ CompanionWebpannel/
 - ✅ **Non-square Bitmaps (STYLE, API 1.11)** — `deriveBitmapDims()` quantisiert Element-Geometrie auf Aspect-Stufen; HostManager `realSubDims` ("WxH"), SatelliteClient STYLE-Branch mit Legacy-Fallback für 4.3; live-verifiziert (Commit bc08f07)
 - ✅ **Phase E: Seitennamen im Picker via HTTP-API** — Schema-Bump 1.7.0→1.8.0 (`httpPort?` auf HostProfile + Migration); `PageNameResolver` (TTL-Cache 30 s, Timeout 1,5 s, graceful bei 403/404/Timeout) + `GET /api/page-name?hostId&page` in ClientServer; Picker holt Companion-Namen lazy beim Seitenwechsel (lokale `pageNames` haben Vorrang); httpPort-Feld im HostEditModal; live-verifiziert (Seite 1 = „PTZ Canon Control")
 
-### Multi-Device / Live-Betrieb (v1.6.0 — committet + gepusht, `CompanionWebpanel-1.6.0.exe` lokal gebaut, kein Tag / GitHub-Release)
+### Multi-Device / Live-Betrieb (Release v1.6.0 — Commit `cf05239`, Tag `v1.6.0` gepusht, GitHub-Release mit `CompanionWebpanel-1.6.0.exe`)
 - ✅ **Zoom/Fit geräte-lokal** — `utils/deviceView.ts` + `store.viewPrefs` (localStorage); Fit ist Default bei fixem Canvas, zentriert, nicht auf 200 % begrenzt; `Panel.zoom`/`autoZoom` deprecated (kein Schema-Bump)
 - ✅ **URL als Geräte-Profil** — `?panel=<Name|ID>&kiosk=1&lock=1`; zuletzt aktives Panel pro Gerät gemerkt
 - ✅ **Show-Lock + Kiosk** — Lock sperrt Edit + Shortcuts; Kiosk blendet Toolbar im View-Mode aus
